@@ -1,2 +1,2 @@
 # costing-service
-Backend Service for Costig Application
+Backend Service for Costing Application
