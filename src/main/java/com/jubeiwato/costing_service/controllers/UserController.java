@@ -1,8 +1,10 @@
 package com.jubeiwato.costing_service.controllers;
 
+import com.jubeiwato.costing_service.entities.User;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.jubeiwato.costing_service.constants.AppConstants;
+import org.springframework.security.core.Authentication;
 import com.jubeiwato.costing_service.dtos.UserDto;
 import com.jubeiwato.costing_service.services.UserService;
 
@@ -31,10 +33,12 @@ public class UserController {
     }
 
     @GetMapping("/whoami")
-    public ResponseEntity<UserDto> getCurrentUser() {
-        UserDto response = userService.getUserById(AppConstants.DEFAULT_USER_ID);
-        return new ResponseEntity<>(response, HttpStatus.OK);
+    public ResponseEntity<User> getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User currentUser = (User) authentication.getPrincipal();
+        return ResponseEntity.ok(currentUser);
     }
-    
+
+
     
 }
