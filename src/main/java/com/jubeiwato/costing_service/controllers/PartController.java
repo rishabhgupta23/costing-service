@@ -8,10 +8,10 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.jubeiwato.costing_service.dtos.CostFactorDto;
 import com.jubeiwato.costing_service.dtos.PartRequestDto;
 import com.jubeiwato.costing_service.services.PartService;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -36,6 +36,11 @@ public class PartController {
     @GetMapping("/units")
     public ResponseEntity<List<String>> getPartUnits() {
         return new ResponseEntity<>(partService.getPartUnits(), HttpStatus.OK);
+    }
+
+    @GetMapping("/cost-factors")
+    public ResponseEntity<List<CostFactorDto>> getCostFactors() {
+        return new ResponseEntity<>(partService.getCostFactors(), HttpStatus.OK);
     }
     
     @PostMapping()

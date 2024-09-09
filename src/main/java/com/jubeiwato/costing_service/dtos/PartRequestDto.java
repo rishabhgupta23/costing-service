@@ -1,5 +1,6 @@
 package com.jubeiwato.costing_service.dtos;
 
+import java.util.List;
 import java.util.Map;
 
 import jakarta.validation.constraints.NotBlank;
@@ -18,8 +19,6 @@ public class PartRequestDto {
     @NotBlank(message = "Part Number cannot be null or blank")
     private String partNumber;
 
-    @NotNull(message = "Invalid Category")
-    @NotBlank(message = "Invalid Category")
     private Long categoryId;
     
     @NotNull(message = "Invalid Part Type")
@@ -31,4 +30,6 @@ public class PartRequestDto {
     private String partUnit;
     
     private Map<Long, PartCostDto> vendorCostMap; // <VendorId, Cost Details>
+
+    private List<BomDto> bom;
 }

@@ -24,7 +24,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @Entity
 @Table(name = "parts")
-public class Part extends BaseEntity {
+public class Part extends BaseEntity{
         @Id
         @GeneratedValue(strategy = GenerationType.AUTO)
         @Column(name = "part_id")

@@ -8,8 +8,10 @@ import java.util.Optional;
 import org.springframework.http.client.MultipartBodyBuilder.PartBuilder;
 import org.springframework.stereotype.Service;
 
+import com.jubeiwato.costing_service.constants.DeleteFlag;
 import com.jubeiwato.costing_service.constants.PartType;
 import com.jubeiwato.costing_service.constants.PartUnit;
+import com.jubeiwato.costing_service.dtos.CostFactorDto;
 import com.jubeiwato.costing_service.dtos.PartRequestDto;
 import com.jubeiwato.costing_service.entities.Category;
 import com.jubeiwato.costing_service.entities.Part;
@@ -60,26 +62,34 @@ public class PartServiceImpl implements PartService {
         partRepository.save(part);
 
         // save part cost details
-        List<PartCost> partCostList = request.getVendorCostMap()
-        .entrySet().stream().map(entry -> createPartCostEntity(part, entry.getKey(), entry.getValue().getCostFactorValues())).toList();
-
-        partCostRepository.saveAll(partCostList);
+        if(request.getVendorCostMap() != null && !request.getVendorCostMap().isEmpty()) {
+            List<PartCost> partCostList = request.getVendorCostMap()
+            .entrySet().stream().map(entry -> createPartCostEntity(part, entry.getKey(), entry.getValue().getCostFactorValues())).toList();
+    
+            partCostRepository.saveAll(partCostList);
+        }
     }
 
-    private void validateCreatePartRequest(PartRequestDto request) {
-        categoryRepository.findById(request.getCategoryId()).orElseThrow(() -> new BadRequestException("Invalid Category"));
+    private void validateCreatePartRequest(PartRequestDto request) { 
+        System.out.println(request);
+        if(request.getCategoryId() != null) {
+            categoryRepository.findById(request.getCategoryId()).orElseThrow(() -> new BadRequestException("Invalid Category"));
+        }
         PartType.valueOf(request.getPartType());
         PartUnit.valueOf(request.getPartUnit());
     }
 
     private Part createPartEntity(PartRequestDto request) {
-        return Part.builder()
-        .categoryName(categoryRepository.findById(request.getCategoryId()).get().getName())
+        Part part = Part.builder()
         .partName(request.getPartName())
         .partNumber(request.getPartNumber())
-        // .type(request.getPartType())
-        // .unit(request.getPartUnit())
+        .type(PartType.valueOf(request.getPartType()))
+        .unit(PartUnit.valueOf(request.getPartUnit()))
         .build();
+        if(request.getCategoryId() != null) {
+            part.setCategoryName(categoryRepository.findById(request.getCategoryId()).get().getName());
+        }
+        return part;
     }
 
     private PartCost createPartCostEntity(Part part, Long vendorId, Map<Long, Double> costFactorValues) {
@@ -96,5 +106,12 @@ public class PartServiceImpl implements PartService {
         .value(value)
         .build();
     }
+
+    @Override
+    public List<CostFactorDto> getCostFactors() {
+        return costFactorRepository.findAll().stream().map(CostFactorDto::entityToDto).toList();
+    }
+
+    
 
 }
