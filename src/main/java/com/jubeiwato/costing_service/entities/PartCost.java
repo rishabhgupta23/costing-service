@@ -2,6 +2,7 @@ package com.jubeiwato.costing_service.entities;
 
 import java.util.List;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -36,12 +37,12 @@ public class PartCost extends BaseEntity {
     @JoinColumn(name = "part_id", referencedColumnName = "part_id")
     private Part part;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "vendor_id", referencedColumnName = "vendor_id")
     private Vendor vendor;
 
 
-    @OneToMany
+    @OneToMany(cascade = CascadeType.PERSIST)
     @JoinColumn(referencedColumnName = "part_cost_id")
     List<PartCostCostFactor> costFactorList;
 }

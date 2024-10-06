@@ -60,6 +60,14 @@ public class UserServiceImpl implements UserService {
         userRepository.save(userEntity);
     }
 
+    @Override
+    public UserDto getUserByEmailId(String emailId) {
+        User userEntity = userRepository.findByEmailId(emailId)
+        .orElseThrow(() -> new NotFoundException("User does not exist"));
+        
+        return UserDto.entityToDto(userEntity);
+    }
+
     
 
     

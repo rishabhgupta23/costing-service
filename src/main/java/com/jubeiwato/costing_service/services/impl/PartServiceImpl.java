@@ -3,17 +3,13 @@ package com.jubeiwato.costing_service.services.impl;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
-import org.springframework.http.client.MultipartBodyBuilder.PartBuilder;
 import org.springframework.stereotype.Service;
 
-import com.jubeiwato.costing_service.constants.DeleteFlag;
 import com.jubeiwato.costing_service.constants.PartType;
 import com.jubeiwato.costing_service.constants.PartUnit;
 import com.jubeiwato.costing_service.dtos.CostFactorDto;
 import com.jubeiwato.costing_service.dtos.PartRequestDto;
-import com.jubeiwato.costing_service.entities.Category;
 import com.jubeiwato.costing_service.entities.Part;
 import com.jubeiwato.costing_service.entities.PartCost;
 import com.jubeiwato.costing_service.entities.PartCostCostFactor;
@@ -65,7 +61,6 @@ public class PartServiceImpl implements PartService {
         if(request.getVendorCostMap() != null && !request.getVendorCostMap().isEmpty()) {
             List<PartCost> partCostList = request.getVendorCostMap()
             .entrySet().stream().map(entry -> createPartCostEntity(part, entry.getKey(), entry.getValue().getCostFactorValues())).toList();
-    
             partCostRepository.saveAll(partCostList);
         }
     }

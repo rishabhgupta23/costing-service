@@ -7,6 +7,8 @@ public interface UserService {
 
     UserDto getUserById(Long id);
 
+    UserDto getUserByEmailId(String emailId);
+
     void updateUserById(Long id, String name, String emailId);
 
     void deleteUserById(Long id);

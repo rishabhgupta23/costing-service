@@ -1,6 +1,10 @@
 package com.jubeiwato.costing_service.authentication.filter;
 
 import com.jubeiwato.costing_service.authentication.service.JwtService;
+import com.jubeiwato.costing_service.entities.User;
+import com.jubeiwato.costing_service.exceptions.NotFoundException;
+import com.jubeiwato.costing_service.repositories.UserRepository;
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,13 +25,13 @@ import java.io.IOException;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final UserDetailsService userDetailsService;
+    private final UserRepository userRepository;
     private final JwtService jwtService;
     private final HandlerExceptionResolver handlerExceptionResolver;
 
 
-    public JwtAuthenticationFilter(UserDetailsService userDetailsService, JwtService jwtService, HandlerExceptionResolver handlerExceptionResolver) {
-        this.userDetailsService = userDetailsService;
+    public JwtAuthenticationFilter(UserRepository userRepository, JwtService jwtService, HandlerExceptionResolver handlerExceptionResolver) {
+        this.userRepository = userRepository;
         this.jwtService = jwtService;
         this.handlerExceptionResolver = handlerExceptionResolver;
     }
@@ -50,13 +54,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
             if (userEmail != null && authentication == null) {
-                UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
+                User user = userRepository.findByEmailId(userEmail)
+                            .orElseThrow(() -> new NotFoundException("User does not exist"));
+                // this.userDetailsService.loadUserByUsername(userEmail);
 
-                if (jwtService.isTokenValid(jwt, userDetails)) {
+                if (jwtService.isTokenValid(jwt, user)) {
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            userDetails,
+                            user,
                             null,
-                            userDetails.getAuthorities()
+                            user.getAuthorities()
                     );
 
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
@@ -66,6 +72,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             filterChain.doFilter(request, response);
         } catch (Exception exception) {
+            exception.printStackTrace();
             handlerExceptionResolver.resolveException(request, response, null, exception);
         }
     }
