@@ -11,7 +11,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -42,7 +41,6 @@ public class PartCost extends BaseEntity {
     private Vendor vendor;
 
 
-    @OneToMany(cascade = CascadeType.PERSIST)
-    @JoinColumn(referencedColumnName = "part_cost_id")
+    @OneToMany(mappedBy = "partCost",cascade = CascadeType.ALL, orphanRemoval = true)
     List<PartCostCostFactor> costFactorList;
 }

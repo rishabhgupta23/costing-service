@@ -7,7 +7,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,10 +29,10 @@ public class PartCostCostFactor extends BaseEntity {
     private Long partCostCostFactorId;
 
     @ManyToOne
-    @JoinColumn(name = "part_cost_id", referencedColumnName = "part_cost_id")
+    @JoinColumn(name = "part_cost_id")
     private PartCost partCost;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "factor_id", referencedColumnName = "factor_id")
     private CostFactor costFactor;
 

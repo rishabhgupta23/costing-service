@@ -66,7 +66,6 @@ public class PartServiceImpl implements PartService {
     }
 
     private void validateCreatePartRequest(PartRequestDto request) { 
-        System.out.println(request);
         if(request.getCategoryId() != null) {
             categoryRepository.findById(request.getCategoryId()).orElseThrow(() -> new BadRequestException("Invalid Category"));
         }
@@ -88,11 +87,16 @@ public class PartServiceImpl implements PartService {
     }
 
     private PartCost createPartCostEntity(Part part, Long vendorId, Map<Long, Double> costFactorValues) {
-        return PartCost.builder()
+        PartCost partCost = PartCost.builder()
         .part(part)
         .vendor(vendorRepository.findById(vendorId).get())
         .costFactorList(costFactorValues.entrySet().stream().map(entry -> createPartCostCostFactor(entry.getKey(), entry.getValue())).toList())
         .build();
+
+        for (PartCostCostFactor costFactor : partCost.getCostFactorList()) {
+            costFactor.setPartCost(partCost);  // Set the partCost reference in each CostFactor
+        }
+        return partCost;
     }
 
     private PartCostCostFactor createPartCostCostFactor(Long costFactorId, Double value) {
