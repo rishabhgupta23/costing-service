@@ -6,9 +6,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
 import com.jubeiwato.costing_service.dtos.CostFactorDto;
+import com.jubeiwato.costing_service.dtos.PartDto;
 import com.jubeiwato.costing_service.dtos.PartRequestDto;
 import com.jubeiwato.costing_service.services.PartService;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,6 +29,11 @@ public class PartController {
 
     public PartController(PartService partService) {
         this.partService = partService;
+    }
+
+    @GetMapping()
+    public ResponseEntity<ApiPageResponseDto<PartDto>> getParts(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "100") int size) {
+        return new ResponseEntity<>(partService.getParts(page, size), HttpStatus.OK);
     }
 
     @GetMapping("/types")

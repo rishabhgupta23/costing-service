@@ -4,11 +4,17 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.jubeiwato.costing_service.constants.PartType;
 import com.jubeiwato.costing_service.constants.PartUnit;
+import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
 import com.jubeiwato.costing_service.dtos.CostFactorDto;
+import com.jubeiwato.costing_service.dtos.PageInfoDto;
+import com.jubeiwato.costing_service.dtos.PartDto;
 import com.jubeiwato.costing_service.dtos.PartRequestDto;
 import com.jubeiwato.costing_service.entities.Part;
 import com.jubeiwato.costing_service.entities.PartCost;
@@ -109,6 +115,24 @@ public class PartServiceImpl implements PartService {
     @Override
     public List<CostFactorDto> getCostFactors() {
         return costFactorRepository.findAll().stream().map(CostFactorDto::entityToDto).toList();
+    }
+
+    @Override
+    public ApiPageResponseDto<PartDto> getParts(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Part> partPage = partRepository.findAll(pageable);
+
+        List<PartDto> partList = partPage.get().toList().stream().map(PartDto::enitityToDto).toList();
+        PageInfoDto pageInfo = PageInfoDto.builder()
+        .totalPages(partPage.getTotalPages())
+        .pageNumber(page)
+        .pageSize(size)
+        .build();
+
+        return ApiPageResponseDto.<PartDto>builder()
+        .data(partList)
+        .pageInfo(pageInfo)
+        .build();
     }
 
     
