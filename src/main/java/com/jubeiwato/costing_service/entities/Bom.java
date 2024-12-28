@@ -6,7 +6,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -24,12 +24,12 @@ import lombok.NoArgsConstructor;
 @Table(name = "bom")
 public class Bom extends BaseEntity {
     @Id
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "parent_part_id", referencedColumnName = "part_id")
     private Part parentPart;
     
     @Id
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "part_id", referencedColumnName = "part_id")
     private Part childPart;
 

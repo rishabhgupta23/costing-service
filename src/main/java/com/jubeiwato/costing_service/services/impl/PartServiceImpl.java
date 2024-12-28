@@ -16,10 +16,12 @@ import com.jubeiwato.costing_service.dtos.CostFactorDto;
 import com.jubeiwato.costing_service.dtos.PageInfoDto;
 import com.jubeiwato.costing_service.dtos.PartDto;
 import com.jubeiwato.costing_service.dtos.PartRequestDto;
+import com.jubeiwato.costing_service.entities.Bom;
 import com.jubeiwato.costing_service.entities.Part;
 import com.jubeiwato.costing_service.entities.PartCost;
 import com.jubeiwato.costing_service.entities.PartCostCostFactor;
 import com.jubeiwato.costing_service.exceptions.BadRequestException;
+import com.jubeiwato.costing_service.repositories.BomRepository;
 import com.jubeiwato.costing_service.repositories.CategoryRepository;
 import com.jubeiwato.costing_service.repositories.CostFactorRepository;
 import com.jubeiwato.costing_service.repositories.PartCostRepository;
@@ -37,14 +39,16 @@ public class PartServiceImpl implements PartService {
     private VendorRepository vendorRepository;
     private CostFactorRepository costFactorRepository;
     private PartCostRepository partCostRepository;
+    private BomRepository bomRepository;
 
     public PartServiceImpl(PartRepository partRepository, CategoryRepository categoryRepository, VendorRepository vendorRepository
-    , CostFactorRepository costFactorRepository, PartCostRepository partCostRepository) {
+    , CostFactorRepository costFactorRepository, PartCostRepository partCostRepository, BomRepository bomRepository) {
         this.partRepository = partRepository;
         this.categoryRepository = categoryRepository;
         this.vendorRepository = vendorRepository;
         this.costFactorRepository = costFactorRepository;
         this.partCostRepository = partCostRepository;
+        this.bomRepository = bomRepository;
     }
 
     @Override
@@ -68,6 +72,14 @@ public class PartServiceImpl implements PartService {
             List<PartCost> partCostList = request.getVendorCostMap()
             .entrySet().stream().map(entry -> createPartCostEntity(part, entry.getKey(), entry.getValue().getCostFactorValues())).toList();
             partCostRepository.saveAll(partCostList);
+        }
+
+        if(request.getPartType().equalsIgnoreCase(PartType.MASTER.name()) && request.getBom() != null && !request.getBom().isEmpty()) {
+            List<Bom> bomList = request.getBom().stream().map(bomDto -> {
+                Part childPart = partRepository.findById(bomDto.getChildPartId()).orElseThrow(() -> new BadRequestException("Invalid Child Part"));
+                return new Bom(part, childPart, bomDto.getQuantity());
+            }).toList(); 
+            bomRepository.saveAll(bomList);
         }
     }
 
