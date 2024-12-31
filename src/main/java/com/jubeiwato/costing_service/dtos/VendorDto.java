@@ -19,7 +19,7 @@ public class VendorDto {
         .id(vendor.getVendorId())
         .name(vendor.getName())
         .emailId(vendor.getEmailId())
-        .contactNumber(vendor.getEmailId())
+        .contactNumber(vendor.getContactNumber())
         .address(vendor.getAddress())
         .build();
     }

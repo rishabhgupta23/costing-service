@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS app.part
     updated_by bigint,
     updated_date_time timestamp(6) without time zone,
     category_name character varying(50) COLLATE pg_catalog."default",
-    part_name character varying(50) COLLATE pg_catalog."default",
+    part_name character varying(200) COLLATE pg_catalog."default",
     part_number character varying(50) COLLATE pg_catalog."default",
     type character varying(10) COLLATE pg_catalog."default",
     unit character varying(10) COLLATE pg_catalog."default",
