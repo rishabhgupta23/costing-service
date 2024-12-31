@@ -21,7 +21,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @Entity
 @IdClass(BomId.class)
-@Table(name = "bom")
+@Table(name = "bom", schema = "app")
 public class Bom extends BaseEntity {
     @Id
     @ManyToOne

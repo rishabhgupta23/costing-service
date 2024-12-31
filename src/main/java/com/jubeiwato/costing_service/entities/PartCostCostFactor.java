@@ -20,11 +20,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "part_cost_cost_factor")
+@Table(name = "part_cost_cost_factor", schema = "app")
 public class PartCostCostFactor extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "part_cost_cost_factor_id")
     private Long partCostCostFactorId;
 

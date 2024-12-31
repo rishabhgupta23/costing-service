@@ -2,6 +2,7 @@
 
 --changeset Rishabh:20241228-1
 --tagDatabase: 'init'
+--rollback empty
 
 --changeset Rishabh:20241228-2
 CREATE SCHEMA app;
@@ -15,7 +16,7 @@ CREATE TABLE IF NOT EXISTS app.app_user
     created_date_time timestamp(6) without time zone,
     updated_by bigint,
     updated_date_time timestamp(6) without time zone,
-    user_id bigint NOT NULL,
+    user_id bigserial NOT NULL,
     email_id character varying(50) COLLATE pg_catalog."default" NOT NULL,
     name character varying(50) COLLATE pg_catalog."default" NOT NULL,
     password character varying(100) COLLATE pg_catalog."default" NOT NULL,
