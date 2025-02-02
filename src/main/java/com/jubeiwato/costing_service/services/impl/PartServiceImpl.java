@@ -16,11 +16,14 @@ import com.jubeiwato.costing_service.dtos.CostFactorDto;
 import com.jubeiwato.costing_service.dtos.PageInfoDto;
 import com.jubeiwato.costing_service.dtos.PartDto;
 import com.jubeiwato.costing_service.dtos.PartRequestDto;
+import com.jubeiwato.costing_service.dtos.VendorDto;
 import com.jubeiwato.costing_service.entities.Bom;
 import com.jubeiwato.costing_service.entities.Part;
 import com.jubeiwato.costing_service.entities.PartCost;
 import com.jubeiwato.costing_service.entities.PartCostCostFactor;
+import com.jubeiwato.costing_service.entities.Vendor;
 import com.jubeiwato.costing_service.exceptions.BadRequestException;
+import com.jubeiwato.costing_service.exceptions.NotFoundException;
 import com.jubeiwato.costing_service.repositories.BomRepository;
 import com.jubeiwato.costing_service.repositories.CategoryRepository;
 import com.jubeiwato.costing_service.repositories.CostFactorRepository;
@@ -139,6 +142,7 @@ public class PartServiceImpl implements PartService {
         .totalPages(partPage.getTotalPages())
         .pageNumber(page)
         .pageSize(size)
+        .totalElements(partPage.getTotalElements())
         .build();
 
         return ApiPageResponseDto.<PartDto>builder()
@@ -147,6 +151,30 @@ public class PartServiceImpl implements PartService {
         .build();
     }
 
+    @Override
+    public PartDto getPartById(Long partId) {
+          Part part = this.partRepository.findById(partId)
+        .orElseThrow(() -> new NotFoundException("Part does not exist"));
+
+        //step 2 - fetch Part Cost
+        //Step 3 -BOM
+
+        return PartDto.enitityToDto(part);
+    }
+
+    @Override
+    public PartDto updatePartById(Long partId, String partName, String partNumber, PartType type, PartUnit unit,
+            String categoryName) {
+                Part part = this.partRepository.getReferenceById(partId);
+                part.setPartName(partName);
+                part.setPartNumber(partNumber);
+                part.setUnit(unit);
+                part.setType(type);
+                part.setCategoryName(categoryName);
+        
+                return PartDto.enitityToDto(this.partRepository.save(part));
+            }
+        
     
 
 }

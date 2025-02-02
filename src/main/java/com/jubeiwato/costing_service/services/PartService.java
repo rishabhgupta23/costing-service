@@ -2,10 +2,13 @@ package com.jubeiwato.costing_service.services;
 
 import java.util.List;
 
+import com.jubeiwato.costing_service.constants.PartType;
+import com.jubeiwato.costing_service.constants.PartUnit;
 import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
 import com.jubeiwato.costing_service.dtos.CostFactorDto;
 import com.jubeiwato.costing_service.dtos.PartDto;
 import com.jubeiwato.costing_service.dtos.PartRequestDto;
+import com.jubeiwato.costing_service.dtos.VendorDto;
 
 public interface PartService {
 
@@ -18,4 +21,10 @@ public interface PartService {
     public List<CostFactorDto> getCostFactors();
 
     public void createPart(PartRequestDto request);
+
+
+    public PartDto getPartById(Long partId);
+
+    public PartDto updatePartById(Long partId, String partName, String partNumber, PartType type, PartUnit unit,
+            String categoryName);
 }
