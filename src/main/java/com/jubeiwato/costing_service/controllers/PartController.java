@@ -64,7 +64,7 @@ public class PartController {
     
     @PostMapping("/{partId}")
     public ResponseEntity<PartDto> updatePartById(@PathVariable Long partId, @RequestBody PartDto partDto) {
-        PartDto updatedPart = this.partService.updatePartById(partId, partDto.getPartName(), partDto.getPartNumber(),
+        PartDto updatedPart = this.partService.updatePartById(partId, partDto.getPartName(),
          partDto.getType(), partDto.getUnit(), partDto.getCategoryName());
         return new ResponseEntity<>(updatedPart, HttpStatus.OK);
     }

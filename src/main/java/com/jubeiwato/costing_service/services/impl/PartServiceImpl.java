@@ -142,7 +142,7 @@ public class PartServiceImpl implements PartService {
         .totalPages(partPage.getTotalPages())
         .pageNumber(page)
         .pageSize(size)
-        .totalElements(partPage.getTotalElements())
+        .totalRecords(partPage.getTotalElements())
         .build();
 
         return ApiPageResponseDto.<PartDto>builder()
@@ -163,11 +163,10 @@ public class PartServiceImpl implements PartService {
     }
 
     @Override
-    public PartDto updatePartById(Long partId, String partName, String partNumber, PartType type, PartUnit unit,
+    public PartDto updatePartById(Long partId, String partName, PartType type, PartUnit unit,
             String categoryName) {
                 Part part = this.partRepository.getReferenceById(partId);
                 part.setPartName(partName);
-                part.setPartNumber(partNumber);
                 part.setUnit(unit);
                 part.setType(type);
                 part.setCategoryName(categoryName);

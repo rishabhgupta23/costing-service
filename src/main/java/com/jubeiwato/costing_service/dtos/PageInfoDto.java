@@ -9,5 +9,5 @@ public class PageInfoDto {
     private Integer pageNumber;
     private Integer pageSize;
     private Integer totalPages;
-    private Long totalElements;
+    private Long totalRecords;
 }
