@@ -16,6 +16,7 @@ import com.jubeiwato.costing_service.dtos.PartDto;
 import com.jubeiwato.costing_service.dtos.PartRequestDto;
 import com.jubeiwato.costing_service.services.PartService;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -31,6 +32,7 @@ public class PartController {
     public PartController(PartService partService) {
         this.partService = partService;
     }
+
 
     @GetMapping()
     public ResponseEntity<ApiPageResponseDto<PartDto>> getParts(@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNo, @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE + "") int pageSize) {
@@ -51,7 +53,20 @@ public class PartController {
     public ResponseEntity<List<CostFactorDto>> getCostFactors() {
         return new ResponseEntity<>(partService.getCostFactors(), HttpStatus.OK);
     }
+
+    @GetMapping("/{partId}")
+    public ResponseEntity<PartDto> getPartById(@PathVariable Long partId) {
+        PartDto part = this.partService.getPartById(partId);
+        return new ResponseEntity<>(part, HttpStatus.OK);
+    }
     
+    @PostMapping("/{partId}")
+    public ResponseEntity<PartDto> updatePartById(@PathVariable Long partId, @RequestBody PartDto partDto) {
+        PartDto updatedPart = this.partService.updatePartById(partId, partDto.getPartName(),
+         partDto.getType(), partDto.getUnit(), partDto.getCategoryName());
+        return new ResponseEntity<>(updatedPart, HttpStatus.OK);
+    }
+
     @PostMapping()
     public ResponseEntity<String> createPart(@RequestBody PartRequestDto request) {
         this.partService.createPart(request);
