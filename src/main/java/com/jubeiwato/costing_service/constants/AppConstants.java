@@ -6,5 +6,5 @@ public final class AppConstants {
     public static final long APP_USER_ID = -9;
     public static final long DEFAULT_USER_ID = 1;
     public static final String DEFAULT_PAGE_SIZE = "100";
-    public static final String DEFAULT_PAGE_NUMBER = "1";
+    public static final String DEFAULT_PAGE_NUMBER = "0";
 }
