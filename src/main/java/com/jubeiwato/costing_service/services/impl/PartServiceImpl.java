@@ -77,7 +77,7 @@ public class PartServiceImpl implements PartService {
             partCostRepository.saveAll(partCostList);
         }
 
-        if(request.getPartType().equalsIgnoreCase(PartType.MASTER.name()) && request.getBom() != null && !request.getBom().isEmpty()) {
+        if(request.getType().equalsIgnoreCase(PartType.MASTER.name()) && request.getBom() != null && !request.getBom().isEmpty()) {
             List<Bom> bomList = request.getBom().stream().map(bomDto -> {
                 Part childPart = partRepository.findById(bomDto.getChildPartId()).orElseThrow(() -> new BadRequestException("Invalid Child Part"));
                 return new Bom(part, childPart, bomDto.getQuantity());
@@ -90,16 +90,16 @@ public class PartServiceImpl implements PartService {
         if(request.getCategoryId() != null) {
             categoryRepository.findById(request.getCategoryId()).orElseThrow(() -> new BadRequestException("Invalid Category"));
         }
-        PartType.valueOf(request.getPartType());
-        PartUnit.valueOf(request.getPartUnit());
+        PartType.valueOf(request.getType());
+        PartUnit.valueOf(request.getUnit());
     }
 
     private Part createPartEntity(PartRequestDto request) {
         Part part = Part.builder()
         .partName(request.getPartName())
         .partNumber(request.getPartNumber())
-        .type(PartType.valueOf(request.getPartType()))
-        .unit(PartUnit.valueOf(request.getPartUnit()))
+        .type(PartType.valueOf(request.getType()))
+        .unit(PartUnit.valueOf(request.getUnit()))
         .build();
         if(request.getCategoryId() != null) {
             part.setCategoryName(categoryRepository.findById(request.getCategoryId()).get().getName());

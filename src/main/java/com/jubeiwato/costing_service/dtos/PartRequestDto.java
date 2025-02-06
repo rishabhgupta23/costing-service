@@ -23,11 +23,11 @@ public class PartRequestDto {
     
     @NotNull(message = "Invalid Part Type")
     @NotBlank(message = "Invalid Part Type")
-    private String partType;
+    private String type;
     
     @NotNull(message = "Invalid Measuring Unit")
     @NotBlank(message = "Invalid Measuring Unit")
-    private String partUnit;
+    private String unit;
     
     private Map<Long, PartCostDto> vendorCostMap; // <VendorId, Cost Details>
 

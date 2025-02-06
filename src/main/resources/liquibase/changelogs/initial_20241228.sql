@@ -129,8 +129,6 @@ CREATE TABLE IF NOT EXISTS app.bom
     updated_by bigint,
     updated_date_time timestamp(6) without time zone,
     CONSTRAINT bom_pkey PRIMARY KEY (parent_part_id, part_id),
-    CONSTRAINT bom_parent_part_id_key UNIQUE (parent_part_id),
-    CONSTRAINT bom_part_id_key UNIQUE (part_id),
     CONSTRAINT bom_parent_part_id_fkey FOREIGN KEY (parent_part_id)
         REFERENCES app.part (part_id) MATCH SIMPLE
         ON UPDATE NO ACTION
