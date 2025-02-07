@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.jubeiwato.costing_service.constants.DeleteFlag;
+import com.jubeiwato.costing_service.dtos.GetVendorPartDto;
 import com.jubeiwato.costing_service.dtos.VendorDto;
 import com.jubeiwato.costing_service.entities.Vendor;
 import com.jubeiwato.costing_service.exceptions.NotFoundException;
@@ -62,5 +63,9 @@ public class VendorServiceImpl implements VendorService {
         vendor.setDeleteFlag(DeleteFlag.POSTITVE.getValue());
         this.vendorRepository.save(vendor);
     }
+    public List<GetVendorPartDto> getVendorParts(Long vendorId) {
+    return vendorRepository.getVendorParts(vendorId);
+}
+
 
 }

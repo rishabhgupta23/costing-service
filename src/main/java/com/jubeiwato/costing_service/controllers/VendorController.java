@@ -2,7 +2,9 @@ package com.jubeiwato.costing_service.controllers;
 
 import org.springframework.web.bind.annotation.RestController;
 
+import com.jubeiwato.costing_service.dtos.GetVendorPartDto;
 import com.jubeiwato.costing_service.dtos.VendorDto;
+
 import com.jubeiwato.costing_service.services.VendorService;
 
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,11 +28,15 @@ import org.springframework.web.bind.annotation.RequestBody;
 @RestController
 @RequestMapping("/vendors")
 public class VendorController {
-
+    
+    
     private final VendorService vendorService;
+    
+    
 
     public VendorController(VendorService vendorService) {
         this.vendorService = vendorService;
+        
     }
 
     @GetMapping()
@@ -63,6 +69,17 @@ public class VendorController {
     public ResponseEntity<String> deleteVendorById(@PathVariable Long id) {
         this.vendorService.deleteVendorById(id);
         return new ResponseEntity<>("{\"message\": \"Successful\"}", HttpStatus.OK);
-    } 
+    
+   } 
+    @GetMapping("/{id}/parts") 
+    public ResponseEntity<List<GetVendorPartDto>> getVendorParts(@PathVariable("id") Long vendorId) {
+        List<GetVendorPartDto> parts = vendorService.getVendorParts(vendorId);
+        if (parts == null || parts.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+        return ResponseEntity.ok(parts);
+   }
 
 }
+
+
