@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -173,7 +174,22 @@ public class PartServiceImpl implements PartService {
         
                 return PartDto.enitityToDto(this.partRepository.save(part));
             }
-        
-    
+
+    @Override
+    @Transactional
+    public void deletePartById(Long partId) {
+        Part part = partRepository.findById(partId)
+                .orElseThrow(() -> new BadRequestException("Part with ID " + partId + " not found."));
+
+        boolean isPartOfMaster = bomRepository.existsByChildPart(part);
+        if (isPartOfMaster) {
+            throw new BadRequestException("Cannot delete UNIT part as it is referenced in a MASTER part.");
+        }
+
+        bomRepository.deleteByParentPart(part);
+
+        partRepository.delete(part);
+    }
+
 
 }
