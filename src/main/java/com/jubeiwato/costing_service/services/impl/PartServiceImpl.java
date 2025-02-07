@@ -181,13 +181,10 @@ public class PartServiceImpl implements PartService {
         Part part = partRepository.findById(partId)
                 .orElseThrow(() -> new BadRequestException("Part with ID " + partId + " not found."));
 
-        boolean isPartOfMaster = bomRepository.existsByChildPart(part);
-        if (isPartOfMaster) {
-            throw new BadRequestException("Cannot delete UNIT part as it is referenced in a MASTER part.");
+        boolean isChildPart = bomRepository.existsByChildPart(part);
+        if (isChildPart) {
+            throw new BadRequestException("Cannot Delete this part it is in BOM of other Part(s). Please remove from BOM first to delete the part.");
         }
-
-        bomRepository.deleteByParentPart(part);
-
         partRepository.delete(part);
     }
 

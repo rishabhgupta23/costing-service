@@ -14,8 +14,4 @@ import java.util.List;
 
 public interface BomRepository extends JpaRepository<Bom, BomId> {
     boolean existsByChildPart(Part childPart);
-    @Modifying
-    @Transactional
-    @Query("DELETE FROM Bom b WHERE b.parentPart = :parentPart")
-    void deleteByParentPart(@Param("parentPart") Part parentPart);
 }
