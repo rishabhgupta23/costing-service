@@ -1,5 +1,6 @@
 package com.jubeiwato.costing_service.services.impl;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -157,10 +158,47 @@ public class PartServiceImpl implements PartService {
           Part part = this.partRepository.findById(partId)
         .orElseThrow(() -> new NotFoundException("Part does not exist"));
 
-        //step 2 - fetch Part Cost
-        //Step 3 -BOM
+        // Step 2: Fetch PartCost and CostFactor details
+        List<PartCost> partCosts = partCostRepository.findByPart(part);
+        List<PartDto.CostDetails> costDetailsList = partCosts.stream().map(partCost -> {
+            List<PartDto.CostFactorDetails> costFactors = partCost.getCostFactorList().stream()
+                    .map(costFactor -> PartDto.CostFactorDetails.builder()
+                            .factorName(costFactor.getCostFactor().getFactorName())
+                            .value(costFactor.getValue())
+                            .build())
+                    .toList();
 
-        return PartDto.enitityToDto(part);
+            return PartDto.CostDetails.builder()
+                    .vendorName(partCost.getVendor().getVendorName())
+                    .costFactors(costFactors)
+                    .build();
+        }).toList();
+
+        // Step 3: Fetch BOM details if the part is of type MASTER
+        List<PartDto.BomDetails> bomDetailsList = new ArrayList<>();
+        if (part.getType() == PartType.MASTER) {
+            List<Bom> bomList = bomRepository.findByParentPart(part);
+            bomDetailsList = bomList.stream()
+                    .map(bom -> PartDto.BomDetails.builder()
+                            .childPartId(bom.getChildPart().getPartId())
+                            .childPartName(bom.getChildPart().getPartName())
+                            .childPartNumber(bom.getChildPart().getPartNumber())
+                            .quantity((bom.getQuantity().intValue()))
+                            .build())
+                    .toList();
+        }
+
+        // Step 4: Build the response DTO
+        return PartDto.builder()
+                .partId(part.getPartId())
+                .partName(part.getPartName())
+                .partNumber(part.getPartNumber())
+                .categoryName(part.getCategoryName())
+                .type(part.getType())
+                .unit(part.getUnit())
+                .costDetails(costDetailsList)
+                .bomDetails(bomDetailsList)
+                .build();
     }
 
     @Override
@@ -187,6 +225,5 @@ public class PartServiceImpl implements PartService {
         }
         partRepository.delete(part);
     }
-
 
 }

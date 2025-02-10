@@ -8,6 +8,7 @@ import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
 import com.jubeiwato.costing_service.dtos.CostFactorDto;
 import com.jubeiwato.costing_service.dtos.PartDto;
 import com.jubeiwato.costing_service.dtos.PartRequestDto;
+import com.jubeiwato.costing_service.entities.PartCost;
 
 public interface PartService {
 
@@ -28,5 +29,6 @@ public interface PartService {
             String categoryName);
 
     void deletePartById(Long partId);
+
 
 }
