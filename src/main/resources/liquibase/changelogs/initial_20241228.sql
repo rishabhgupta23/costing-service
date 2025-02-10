@@ -94,8 +94,8 @@ CREATE TABLE IF NOT EXISTS app.part_cost
         ON DELETE NO ACTION,
     CONSTRAINT part_cost_part_id_fkey FOREIGN KEY (part_id)
         REFERENCES app.part (part_id) MATCH SIMPLE
+        ON DELETE CASCADE
         ON UPDATE NO ACTION
-        ON DELETE NO ACTION
 );
 CREATE TABLE IF NOT EXISTS app.part_cost_cost_factor
 (
@@ -111,8 +111,8 @@ CREATE TABLE IF NOT EXISTS app.part_cost_cost_factor
     CONSTRAINT part_cost_cost_factor_pkey PRIMARY KEY (part_cost_cost_factor_id),
     CONSTRAINT part_cost_cost_factor_part_cost_id_fkey FOREIGN KEY (part_cost_id)
         REFERENCES app.part_cost (part_cost_id) MATCH SIMPLE
-        ON UPDATE NO ACTION
-        ON DELETE NO ACTION,
+        ON DELETE CASCADE
+        ON UPDATE NO ACTION,
     CONSTRAINT part_cost_cost_factor_factor_id_fkey FOREIGN KEY (factor_id)
         REFERENCES app.cost_factor (factor_id) MATCH SIMPLE
         ON UPDATE NO ACTION
@@ -131,8 +131,8 @@ CREATE TABLE IF NOT EXISTS app.bom
     CONSTRAINT bom_pkey PRIMARY KEY (parent_part_id, part_id),
     CONSTRAINT bom_parent_part_id_fkey FOREIGN KEY (parent_part_id)
         REFERENCES app.part (part_id) MATCH SIMPLE
-        ON UPDATE NO ACTION
-        ON DELETE NO ACTION,
+        ON DELETE CASCADE
+        ON UPDATE NO ACTION,
     CONSTRAINT bom_part_id_fkey FOREIGN KEY (part_id)
         REFERENCES app.part (part_id) MATCH SIMPLE
         ON UPDATE NO ACTION

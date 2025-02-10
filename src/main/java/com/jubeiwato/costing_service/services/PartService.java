@@ -26,4 +26,7 @@ public interface PartService {
 
     public PartDto updatePartById(Long partId, String partName, PartType type, PartUnit unit,
             String categoryName);
+
+    void deletePartById(Long partId);
+
 }

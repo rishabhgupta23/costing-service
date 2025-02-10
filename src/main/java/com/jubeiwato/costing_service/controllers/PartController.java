@@ -4,10 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.jubeiwato.costing_service.constants.AppConstants;
 import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
@@ -15,11 +12,6 @@ import com.jubeiwato.costing_service.dtos.CostFactorDto;
 import com.jubeiwato.costing_service.dtos.PartDto;
 import com.jubeiwato.costing_service.dtos.PartRequestDto;
 import com.jubeiwato.costing_service.services.PartService;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-
 
 
 @CrossOrigin
@@ -72,5 +64,11 @@ public class PartController {
         this.partService.createPart(request);
         return new ResponseEntity<>("{\"message\": \"Successful\"}", HttpStatus.OK);
     }
-    
+
+    @DeleteMapping("/{partId}")
+    public ResponseEntity<String> deletePartById(@PathVariable Long partId) {
+        partService.deletePartById(partId);
+        return new ResponseEntity<>("Part deleted successfully", HttpStatus.OK);
+    }
+
 }
