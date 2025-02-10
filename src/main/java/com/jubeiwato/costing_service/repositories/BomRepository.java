@@ -14,4 +14,7 @@ import java.util.List;
 
 public interface BomRepository extends JpaRepository<Bom, BomId> {
     boolean existsByChildPart(Part childPart);
+
+    List<Bom> findByParentPart(Part parentPart);
+
 }
