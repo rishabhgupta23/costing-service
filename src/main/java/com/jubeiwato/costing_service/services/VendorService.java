@@ -2,7 +2,7 @@ package com.jubeiwato.costing_service.services;
 
 import java.util.List;
 
-import com.jubeiwato.costing_service.dtos.GetVendorPartDto;
+import com.jubeiwato.costing_service.dtos.PartDto;
 import com.jubeiwato.costing_service.dtos.VendorDto;
 
 public interface VendorService {
@@ -16,6 +16,6 @@ public interface VendorService {
 
     void deleteVendorById(Long id);
 
-    List<GetVendorPartDto> getVendorParts(Long vendorId);
+    List<PartDto> getVendorParts(Long vendorId);
 
 }

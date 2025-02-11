@@ -91,7 +91,7 @@ CREATE TABLE IF NOT EXISTS app.part_cost
     CONSTRAINT part_cost_vendor_id_fkey FOREIGN KEY (vendor_id)
         REFERENCES app.vendor (vendor_id) MATCH SIMPLE
         ON UPDATE NO ACTION
-        ON DELETE NO ACTION,
+        ON DELETE CASCADE,
     CONSTRAINT part_cost_part_id_fkey FOREIGN KEY (part_id)
         REFERENCES app.part (part_id) MATCH SIMPLE
         ON UPDATE NO ACTION
@@ -112,7 +112,7 @@ CREATE TABLE IF NOT EXISTS app.part_cost_cost_factor
     CONSTRAINT part_cost_cost_factor_part_cost_id_fkey FOREIGN KEY (part_cost_id)
         REFERENCES app.part_cost (part_cost_id) MATCH SIMPLE
         ON UPDATE NO ACTION
-        ON DELETE NO ACTION,
+        ON DELETE CASCADE,
     CONSTRAINT part_cost_cost_factor_factor_id_fkey FOREIGN KEY (factor_id)
         REFERENCES app.cost_factor (factor_id) MATCH SIMPLE
         ON UPDATE NO ACTION

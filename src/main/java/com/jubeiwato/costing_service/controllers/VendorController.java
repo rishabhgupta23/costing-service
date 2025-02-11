@@ -2,7 +2,7 @@ package com.jubeiwato.costing_service.controllers;
 
 import org.springframework.web.bind.annotation.RestController;
 
-import com.jubeiwato.costing_service.dtos.GetVendorPartDto;
+import com.jubeiwato.costing_service.dtos.PartDto;
 import com.jubeiwato.costing_service.dtos.VendorDto;
 
 import com.jubeiwato.costing_service.services.VendorService;
@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 
 
-@CrossOrigin
+@CrossOrigin(origins = "http://localhost:4200")
 @RestController
 @RequestMapping("/vendors")
 public class VendorController {
@@ -66,17 +66,14 @@ public class VendorController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteVendorById(@PathVariable Long id) {
-        this.vendorService.deleteVendorById(id);
-        return new ResponseEntity<>("{\"message\": \"Successful\"}", HttpStatus.OK);
-    
-   } 
+    public ResponseEntity<String> deleteVendor(@PathVariable Long id) {
+        vendorService.deleteVendorById(id);
+        return ResponseEntity.ok("Vendor deleted successfully");
+    }
+
     @GetMapping("/{id}/parts") 
-    public ResponseEntity<List<GetVendorPartDto>> getVendorParts(@PathVariable("id") Long vendorId) {
-        List<GetVendorPartDto> parts = vendorService.getVendorParts(vendorId);
-        if (parts == null || parts.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-        }
+public ResponseEntity<List<PartDto>> getVendorParts(@PathVariable("id") Long vendorId) {
+    List<PartDto> parts = vendorService.getVendorParts(vendorId);
         return ResponseEntity.ok(parts);
    }
 
