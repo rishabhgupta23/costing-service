@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -173,7 +174,19 @@ public class PartServiceImpl implements PartService {
         
                 return PartDto.enitityToDto(this.partRepository.save(part));
             }
-        
-    
+
+    @Override
+    @Transactional
+    public void deletePartById(Long partId) {
+        Part part = partRepository.findById(partId)
+                .orElseThrow(() -> new BadRequestException("Part with ID " + partId + " not found."));
+
+        boolean isChildPart = bomRepository.existsByChildPart(part);
+        if (isChildPart) {
+            throw new BadRequestException("Cannot Delete this part it is in BOM of other Part(s). Please remove from BOM first to delete the part.");
+        }
+        partRepository.delete(part);
+    }
+
 
 }
