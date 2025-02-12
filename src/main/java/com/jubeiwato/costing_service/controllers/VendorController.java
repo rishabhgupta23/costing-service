@@ -56,7 +56,7 @@ public class VendorController {
     public ResponseEntity<GeneralResponseDto> createVendor(@RequestBody VendorDto vendorDto) {
         this.vendorService.createVendor(vendorDto.getName(), vendorDto.getEmailId(),
          vendorDto.getContactNumber(), vendorDto.getAddress());
-         GeneralResponseDto response = new GeneralResponseDto("Vendor created successfully", 201);
+         GeneralResponseDto response = new GeneralResponseDto("Vendor created successfully", HttpStatus.CREATED.value());
     return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -70,7 +70,7 @@ public class VendorController {
     @DeleteMapping("/{id}")
     public ResponseEntity<GeneralResponseDto> deleteVendor(@PathVariable Long id) {
         vendorService.deleteVendorById(id);
-        GeneralResponseDto response = new GeneralResponseDto("Vendor deleted successfully", 200);
+        GeneralResponseDto response = new GeneralResponseDto("Vendor deleted successfully", HttpStatus.OK.value());
         return ResponseEntity.ok(response);
     }
 
