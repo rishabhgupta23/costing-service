@@ -2,7 +2,10 @@ package com.jubeiwato.costing_service.controllers;
 
 import org.springframework.web.bind.annotation.RestController;
 
+import com.jubeiwato.costing_service.dtos.GeneralResponseDto;
+import com.jubeiwato.costing_service.dtos.PartDto;
 import com.jubeiwato.costing_service.dtos.VendorDto;
+
 import com.jubeiwato.costing_service.services.VendorService;
 
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,11 +29,15 @@ import org.springframework.web.bind.annotation.RequestBody;
 @RestController
 @RequestMapping("/vendors")
 public class VendorController {
-
+    
+    
     private final VendorService vendorService;
+    
+    
 
     public VendorController(VendorService vendorService) {
         this.vendorService = vendorService;
+        
     }
 
     @GetMapping()
@@ -46,10 +53,11 @@ public class VendorController {
     }
 
     @PostMapping()
-    public ResponseEntity<String> createVendor(@RequestBody VendorDto vendorDto) {
+    public ResponseEntity<GeneralResponseDto> createVendor(@RequestBody VendorDto vendorDto) {
         this.vendorService.createVendor(vendorDto.getName(), vendorDto.getEmailId(),
          vendorDto.getContactNumber(), vendorDto.getAddress());
-        return new ResponseEntity<>("{\"message\": \"Successful\"}", HttpStatus.OK);
+         GeneralResponseDto response = new GeneralResponseDto("Vendor created successfully", HttpStatus.CREATED.value());
+    return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PutMapping("/{id}")
@@ -60,9 +68,18 @@ public class VendorController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteVendorById(@PathVariable Long id) {
-        this.vendorService.deleteVendorById(id);
-        return new ResponseEntity<>("{\"message\": \"Successful\"}", HttpStatus.OK);
-    } 
+    public ResponseEntity<GeneralResponseDto> deleteVendor(@PathVariable Long id) {
+        vendorService.deleteVendorById(id);
+        GeneralResponseDto response = new GeneralResponseDto("Vendor deleted successfully", HttpStatus.OK.value());
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{id}/parts") 
+public ResponseEntity<List<PartDto>> getVendorParts(@PathVariable("id") Long vendorId) {
+    List<PartDto> parts = vendorService.getVendorParts(vendorId);
+        return ResponseEntity.ok(parts);
+   }
 
 }
+
+

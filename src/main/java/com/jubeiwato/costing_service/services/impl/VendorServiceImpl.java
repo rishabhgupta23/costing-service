@@ -3,11 +3,14 @@ package com.jubeiwato.costing_service.services.impl;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import com.jubeiwato.costing_service.constants.DeleteFlag;
+import com.jubeiwato.costing_service.entities.Part;
+import com.jubeiwato.costing_service.dtos.PartDto;
 import com.jubeiwato.costing_service.dtos.VendorDto;
 import com.jubeiwato.costing_service.entities.Vendor;
 import com.jubeiwato.costing_service.exceptions.NotFoundException;
+import com.jubeiwato.costing_service.repositories.PartRepository;
 import com.jubeiwato.costing_service.repositories.VendorRepository;
 import com.jubeiwato.costing_service.services.VendorService;
 
@@ -15,10 +18,12 @@ import com.jubeiwato.costing_service.services.VendorService;
 public class VendorServiceImpl implements VendorService {
 
     private final VendorRepository vendorRepository;
-
-    public VendorServiceImpl(VendorRepository vendorRepository) {
+    private final PartRepository partRepository;
+    
+    public VendorServiceImpl(VendorRepository vendorRepository,PartRepository partRepository) {
         this.vendorRepository = vendorRepository;
-    }
+        this.partRepository= partRepository;
+         }
 
     @Override
     public void createVendor(String name, String emailId, String contactNumber, String address) {
@@ -55,12 +60,22 @@ public class VendorServiceImpl implements VendorService {
 
         return VendorDto.entityToDto(this.vendorRepository.save(vendor));
     }
-
+   
+    @Transactional
     @Override
     public void deleteVendorById(Long id) {
-        Vendor vendor = this.vendorRepository.getReferenceById(id);
-        vendor.setDeleteFlag(DeleteFlag.POSTITVE.getValue());
-        this.vendorRepository.save(vendor);
+      
+        vendorRepository.deleteById(id);
     }
+    
+    @Override
+    public List<PartDto> getVendorParts(Long vendorId) {
+        List<Part> parts = partRepository.getVendorParts(vendorId);
+    
+        return parts.stream()
+        .map(PartDto::enitityToDto)
+        .toList();
+    }
+    
 
 }
