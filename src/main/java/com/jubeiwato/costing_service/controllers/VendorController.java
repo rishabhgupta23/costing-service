@@ -2,6 +2,7 @@ package com.jubeiwato.costing_service.controllers;
 
 import org.springframework.web.bind.annotation.RestController;
 
+import com.jubeiwato.costing_service.dtos.GeneralResponseDto;
 import com.jubeiwato.costing_service.dtos.PartDto;
 import com.jubeiwato.costing_service.dtos.VendorDto;
 
@@ -24,7 +25,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 
 
-@CrossOrigin(origins = "http://localhost:4200")
+@CrossOrigin
 @RestController
 @RequestMapping("/vendors")
 public class VendorController {
@@ -52,10 +53,11 @@ public class VendorController {
     }
 
     @PostMapping()
-    public ResponseEntity<String> createVendor(@RequestBody VendorDto vendorDto) {
+    public ResponseEntity<GeneralResponseDto> createVendor(@RequestBody VendorDto vendorDto) {
         this.vendorService.createVendor(vendorDto.getName(), vendorDto.getEmailId(),
          vendorDto.getContactNumber(), vendorDto.getAddress());
-        return new ResponseEntity<>("{\"message\": \"Successful\"}", HttpStatus.OK);
+         GeneralResponseDto response = new GeneralResponseDto("Vendor created successfully", 201);
+    return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PutMapping("/{id}")
@@ -66,9 +68,10 @@ public class VendorController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteVendor(@PathVariable Long id) {
+    public ResponseEntity<GeneralResponseDto> deleteVendor(@PathVariable Long id) {
         vendorService.deleteVendorById(id);
-        return ResponseEntity.ok("Vendor deleted successfully");
+        GeneralResponseDto response = new GeneralResponseDto("Vendor deleted successfully", 200);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}/parts") 

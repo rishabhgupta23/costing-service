@@ -10,6 +10,7 @@ import com.jubeiwato.costing_service.dtos.PartDto;
 import com.jubeiwato.costing_service.dtos.VendorDto;
 import com.jubeiwato.costing_service.entities.Vendor;
 import com.jubeiwato.costing_service.exceptions.NotFoundException;
+import com.jubeiwato.costing_service.repositories.PartRepository;
 import com.jubeiwato.costing_service.repositories.VendorRepository;
 import com.jubeiwato.costing_service.services.VendorService;
 
@@ -17,9 +18,11 @@ import com.jubeiwato.costing_service.services.VendorService;
 public class VendorServiceImpl implements VendorService {
 
     private final VendorRepository vendorRepository;
-  
-    public VendorServiceImpl(VendorRepository vendorRepository) {
+    private final PartRepository partRepository;
+    
+    public VendorServiceImpl(VendorRepository vendorRepository,PartRepository partRepository) {
         this.vendorRepository = vendorRepository;
+        this.partRepository= partRepository;
          }
 
     @Override
@@ -67,7 +70,7 @@ public class VendorServiceImpl implements VendorService {
     
     @Override
     public List<PartDto> getVendorParts(Long vendorId) {
-        List<Part> parts = vendorRepository.getVendorParts(vendorId);
+        List<Part> parts = partRepository.getVendorParts(vendorId);
     
         return parts.stream()
         .map(PartDto::enitityToDto)
