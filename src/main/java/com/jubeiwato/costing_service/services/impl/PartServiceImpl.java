@@ -22,7 +22,6 @@ import com.jubeiwato.costing_service.entities.Bom;
 import com.jubeiwato.costing_service.entities.Part;
 import com.jubeiwato.costing_service.entities.PartCost;
 import com.jubeiwato.costing_service.entities.PartCostCostFactor;
-import com.jubeiwato.costing_service.entities.Vendor;
 import com.jubeiwato.costing_service.exceptions.BadRequestException;
 import com.jubeiwato.costing_service.exceptions.NotFoundException;
 import com.jubeiwato.costing_service.repositories.BomRepository;
@@ -140,12 +139,14 @@ public class PartServiceImpl implements PartService {
 
         List<PartDto> partList = partPage.getContent().stream()
         .map(part -> {
-            List<VendorDto> vendorList = partCostRepository.findByPart(part)
+            PartDto partDto = PartDto.enitityToDto(part);
+            List<VendorDto> vendorList = partRepository.findDistinctVendorsByPart(part)
                 .stream()
-                .map(partCost -> VendorDto.entityToDto(partCost.getVendor()))
+                .map(VendorDto::entityToDto)
                 .toList();
+                partDto.setVendors(vendorList);
 
-            return PartDto.entityToDto(part, vendorList); // Include vendors only here
+            return partDto;
         })
         .toList();
         PageInfoDto pageInfo = PageInfoDto.builder()
