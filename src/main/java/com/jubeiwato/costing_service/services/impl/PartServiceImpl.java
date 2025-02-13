@@ -138,7 +138,16 @@ public class PartServiceImpl implements PartService {
         Pageable pageable = PageRequest.of(page, size);
         Page<Part> partPage = partRepository.findAll(pageable);
 
-        List<PartDto> partList = partPage.get().toList().stream().map(PartDto::enitityToDto).toList();
+        List<PartDto> partList = partPage.getContent().stream()
+        .map(part -> {
+            List<VendorDto> vendorList = partCostRepository.findByPart(part)
+                .stream()
+                .map(partCost -> VendorDto.entityToDto(partCost.getVendor()))
+                .toList();
+
+            return PartDto.entityToDto(part, vendorList); // Include vendors only here
+        })
+        .toList();
         PageInfoDto pageInfo = PageInfoDto.builder()
         .totalPages(partPage.getTotalPages())
         .pageNumber(page)
