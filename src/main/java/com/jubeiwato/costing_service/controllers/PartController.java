@@ -2,15 +2,12 @@ package com.jubeiwato.costing_service.controllers;
 
 import java.util.List;
 
+import com.jubeiwato.costing_service.dtos.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.jubeiwato.costing_service.constants.AppConstants;
-import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
-import com.jubeiwato.costing_service.dtos.CostFactorDto;
-import com.jubeiwato.costing_service.dtos.PartDto;
-import com.jubeiwato.costing_service.dtos.PartRequestDto;
 import com.jubeiwato.costing_service.services.PartService;
 
 
@@ -52,10 +49,9 @@ public class PartController {
         return new ResponseEntity<>(part, HttpStatus.OK);
     }
     
-    @PutMapping("/{partId}")
-    public ResponseEntity<PartDto> updatePartById(@PathVariable Long partId, @RequestBody PartDto partDto) {
-        PartDto updatedPart = this.partService.updatePartById(partId, partDto.getPartName(),
-         partDto.getType(), partDto.getUnit(), partDto.getCategoryName());
+    @PostMapping("/{partId}")
+    public ResponseEntity<PartDto> updatePartById(@PathVariable Long partId, @RequestBody PartRequestDto request) {
+        PartDto updatedPart = this.partService.updatePartById(partId, request);
         return new ResponseEntity<>(updatedPart, HttpStatus.OK);
     }
 
@@ -70,5 +66,4 @@ public class PartController {
         partService.deletePartById(partId);
         return new ResponseEntity<>("Part deleted successfully", HttpStatus.OK);
     }
-
 }

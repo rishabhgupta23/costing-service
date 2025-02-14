@@ -13,9 +13,11 @@ public interface PartCostRepository extends JpaRepository<PartCost, Long> {
     List<PartCost> findByPart(Part part);
 
     @Query("SELECT p1 FROM PartCost p1 " +
-            "INNER JOIN PartCost p2 " +
-            "ON p1.part.id = p2.part.id AND p1.vendor.id = p2.vendor.id " +
-            "WHERE p1.updatedBy > p2.updatedBy AND p1.part.id = :partId")
-    List<PartCost> findLatestByPart(@Param("partId") Long partId);
+            "WHERE p1.updatedDateTime = (" +
+            "    SELECT MAX(p2.updatedDateTime) " +
+            "    FROM PartCost p2 " +
+            "    WHERE p2.part.id = :partId AND p2.vendor.id = p1.vendor.id" +
+            ") AND p1.part.id = :partId")
+    List<PartCost> findByPart(@Param("partId") Long partId);
 
 }
