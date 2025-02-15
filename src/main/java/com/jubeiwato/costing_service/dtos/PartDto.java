@@ -1,15 +1,20 @@
 package com.jubeiwato.costing_service.dtos;
 
-import java.util.List;
 import com.jubeiwato.costing_service.constants.PartType;
 import com.jubeiwato.costing_service.constants.PartUnit;
 import com.jubeiwato.costing_service.entities.Part;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
 @Data
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
+@EqualsAndHashCode
 public class PartDto {
     private Long partId;
     private String partName;
@@ -18,7 +23,6 @@ public class PartDto {
     private PartType type;
     private PartUnit unit;
 
-    private List<VendorDto> vendors;
 
     public static PartDto enitityToDto(Part entity) {
         return PartDto.builder()

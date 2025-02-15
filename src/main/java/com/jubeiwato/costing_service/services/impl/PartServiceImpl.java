@@ -1,8 +1,10 @@
 package com.jubeiwato.costing_service.services.impl;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
@@ -15,9 +17,10 @@ import com.jubeiwato.costing_service.constants.PartUnit;
 import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
 import com.jubeiwato.costing_service.dtos.CostFactorDto;
 import com.jubeiwato.costing_service.dtos.PageInfoDto;
+import com.jubeiwato.costing_service.dtos.PartDataDto;
 import com.jubeiwato.costing_service.dtos.PartDto;
 import com.jubeiwato.costing_service.dtos.PartRequestDto;
-import com.jubeiwato.costing_service.dtos.VendorDto;
+import com.jubeiwato.costing_service.dtos.PartRowDto;
 import com.jubeiwato.costing_service.entities.Bom;
 import com.jubeiwato.costing_service.entities.Part;
 import com.jubeiwato.costing_service.entities.PartCost;
@@ -133,34 +136,49 @@ public class PartServiceImpl implements PartService {
     }
 
     @Override
-    public ApiPageResponseDto<PartDto> getParts(int page, int size) {
+    public ApiPageResponseDto<PartDataDto> getParts(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Part> partPage = partRepository.findAll(pageable);
 
-        List<PartDto> partList = partPage.getContent().stream()
-        .map(part -> {
-            PartDto partDto = PartDto.enitityToDto(part);
-            List<VendorDto> vendorList = partRepository.findDistinctVendorsByPart(part)
-                .stream()
-                .map(VendorDto::entityToDto)
-                .toList();
-                partDto.setVendors(vendorList);
+        List<Object[]> partVendorList = partCostRepository.getPartVendorList();
+    
+        Integer maxVendorCount = vendorRepository.getMaxVendorCount();
 
-            return partDto;
-        })
+        Map<Long, List<String>> partVendorMap = partVendorList.stream()
+        .collect(Collectors.toMap(
+            obj -> ((Number) obj[0]).longValue(),  
+            obj -> Arrays.asList(((String) obj[1]).split(",")) 
+        ));
+
+        List<PartRowDto> partList = partPage.getContent().stream()
+        .map(part -> PartRowDto.superBuilder()
+            .partId(part.getPartId())
+            .partName(part.getPartName())
+            .partNumber(part.getPartNumber())
+            .categoryName(part.getCategoryName())
+            .type(part.getType())
+            .unit(part.getUnit())
+            .vendorNames(partVendorMap.getOrDefault(part.getPartId(), new ArrayList<>())) 
+            .build())
         .toList();
+
+        PartDataDto partDataDto = PartDataDto.builder()
+        .partsList(partList)
+        .maxVendorCount(maxVendorCount != null ? maxVendorCount : 0)
+        .build();
+
         PageInfoDto pageInfo = PageInfoDto.builder()
         .totalPages(partPage.getTotalPages())
         .pageNumber(page)
         .pageSize(size)
         .totalRecords(partPage.getTotalElements())
         .build();
-
-        return ApiPageResponseDto.<PartDto>builder()
-        .data(partList)
+    
+       return ApiPageResponseDto.<PartDataDto>builder()
+        .data(partDataDto) 
         .pageInfo(pageInfo)
         .build();
-    }
+}
 
     @Override
     public PartDto getPartById(Long partId) {
