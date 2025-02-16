@@ -138,43 +138,28 @@ public class PartServiceImpl implements PartService {
     @Override
     public ApiPageResponseDto<PartDataDto> getParts(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<Part> partPage = partRepository.findAll(pageable);
+    Page<Object[]> partVendorList = partCostRepository.getPartVendorList(pageable);
 
-        List<Object[]> partVendorList = partCostRepository.getPartVendorList();
-    
-        Integer maxVendorCount = vendorRepository.getMaxVendorCount();
+      Integer maxVendorCount = partCostRepository.getMaxVendorCount();
 
-        Map<Long, List<String>> partVendorMap = partVendorList.stream()
-        .collect(Collectors.toMap(
-            obj -> ((Number) obj[0]).longValue(),  
-            obj -> Arrays.asList(((String) obj[1]).split(",")) 
-        ));
 
-        List<PartRowDto> partList = partPage.getContent().stream()
-        .map(part -> PartRowDto.superBuilder()
-            .partId(part.getPartId())
-            .partName(part.getPartName())
-            .partNumber(part.getPartNumber())
-            .categoryName(part.getCategoryName())
-            .type(part.getType())
-            .unit(part.getUnit())
-            .vendorNames(partVendorMap.getOrDefault(part.getPartId(), new ArrayList<>())) 
-            .build())
-        .toList();
-
-        PartDataDto partDataDto = PartDataDto.builder()
+       List<PartRowDto> partList = partVendorList.getContent().stream()
+       .map(PartRowDto::fromQueryResult) 
+             .toList();
+      
+    PartDataDto partDataDto = PartDataDto.builder()
         .partsList(partList)
         .maxVendorCount(maxVendorCount != null ? maxVendorCount : 0)
         .build();
 
-        PageInfoDto pageInfo = PageInfoDto.builder()
-        .totalPages(partPage.getTotalPages())
+    PageInfoDto pageInfo = PageInfoDto.builder()
+        .totalPages(partVendorList.getTotalPages())
         .pageNumber(page)
         .pageSize(size)
-        .totalRecords(partPage.getTotalElements())
+        .totalRecords(partVendorList.getTotalElements())
         .build();
     
-       return ApiPageResponseDto.<PartDataDto>builder()
+    return ApiPageResponseDto.<PartDataDto>builder()
         .data(partDataDto) 
         .pageInfo(pageInfo)
         .build();
