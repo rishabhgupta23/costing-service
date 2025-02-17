@@ -144,7 +144,25 @@ public class PartServiceImpl implements PartService {
 
 
        List<PartRowDto> partList = partVendorList.getContent().stream()
-       .map(PartRowDto::fromQueryResult) 
+       .map(obj -> {
+        Long partId = ((Number) obj[0]).longValue();
+        String partName = (String) obj[1];
+        String partNumber = (String) obj[2];
+        String categoryName = (String) obj[3];
+        PartType type = PartType.valueOf((String) obj[4]);
+        PartUnit unit = PartUnit.valueOf((String) obj[5]);
+        List<String> vendorNames = obj[6] != null ? Arrays.asList(((String) obj[6]).split(",")) : List.of();
+
+        return PartRowDto.superBuilder()
+            .partId(partId)
+            .partName(partName)
+            .partNumber(partNumber)
+            .categoryName(categoryName)
+            .type(type)
+            .unit(unit)
+            .vendorNames(vendorNames)
+            .build();
+    }) 
              .toList();
       
     PartDataDto partDataDto = PartDataDto.builder()

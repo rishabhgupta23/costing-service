@@ -7,21 +7,15 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface PartCostRepository extends JpaRepository<PartCost, Long> {
-    @Query(value = """
-    SELECT p.part_id, p.part_name, p.part_number, p.category_name, p.type, p.unit, STRING_AGG(DISTINCT v.name, ', ') AS vendors
-    FROM app.part_cost pc 
-    JOIN app.part p ON pc.part_id = p.part_id 
-    JOIN app.vendor v ON pc.vendor_id = v.vendor_id 
-    GROUP BY p.part_id
-    ORDER BY p.part_id
-    OFFSET :#{#pageable.offset} LIMIT :#{#pageable.pageSize}
-    """,
-    countQuery = """
-    SELECT COUNT(DISTINCT p.part_id)
-    FROM app.part_cost pc 
-    JOIN app.part p ON pc.part_id = p.part_id 
-    JOIN app.vendor v ON pc.vendor_id = v.vendor_id
-    """,
+    @Query(value = "SELECT p.part_id, p.part_name, p.part_number, p.category_name, p.type, p.unit, " +
+    "STRING_AGG(DISTINCT v.name, ', ') AS vendors " +
+    "FROM app.part p " +
+    "LEFT JOIN app.part_cost pc ON p.part_id = pc.part_id " +
+    "LEFT JOIN app.vendor v ON pc.vendor_id = v.vendor_id " +
+    "GROUP BY p.part_id " +
+    "ORDER BY p.part_id " +
+    "OFFSET :#{#pageable.offset} LIMIT :#{#pageable.pageSize}",
+    countQuery = "SELECT COUNT(p.part_id) FROM app.part p",
     nativeQuery = true)
 Page<Object[]> getPartVendorList(Pageable pageable);
 
