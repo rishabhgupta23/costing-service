@@ -9,7 +9,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.util.Arrays;
 
 @Data
 @AllArgsConstructor
@@ -26,17 +25,5 @@ public class PartRowDto extends PartDto {
         this.vendorNames = vendorNames;
     }
      
-        public static PartRowDto fromQueryResult(Object[] obj) {
-           
-            return PartRowDto.superBuilder()
-                .partId(((Number) obj[0]).longValue())
-                .partName((String) obj[1])
-                .partNumber((String) obj[2])
-                .categoryName((String) obj[3])
-                .type(PartType.valueOf((String) obj[4])) 
-                .unit(PartUnit.valueOf((String) obj[5]))  
-                .vendorNames(obj[6] != null ? Arrays.asList(((String) obj[6]).split(",")) : List.of()) 
-                .build();
-        }
     
 }
