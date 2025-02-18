@@ -24,8 +24,9 @@ public class PartController {
 
 
     @GetMapping()
-    public ResponseEntity<ApiPageResponseDto<PartDto>> getParts(@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNumber, @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE + "") int pageSize) {
-        return new ResponseEntity<>(partService.getParts(pageNumber, pageSize), HttpStatus.OK);
+    public ResponseEntity<ApiPageResponseDto<PartDataDto>> getParts(@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNumber, @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE + "") int pageSize) {
+        ApiPageResponseDto<PartDataDto> response = partService.getParts(pageNumber, pageSize);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @GetMapping("/types")
