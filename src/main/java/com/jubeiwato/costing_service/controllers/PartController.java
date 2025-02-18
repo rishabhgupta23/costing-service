@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import com.jubeiwato.costing_service.constants.AppConstants;
 import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
 import com.jubeiwato.costing_service.dtos.CostFactorDto;
+import com.jubeiwato.costing_service.dtos.PartDataDto;
 import com.jubeiwato.costing_service.dtos.PartDto;
 import com.jubeiwato.costing_service.dtos.PartRequestDto;
 import com.jubeiwato.costing_service.services.PartService;
@@ -27,8 +28,9 @@ public class PartController {
 
 
     @GetMapping()
-    public ResponseEntity<ApiPageResponseDto<PartDto>> getParts(@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNumber, @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE + "") int pageSize) {
-        return new ResponseEntity<>(partService.getParts(pageNumber, pageSize), HttpStatus.OK);
+    public ResponseEntity<ApiPageResponseDto<PartDataDto>> getParts(@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNumber, @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE + "") int pageSize) {
+         ApiPageResponseDto<PartDataDto> response = partService.getParts(pageNumber, pageSize);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @GetMapping("/types")
