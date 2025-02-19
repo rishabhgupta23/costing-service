@@ -2,10 +2,14 @@ package com.jubeiwato.costing_service.services.impl;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import org.springframework.data.domain.Pageable;
 import com.jubeiwato.costing_service.entities.Part;
+import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
+import com.jubeiwato.costing_service.dtos.PageInfoDto;
 import com.jubeiwato.costing_service.dtos.PartDto;
 import com.jubeiwato.costing_service.dtos.VendorDto;
 import com.jubeiwato.costing_service.entities.Vendor;
@@ -38,9 +42,26 @@ public class VendorServiceImpl implements VendorService {
     }
 
     @Override
-    public List<VendorDto> getVendorList() {
-        return this.vendorRepository.findAll().stream().map(VendorDto::entityToDto).toList();
-    }
+    public ApiPageResponseDto<List<VendorDto>> getVendorList(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size); 
+        Page<Vendor> vendorPage = this.vendorRepository.findAll(pageable); 
+
+        List<VendorDto> vendorDtos = vendorPage.getContent().stream()
+                .map(VendorDto::entityToDto)
+                .toList();
+
+        PageInfoDto pageInfo = PageInfoDto.builder()
+             .totalPages(vendorPage.getTotalPages())
+             .pageNumber(page)
+             .pageSize(size)
+             .totalRecords(vendorPage.getTotalElements())
+                .build();
+
+        return ApiPageResponseDto.<List<VendorDto>>builder()
+                .data(vendorDtos)
+                .pageInfo(pageInfo)
+                .build();
+    } 
 
     @Override
     public VendorDto getVendorById(Long id) {
@@ -69,13 +90,26 @@ public class VendorServiceImpl implements VendorService {
     }
     
     @Override
-    public List<PartDto> getVendorParts(Long vendorId) {
-        List<Part> parts = partRepository.getVendorParts(vendorId);
-    
-        return parts.stream()
+    public ApiPageResponseDto<List<PartDto>> getVendorParts(Long vendorId, int page, int size) {
+    PageRequest pageable = PageRequest.of(page, size);
+    Page<Part> partVendorList = partRepository.getVendorParts(vendorId, pageable);
+
+    List<PartDto> partDtos = partVendorList.getContent().stream()
         .map(PartDto::enitityToDto)
         .toList();
-    }
+
+    PageInfoDto pageInfo = PageInfoDto.builder()
+        .totalPages(partVendorList.getTotalPages())
+        .pageNumber(page)
+        .pageSize(size)
+        .totalRecords(partVendorList.getTotalElements())
+        .build();
+
+        return ApiPageResponseDto.<List<PartDto>>builder()
+        .data(partDtos)
+        .pageInfo(pageInfo)
+        .build();
+}
     
 
 }

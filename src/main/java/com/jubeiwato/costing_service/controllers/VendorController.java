@@ -2,6 +2,8 @@ package com.jubeiwato.costing_service.controllers;
 
 import org.springframework.web.bind.annotation.RestController;
 
+import com.jubeiwato.costing_service.constants.AppConstants;
+import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
 import com.jubeiwato.costing_service.dtos.GeneralResponseDto;
 import com.jubeiwato.costing_service.dtos.PartDto;
 import com.jubeiwato.costing_service.dtos.VendorDto;
@@ -9,6 +11,7 @@ import com.jubeiwato.costing_service.dtos.VendorDto;
 import com.jubeiwato.costing_service.services.VendorService;
 
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
@@ -41,9 +44,10 @@ public class VendorController {
     }
 
     @GetMapping()
-    public ResponseEntity<List<VendorDto>> getVendorList() {
-        List<VendorDto> vendorList = this.vendorService.getVendorList();
-        return new ResponseEntity<>(vendorList, HttpStatus.OK);
+    public ResponseEntity<ApiPageResponseDto<List<VendorDto>>> getVendorList(@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int page,
+    @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int size) {
+        ApiPageResponseDto<List<VendorDto>> response = this.vendorService.getVendorList(page, size);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
@@ -75,10 +79,10 @@ public class VendorController {
     }
 
     @GetMapping("/{id}/parts") 
-public ResponseEntity<List<PartDto>> getVendorParts(@PathVariable("id") Long vendorId) {
-    List<PartDto> parts = vendorService.getVendorParts(vendorId);
-        return ResponseEntity.ok(parts);
-   }
+    public ResponseEntity<ApiPageResponseDto<List<PartDto>>> getVendorParts(    @PathVariable("id") Long vendorId,@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int page, @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int size ) {
+        ApiPageResponseDto<List<PartDto>> response = vendorService.getVendorParts(vendorId, page, size);
+        return ResponseEntity.ok(response);
+    }
 
 }
 

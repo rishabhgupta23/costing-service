@@ -1,7 +1,6 @@
 package com.jubeiwato.costing_service.entities;
 
 import com.jubeiwato.costing_service.constants.PartType;
-import com.jubeiwato.costing_service.constants.PartUnit;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -44,6 +43,5 @@ public class Part extends BaseEntity{
         private PartType type;
 
         @Column(name = "unit")
-        @Enumerated(EnumType.STRING)
-        private PartUnit unit;
+        private String unit;
 }

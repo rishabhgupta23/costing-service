@@ -12,6 +12,7 @@ import com.jubeiwato.costing_service.dtos.CostFactorDto;
 import com.jubeiwato.costing_service.dtos.PartDataDto;
 import com.jubeiwato.costing_service.dtos.PartDto;
 import com.jubeiwato.costing_service.dtos.PartRequestDto;
+import com.jubeiwato.costing_service.dtos.PartUnitDto;
 import com.jubeiwato.costing_service.services.PartService;
 
 
@@ -38,15 +39,17 @@ public class PartController {
         return new ResponseEntity<>(partService.getPartTypes(), HttpStatus.OK);
     }
 
-    @GetMapping("/units")
-    public ResponseEntity<List<String>> getPartUnits() {
-        return new ResponseEntity<>(partService.getPartUnits(), HttpStatus.OK);
+     @GetMapping("/units")
+   public ResponseEntity<ApiPageResponseDto<List<PartUnitDto>>> getPartUnits(@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int page,@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int size) {
+        ApiPageResponseDto<List<PartUnitDto>> response = partService.getPartUnits(page, size);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/cost-factors")
-    public ResponseEntity<List<CostFactorDto>> getCostFactors() {
-        return new ResponseEntity<>(partService.getCostFactors(), HttpStatus.OK);
-    }
+    public ResponseEntity<ApiPageResponseDto<List<CostFactorDto>>> getCostFactors(@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int page,@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int size) {
+       ApiPageResponseDto<List<CostFactorDto>> response = partService.getCostFactors(page, size);
+       return new ResponseEntity<>(response, HttpStatus.OK);
+}
 
     @GetMapping("/{partId}")
     public ResponseEntity<PartDto> getPartById(@PathVariable Long partId) {

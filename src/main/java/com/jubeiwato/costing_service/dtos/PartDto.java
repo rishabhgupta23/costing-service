@@ -1,7 +1,6 @@
 package com.jubeiwato.costing_service.dtos;
 
 import com.jubeiwato.costing_service.constants.PartType;
-import com.jubeiwato.costing_service.constants.PartUnit;
 import com.jubeiwato.costing_service.entities.Part;
 
 import lombok.AllArgsConstructor;
@@ -21,7 +20,7 @@ public class PartDto {
     private String partNumber;
     private String categoryName;
     private PartType type;
-    private PartUnit unit;
+    private String unit;
 
 
     public static PartDto enitityToDto(Part entity) {

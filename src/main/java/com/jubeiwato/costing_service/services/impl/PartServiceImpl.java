@@ -1,10 +1,8 @@
 package com.jubeiwato.costing_service.services.impl;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
@@ -13,7 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.jubeiwato.costing_service.constants.PartType;
-import com.jubeiwato.costing_service.constants.PartUnit;
+import com.jubeiwato.costing_service.entities.PartUnit;
 import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
 import com.jubeiwato.costing_service.dtos.CostFactorDto;
 import com.jubeiwato.costing_service.dtos.PageInfoDto;
@@ -21,7 +19,9 @@ import com.jubeiwato.costing_service.dtos.PartDataDto;
 import com.jubeiwato.costing_service.dtos.PartDto;
 import com.jubeiwato.costing_service.dtos.PartRequestDto;
 import com.jubeiwato.costing_service.dtos.PartRowDto;
+import com.jubeiwato.costing_service.dtos.PartUnitDto;
 import com.jubeiwato.costing_service.entities.Bom;
+import com.jubeiwato.costing_service.entities.CostFactor;
 import com.jubeiwato.costing_service.entities.Part;
 import com.jubeiwato.costing_service.entities.PartCost;
 import com.jubeiwato.costing_service.entities.PartCostCostFactor;
@@ -33,6 +33,7 @@ import com.jubeiwato.costing_service.repositories.CostFactorRepository;
 import com.jubeiwato.costing_service.repositories.PartCostRepository;
 import com.jubeiwato.costing_service.repositories.PartRepository;
 import com.jubeiwato.costing_service.repositories.VendorRepository;
+import com.jubeiwato.costing_service.repositories.PartUnitRepository;
 import com.jubeiwato.costing_service.services.PartService;
 
 import jakarta.validation.Valid;
@@ -46,27 +47,47 @@ public class PartServiceImpl implements PartService {
     private CostFactorRepository costFactorRepository;
     private PartCostRepository partCostRepository;
     private BomRepository bomRepository;
+    private PartUnitRepository partUnitRepository;
 
     public PartServiceImpl(PartRepository partRepository, CategoryRepository categoryRepository, VendorRepository vendorRepository
-    , CostFactorRepository costFactorRepository, PartCostRepository partCostRepository, BomRepository bomRepository) {
+    , CostFactorRepository costFactorRepository, PartCostRepository partCostRepository, BomRepository bomRepository,PartUnitRepository partUnitRepository) {
         this.partRepository = partRepository;
         this.categoryRepository = categoryRepository;
         this.vendorRepository = vendorRepository;
         this.costFactorRepository = costFactorRepository;
         this.partCostRepository = partCostRepository;
         this.bomRepository = bomRepository;
+        this.partUnitRepository=partUnitRepository;
     }
-
+    
     @Override
     public List<String> getPartTypes() {
         return Arrays.asList(PartType.values()).stream().map(PartType::name).toList();
     }
 
     @Override
-    public List<String> getPartUnits() {
-        return Arrays.asList(PartUnit.values()).stream().map(PartUnit::name).toList();
-    }
+    public  ApiPageResponseDto<List<PartUnitDto>> getPartUnits(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<PartUnit> partUnitPage = partUnitRepository.findAll(pageable);
+        
+        List<PartUnitDto> partUnitDtos = partUnitPage.getContent()
+                .stream()
+                .map(PartUnitDto::entityToDto)
+                .toList();
 
+        PageInfoDto pageInfo = PageInfoDto.builder()
+                .pageNumber(page)
+                .pageSize(size)
+                .totalPages(partUnitPage.getTotalPages())
+                .totalRecords(partUnitPage.getTotalElements())
+                .build();
+
+        return ApiPageResponseDto.<List<PartUnitDto>>builder()
+                .data(partUnitDtos)
+                .pageInfo(pageInfo)
+                .build();
+    }
+  
     @Override
     public void createPart(@Valid PartRequestDto request) {
         validateCreatePartRequest(request);
@@ -94,7 +115,7 @@ public class PartServiceImpl implements PartService {
             categoryRepository.findById(request.getCategoryId()).orElseThrow(() -> new BadRequestException("Invalid Category"));
         }
         PartType.valueOf(request.getType());
-        PartUnit.valueOf(request.getUnit());
+        request.getUnit();
     }
 
     private Part createPartEntity(PartRequestDto request) {
@@ -102,7 +123,7 @@ public class PartServiceImpl implements PartService {
         .partName(request.getPartName())
         .partNumber(request.getPartNumber())
         .type(PartType.valueOf(request.getType()))
-        .unit(PartUnit.valueOf(request.getUnit()))
+        .unit(request.getUnit())
         .build();
         if(request.getCategoryId() != null) {
             part.setCategoryName(categoryRepository.findById(request.getCategoryId()).get().getName());
@@ -131,9 +152,27 @@ public class PartServiceImpl implements PartService {
     }
 
     @Override
-    public List<CostFactorDto> getCostFactors() {
-        return costFactorRepository.findAll().stream().map(CostFactorDto::entityToDto).toList();
-    }
+    public ApiPageResponseDto<List<CostFactorDto>> getCostFactors(int page, int size) {
+    Pageable pageable = PageRequest.of(page, size);
+    Page<CostFactor> costFactorPage = costFactorRepository.findAll(pageable);
+    
+       List<CostFactorDto> costFactorDtos = costFactorPage.getContent()
+        .stream()
+        .map(CostFactorDto::entityToDto)
+        .toList();
+    
+       PageInfoDto pageInfo = PageInfoDto.builder()
+        .totalPages(costFactorPage.getTotalPages())
+        .pageNumber(page)
+        .pageSize(size)
+        .totalRecords(costFactorPage.getTotalElements())
+        .build();
+    
+    return ApiPageResponseDto.<List<CostFactorDto>>builder()
+        .data(costFactorDtos)
+        .pageInfo(pageInfo)
+        .build();
+} 
 
     @Override
     public ApiPageResponseDto<PartDataDto> getParts(int page, int size) {
@@ -150,7 +189,7 @@ public class PartServiceImpl implements PartService {
         String partNumber = (String) obj[2];
         String categoryName = (String) obj[3];
         PartType type = PartType.valueOf((String) obj[4]);
-        PartUnit unit = PartUnit.valueOf((String) obj[5]);
+       String unit = ((String) obj[5]);
         List<String> vendorNames = obj[6] != null ? Arrays.asList(((String) obj[6]).split(",")) : List.of();
 
         return PartRowDto.superBuilder()
@@ -195,7 +234,7 @@ public class PartServiceImpl implements PartService {
     }
 
     @Override
-    public PartDto updatePartById(Long partId, String partName, PartType type, PartUnit unit,
+    public PartDto updatePartById(Long partId, String partName, PartType type,String unit,
             String categoryName) {
                 Part part = this.partRepository.getReferenceById(partId);
                 part.setPartName(partName);
