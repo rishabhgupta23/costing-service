@@ -25,7 +25,6 @@ public class CostCalcServiceImpl implements CostCalcService {
 
     @Override
     public CostCalcDto calculatePrice(Long partId, String priceMode) {
-        System.out.println("calculatePrice called with partId: " + partId + ", priceMode: " + priceMode);
         // Fetch part details from DB
         Part part = partRepository.findById(partId)
                 .orElseThrow(() -> new BadRequestException("Part not found with ID: " + partId));
