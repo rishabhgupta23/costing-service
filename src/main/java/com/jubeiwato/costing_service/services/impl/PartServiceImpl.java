@@ -148,7 +148,7 @@ public class PartServiceImpl implements PartService {
         .orElseThrow(() -> new NotFoundException("Part does not exist"));
 
           //Fetch Part Cost
-        List<PartCost> partCostDetails = partCostRepository.findByPart(partId);
+        List<PartCost> partCostDetails = partCostRepository.findByPartId(partId);
           //Fetch Bom
         List<Bom> bomDetails = bomRepository.findByParentPart(part);
 

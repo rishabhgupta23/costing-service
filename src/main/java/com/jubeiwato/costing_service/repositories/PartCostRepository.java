@@ -18,6 +18,6 @@ public interface PartCostRepository extends JpaRepository<PartCost, Long> {
             "    FROM PartCost p2 " +
             "    WHERE p2.part.id = :partId AND p2.vendor.id = p1.vendor.id" +
             ") AND p1.part.id = :partId")
-    List<PartCost> findByPart(@Param("partId") Long partId);
+    List<PartCost> findByPartId(@Param("partId") Long partId);
 
 }
