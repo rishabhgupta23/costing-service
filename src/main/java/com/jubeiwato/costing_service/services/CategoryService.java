@@ -5,7 +5,7 @@ import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
 import com.jubeiwato.costing_service.dtos.CategoryDto;
 
 public interface CategoryService {
-    ApiPageResponseDto<List<CategoryDto>> getCategoryList(int page, int size);
+    ApiPageResponseDto<List<CategoryDto>> getCategoryList(int pageNo, int size);
 
     void createCategory(String categoryName);
 

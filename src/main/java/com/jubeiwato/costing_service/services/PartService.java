@@ -12,13 +12,13 @@ import com.jubeiwato.costing_service.dtos.PartUnitDto;
 
 public interface PartService {
     
-    public ApiPageResponseDto<PartDataDto> getParts(int page, int size);
+    public ApiPageResponseDto<PartDataDto> getParts(int pageNo, int size);
 
     public List<String> getPartTypes();
 
-    public ApiPageResponseDto<List<PartUnitDto>> getPartUnits(int page, int size);
+    public ApiPageResponseDto<List<PartUnitDto>> getPartUnits(int pageNo, int size);
 
-    public ApiPageResponseDto<List<CostFactorDto>> getCostFactors(int page, int size);
+    public ApiPageResponseDto<List<CostFactorDto>> getCostFactors(int pageNo, int size);
 
     public void createPart(PartRequestDto request);
 

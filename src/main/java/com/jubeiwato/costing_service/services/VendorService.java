@@ -9,7 +9,7 @@ import com.jubeiwato.costing_service.dtos.VendorDto;
 public interface VendorService {
     void createVendor(String name, String emailId, String contactNumber, String address);
     
-    ApiPageResponseDto<List<VendorDto>> getVendorList(int page, int size);
+    ApiPageResponseDto<List<VendorDto>> getVendorList(int pageNo, int size);
 
     VendorDto getVendorById(Long id);
 

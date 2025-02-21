@@ -44,9 +44,9 @@ public class VendorController {
     }
 
     @GetMapping()
-    public ResponseEntity<ApiPageResponseDto<List<VendorDto>>> getVendorList(@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int page,
+    public ResponseEntity<ApiPageResponseDto<List<VendorDto>>> getVendorList(@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNo,
     @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int size) {
-        ApiPageResponseDto<List<VendorDto>> response = this.vendorService.getVendorList(page, size);
+        ApiPageResponseDto<List<VendorDto>> response = this.vendorService.getVendorList(pageNo, size);
         return ResponseEntity.ok(response);
     }
 
@@ -79,8 +79,8 @@ public class VendorController {
     }
 
     @GetMapping("/{id}/parts") 
-    public ResponseEntity<ApiPageResponseDto<List<PartDto>>> getVendorParts(    @PathVariable("id") Long vendorId,@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int page, @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int size ) {
-        ApiPageResponseDto<List<PartDto>> response = vendorService.getVendorParts(vendorId, page, size);
+    public ResponseEntity<ApiPageResponseDto<List<PartDto>>> getVendorParts(    @PathVariable("id") Long vendorId,@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNo, @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int size ) {
+        ApiPageResponseDto<List<PartDto>> response = vendorService.getVendorParts(vendorId, pageNo, size);
         return ResponseEntity.ok(response);
     }
 

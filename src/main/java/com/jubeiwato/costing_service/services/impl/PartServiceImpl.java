@@ -66,8 +66,8 @@ public class PartServiceImpl implements PartService {
     }
 
     @Override
-    public  ApiPageResponseDto<List<PartUnitDto>> getPartUnits(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
+    public  ApiPageResponseDto<List<PartUnitDto>> getPartUnits(int pageNo, int size) {
+        Pageable pageable = PageRequest.of(pageNo, size);
         Page<PartUnit> partUnitPage = partUnitRepository.findAll(pageable);
         
         List<PartUnitDto> partUnitDtos = partUnitPage.getContent()
@@ -76,7 +76,7 @@ public class PartServiceImpl implements PartService {
                 .toList();
 
         PageInfoDto pageInfo = PageInfoDto.builder()
-                .pageNumber(page)
+                .pageNumber(pageNo)
                 .pageSize(size)
                 .totalPages(partUnitPage.getTotalPages())
                 .totalRecords(partUnitPage.getTotalElements())
@@ -152,8 +152,8 @@ public class PartServiceImpl implements PartService {
     }
 
     @Override
-    public ApiPageResponseDto<List<CostFactorDto>> getCostFactors(int page, int size) {
-    Pageable pageable = PageRequest.of(page, size);
+    public ApiPageResponseDto<List<CostFactorDto>> getCostFactors(int pageNo, int size) {
+    Pageable pageable = PageRequest.of(pageNo, size);
     Page<CostFactor> costFactorPage = costFactorRepository.findAll(pageable);
     
        List<CostFactorDto> costFactorDtos = costFactorPage.getContent()
@@ -163,7 +163,7 @@ public class PartServiceImpl implements PartService {
     
        PageInfoDto pageInfo = PageInfoDto.builder()
         .totalPages(costFactorPage.getTotalPages())
-        .pageNumber(page)
+        .pageNumber(pageNo)
         .pageSize(size)
         .totalRecords(costFactorPage.getTotalElements())
         .build();
@@ -175,8 +175,8 @@ public class PartServiceImpl implements PartService {
 } 
 
     @Override
-    public ApiPageResponseDto<PartDataDto> getParts(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
+    public ApiPageResponseDto<PartDataDto> getParts(int pageNo, int size) {
+        Pageable pageable = PageRequest.of(pageNo, size);
     Page<Object[]> partVendorList = partCostRepository.getPartVendorList(pageable);
 
       Integer maxVendorCount = partCostRepository.getMaxVendorCount();
@@ -189,7 +189,7 @@ public class PartServiceImpl implements PartService {
         String partNumber = (String) obj[2];
         String categoryName = (String) obj[3];
         PartType type = PartType.valueOf((String) obj[4]);
-       String unit = ((String) obj[5]);
+        String unit = ((String) obj[5]);
         List<String> vendorNames = obj[6] != null ? Arrays.asList(((String) obj[6]).split(",")) : List.of();
 
         return PartRowDto.superBuilder()
@@ -211,7 +211,7 @@ public class PartServiceImpl implements PartService {
 
     PageInfoDto pageInfo = PageInfoDto.builder()
         .totalPages(partVendorList.getTotalPages())
-        .pageNumber(page)
+        .pageNumber(pageNo)
         .pageSize(size)
         .totalRecords(partVendorList.getTotalElements())
         .build();
