@@ -60,7 +60,7 @@ public class PartController {
     public ResponseEntity<GeneralResponseDto> createPart(@RequestBody PartRequestDto request) {
         partService.createPart(request);
         GeneralResponseDto response = new GeneralResponseDto("Successful", HttpStatus.CREATED.value());
-        return ResponseEntity.ok(response);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @DeleteMapping("/{partId}")
