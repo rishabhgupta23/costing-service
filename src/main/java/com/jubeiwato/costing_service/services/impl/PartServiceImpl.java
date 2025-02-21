@@ -5,9 +5,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.function.Function;
 
 import com.jubeiwato.costing_service.dtos.*;
-import com.jubeiwato.costing_service.entities.*;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -190,15 +190,15 @@ public class PartServiceImpl implements PartService {
         .orElseThrow(() -> new NotFoundException("Part does not exist"));
 
           //Fetch Part Cost
-        List<PartCost> partCostDetails = partCostRepository.findByPartId(partId);
+        List<PartCost> partCostList = partCostRepository.findByPartId(partId);
           //Fetch Bom
         List<Bom> bomDetails = bomRepository.findByParentPart(part);
 
         //Map everything and return
-        return createPartResponseDto(part, partCostDetails, bomDetails);
+        return createPartResponseDto(part, partCostList, bomDetails);
     }
 
-    PartResponseDto createPartResponseDto(Part part, List<PartCost> partCost, List<Bom> bom) {
+    PartResponseDto createPartResponseDto(Part part, List<PartCost> partCostList, List<Bom> bom) {
         List<BomResponseDto> bomDtoList = bom.stream().map(BomResponseDto::entityToDto).toList();
         PartResponseDto responseDto = PartResponseDto.superBuilder()
                 .partId(part.getPartId())
@@ -208,35 +208,31 @@ public class PartServiceImpl implements PartService {
                 .categoryName(part.getCategoryName())
                 .type(part.getType())
                 .bom(bomDtoList)
-                .vendorCostList(createVendorCostList(partCost))
+                .vendorCostList(createVendorCostList(partCostList))
                 .build();
         return  responseDto;
     }
 
     public List<VendorCostDto> createVendorCostList(List<PartCost> partCostList) {
-        // Group PartCost objects by Vendor
-        Map<Vendor, List<PartCost>> vendorToPartCostMap = partCostList.stream()
-                .collect(Collectors.groupingBy(PartCost::getVendor));
+        // Since each vendor has at most one PartCost, use toMap instead of groupingBy
+        Map<Vendor, PartCost> vendorToPartCostMap = partCostList.stream()
+                .collect(Collectors.toMap(PartCost::getVendor, Function.identity()));
 
         List<VendorCostDto> vendorCostList = new ArrayList<>();
 
-        // Iterate through each vendor and their corresponding PartCost list
-        for (Map.Entry<Vendor, List<PartCost>> entry : vendorToPartCostMap.entrySet()) {
+        // Iterate through each vendor and their corresponding PartCost
+        for (Map.Entry<Vendor, PartCost> entry : vendorToPartCostMap.entrySet()) {
             Vendor vendor = entry.getKey();
-            List<PartCost> vendorPartCosts = entry.getValue();
+            PartCost partCost = entry.getValue();
 
             // Extract cost factor values for the vendor
-            List<CostFactorValueDto> costFactorValues = new ArrayList<>();
-            for (PartCost partCost : vendorPartCosts) {
-                for (PartCostCostFactor partCostCostFactor : partCost.getCostFactorList()) {
-                    CostFactor costFactor = partCostCostFactor.getCostFactor();
-                    costFactorValues.add(new CostFactorValueDto(
-                            costFactor.getFactorId(),
-                            costFactor.getFactorName(),
-                            partCostCostFactor.getValue()
-                    ));
-                }
-            }
+            List<CostFactorValueDto> costFactorValues = partCost.getCostFactorList().stream()
+                    .map(pc -> new CostFactorValueDto(
+                            pc.getCostFactor().getFactorId(),
+                            pc.getCostFactor().getFactorName(),
+                            pc.getValue()
+                    ))
+                    .collect(Collectors.toList());
 
             // Build and add VendorCostDto to the result list
             VendorCostDto vendorCostDto = VendorCostDto.superBuilder()
@@ -253,6 +249,7 @@ public class PartServiceImpl implements PartService {
 
         return vendorCostList;
     }
+
 
 
     @Override

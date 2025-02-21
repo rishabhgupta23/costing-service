@@ -59,7 +59,7 @@ public class PartController {
     @PostMapping
     public ResponseEntity<GeneralResponseDto> createPart(@RequestBody PartRequestDto request) {
         partService.createPart(request);
-        GeneralResponseDto response = new GeneralResponseDto("Successful", HttpStatus.OK.value());
+        GeneralResponseDto response = new GeneralResponseDto("Successful", HttpStatus.CREATED.value());
         return ResponseEntity.ok(response);
     }
 
