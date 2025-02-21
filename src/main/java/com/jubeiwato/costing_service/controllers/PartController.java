@@ -24,8 +24,9 @@ public class PartController {
 
 
     @GetMapping()
-    public ResponseEntity<ApiPageResponseDto<PartDto>> getParts(@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNumber, @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE + "") int pageSize) {
-        return new ResponseEntity<>(partService.getParts(pageNumber, pageSize), HttpStatus.OK);
+    public ResponseEntity<ApiPageResponseDto<PartDataDto>> getParts(@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNumber, @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE + "") int pageSize) {
+        ApiPageResponseDto<PartDataDto> response = partService.getParts(pageNumber, pageSize);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @GetMapping("/types")
@@ -55,15 +56,18 @@ public class PartController {
         return new ResponseEntity<>(updatedPart, HttpStatus.OK);
     }
 
-    @PostMapping()
-    public ResponseEntity<String> createPart(@RequestBody PartRequestDto request) {
-        this.partService.createPart(request);
-        return new ResponseEntity<>("{\"message\": \"Successful\"}", HttpStatus.OK);
+    @PostMapping
+    public ResponseEntity<GeneralResponseDto> createPart(@RequestBody PartRequestDto request) {
+        partService.createPart(request);
+        GeneralResponseDto response = new GeneralResponseDto("Successful", HttpStatus.CREATED.value());
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @DeleteMapping("/{partId}")
-    public ResponseEntity<String> deletePartById(@PathVariable Long partId) {
+    public ResponseEntity<GeneralResponseDto> deletePartById(@PathVariable Long partId) {
         partService.deletePartById(partId);
-        return new ResponseEntity<>("Part deleted successfully", HttpStatus.OK);
+        GeneralResponseDto response = new GeneralResponseDto("Part deleted successfully", HttpStatus.OK.value());
+        return ResponseEntity.ok(response);
     }
+
 }

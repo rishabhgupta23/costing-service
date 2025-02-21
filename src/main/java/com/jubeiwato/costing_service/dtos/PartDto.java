@@ -7,6 +7,7 @@ import com.jubeiwato.costing_service.entities.Part;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
@@ -15,6 +16,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode
 public class PartDto {
     private Long partId;
     private String partName;
@@ -22,6 +24,7 @@ public class PartDto {
     private String categoryName;
     private PartType type;
     private PartUnit unit;
+
 
     public static PartDto enitityToDto(Part entity) {
         return PartDto.builder()
@@ -33,4 +36,5 @@ public class PartDto {
         .unit(entity.getUnit())
         .build();
     }
+
 }

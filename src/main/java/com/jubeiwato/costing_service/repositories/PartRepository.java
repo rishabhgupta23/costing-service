@@ -10,4 +10,6 @@ import com.jubeiwato.costing_service.entities.Part;
 public interface PartRepository extends JpaRepository<Part, Long>{
    @Query("SELECT p FROM Part p JOIN PartCost pc ON p.partId = pc.part.partId WHERE pc.vendor.vendorId = :vendorId")
    List<Part> getVendorParts(@Param("vendorId") Long vendorId);
+
+
 }

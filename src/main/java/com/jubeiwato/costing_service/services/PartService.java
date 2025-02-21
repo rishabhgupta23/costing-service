@@ -2,17 +2,15 @@ package com.jubeiwato.costing_service.services;
 
 import java.util.List;
 
-import com.jubeiwato.costing_service.constants.PartType;
-import com.jubeiwato.costing_service.constants.PartUnit;
 import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
 import com.jubeiwato.costing_service.dtos.CostFactorDto;
+import com.jubeiwato.costing_service.dtos.PartDataDto;
 import com.jubeiwato.costing_service.dtos.PartDto;
 import com.jubeiwato.costing_service.dtos.PartRequestDto;
-import com.jubeiwato.costing_service.entities.PartCost;
 
 public interface PartService {
 
-    public ApiPageResponseDto<PartDto> getParts(int page, int size);
+    public ApiPageResponseDto<PartDataDto> getParts(int page, int size);
 
     public List<String> getPartTypes();
 

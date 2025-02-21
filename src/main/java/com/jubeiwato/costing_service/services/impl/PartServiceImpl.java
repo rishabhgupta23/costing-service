@@ -2,9 +2,9 @@ package com.jubeiwato.costing_service.services.impl;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.function.Function;
 
 import com.jubeiwato.costing_service.dtos.*;
-import com.jubeiwato.costing_service.entities.*;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -13,6 +13,16 @@ import org.springframework.stereotype.Service;
 
 import com.jubeiwato.costing_service.constants.PartType;
 import com.jubeiwato.costing_service.constants.PartUnit;
+import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
+import com.jubeiwato.costing_service.dtos.CostFactorDto;
+import com.jubeiwato.costing_service.dtos.PageInfoDto;
+import com.jubeiwato.costing_service.dtos.PartDto;
+import com.jubeiwato.costing_service.dtos.PartRequestDto;
+import com.jubeiwato.costing_service.entities.Bom;
+import com.jubeiwato.costing_service.entities.Part;
+import com.jubeiwato.costing_service.entities.PartCost;
+import com.jubeiwato.costing_service.entities.PartCostCostFactor;
+import com.jubeiwato.costing_service.entities.Vendor;
 import com.jubeiwato.costing_service.exceptions.BadRequestException;
 import com.jubeiwato.costing_service.exceptions.NotFoundException;
 import com.jubeiwato.costing_service.repositories.BomRepository;
@@ -124,23 +134,52 @@ public class PartServiceImpl implements PartService {
     }
 
     @Override
-    public ApiPageResponseDto<PartDto> getParts(int page, int size) {
+    public ApiPageResponseDto<PartDataDto> getParts(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<Part> partPage = partRepository.findAll(pageable);
+    Page<Object[]> partVendorList = partCostRepository.getPartVendorList(pageable);
 
-        List<PartDto> partList = partPage.get().toList().stream().map(PartDto::enitityToDto).toList();
-        PageInfoDto pageInfo = PageInfoDto.builder()
-        .totalPages(partPage.getTotalPages())
+      Integer maxVendorCount = partCostRepository.getMaxVendorCount();
+
+
+       List<PartRowDto> partList = partVendorList.getContent().stream()
+       .map(obj -> {
+        Long partId = ((Number) obj[0]).longValue();
+        String partName = (String) obj[1];
+        String partNumber = (String) obj[2];
+        String categoryName = (String) obj[3];
+        PartType type = PartType.valueOf((String) obj[4]);
+        PartUnit unit = PartUnit.valueOf((String) obj[5]);
+        List<String> vendorNames = obj[6] != null ? Arrays.asList(((String) obj[6]).split(",")) : List.of();
+
+        return PartRowDto.superBuilder()
+            .partId(partId)
+            .partName(partName)
+            .partNumber(partNumber)
+            .categoryName(categoryName)
+            .type(type)
+            .unit(unit)
+            .vendorNames(vendorNames)
+            .build();
+    })
+             .toList();
+
+    PartDataDto partDataDto = PartDataDto.builder()
+        .partsList(partList)
+        .maxVendorCount(maxVendorCount != null ? maxVendorCount : 0)
+        .build();
+
+    PageInfoDto pageInfo = PageInfoDto.builder()
+        .totalPages(partVendorList.getTotalPages())
         .pageNumber(page)
         .pageSize(size)
-        .totalRecords(partPage.getTotalElements())
+        .totalRecords(partVendorList.getTotalElements())
         .build();
 
-        return ApiPageResponseDto.<PartDto>builder()
-        .data(partList)
+    return ApiPageResponseDto.<PartDataDto>builder()
+        .data(partDataDto)
         .pageInfo(pageInfo)
         .build();
-    }
+}
 
     @Override
     public PartDto getPartById(Long partId) {
@@ -171,31 +210,41 @@ public class PartServiceImpl implements PartService {
         return  responseDto;
     }
 
-    List<VendorCostDto> createVendorCostList(List<PartCost> partCostList) {
-        return partCostList.stream()
-                .collect(Collectors.groupingBy(PartCost::getVendor)) // Group by Vendor
-                .entrySet().stream()
-                .map(entry -> {
-                    Vendor vendor = entry.getKey();
-                    List<CostFactorValueDto> costFactorValues = entry.getValue().stream()
-                            .flatMap(partCost -> partCost.getCostFactorList().stream()
-                                    .map(partCostCostFactor -> new CostFactorValueDto(
-                                            partCostCostFactor.getCostFactor().getFactorId(),
-                                            partCostCostFactor.getCostFactor().getFactorName(),
-                                            partCostCostFactor.getValue()
-                                    ))
-                            )
-                            .toList();
-                    return VendorCostDto.superBuilder()
-                            .id(vendor.getVendorId())
-                            .name(vendor.getName())
-                            .address(vendor.getAddress())
-                            .emailId(vendor.getEmailId())
-                            .contactNumber(vendor.getContactNumber())
-                            .costFactorValues(costFactorValues)
-                            .build();
-                })
-                .toList();
+    public List<VendorCostDto> createVendorCostList(List<PartCost> partCostList) {
+        // Since each vendor has at most one PartCost, use toMap instead of groupingBy
+        Map<Vendor, PartCost> vendorToPartCostMap = partCostList.stream()
+                .collect(Collectors.toMap(PartCost::getVendor, Function.identity()));
+
+        List<VendorCostDto> vendorCostList = new ArrayList<>();
+
+        // Iterate through each vendor and their corresponding PartCost
+        for (Map.Entry<Vendor, PartCost> entry : vendorToPartCostMap.entrySet()) {
+            Vendor vendor = entry.getKey();
+            PartCost partCost = entry.getValue();
+
+            // Extract cost factor values for the vendor
+            List<CostFactorValueDto> costFactorValues = partCost.getCostFactorList().stream()
+                    .map(pc -> new CostFactorValueDto(
+                            pc.getCostFactor().getFactorId(),
+                            pc.getCostFactor().getFactorName(),
+                            pc.getValue()
+                    ))
+                    .collect(Collectors.toList());
+
+            // Build and add VendorCostDto to the result list
+            VendorCostDto vendorCostDto = VendorCostDto.superBuilder()
+                    .id(vendor.getVendorId())
+                    .name(vendor.getName())
+                    .address(vendor.getAddress())
+                    .emailId(vendor.getEmailId())
+                    .contactNumber(vendor.getContactNumber())
+                    .costFactorValues(costFactorValues)
+                    .build();
+
+            vendorCostList.add(vendorCostDto);
+        }
+
+        return vendorCostList;
     }
 
     @Override
