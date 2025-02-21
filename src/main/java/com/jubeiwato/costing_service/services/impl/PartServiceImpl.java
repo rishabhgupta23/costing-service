@@ -1,5 +1,6 @@
 package com.jubeiwato.costing_service.services.impl;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -20,7 +21,6 @@ import com.jubeiwato.costing_service.dtos.CostFactorDto;
 import com.jubeiwato.costing_service.dtos.PageInfoDto;
 import com.jubeiwato.costing_service.dtos.PartDto;
 import com.jubeiwato.costing_service.dtos.PartRequestDto;
-import com.jubeiwato.costing_service.dtos.VendorDto;
 import com.jubeiwato.costing_service.entities.Bom;
 import com.jubeiwato.costing_service.entities.Part;
 import com.jubeiwato.costing_service.entities.PartCost;
@@ -190,7 +190,7 @@ public class PartServiceImpl implements PartService {
         .orElseThrow(() -> new NotFoundException("Part does not exist"));
 
           //Fetch Part Cost
-        List<PartCost> partCostDetails = partCostRepository.findByPart(partId);
+        List<PartCost> partCostDetails = partCostRepository.findByPartId(partId);
           //Fetch Bom
         List<Bom> bomDetails = bomRepository.findByParentPart(part);
 
@@ -213,32 +213,47 @@ public class PartServiceImpl implements PartService {
         return  responseDto;
     }
 
-    List<VendorCostDto> createVendorCostList(List<PartCost> partCostList) {
-        return partCostList.stream()
-                .collect(Collectors.groupingBy(PartCost::getVendor)) // Group by Vendor
-                .entrySet().stream()
-                .map(entry -> {
-                    Vendor vendor = entry.getKey();
-                    List<CostFactorValueDto> costFactorValues = entry.getValue().stream()
-                            .flatMap(partCost -> partCost.getCostFactorList().stream()
-                                    .map(partCostCostFactor -> new CostFactorValueDto(
-                                            partCostCostFactor.getCostFactor().getFactorId(),
-                                            partCostCostFactor.getCostFactor().getFactorName(),
-                                            partCostCostFactor.getValue()
-                                    ))
-                            )
-                            .toList();
-                    return VendorCostDto.superBuilder()
-                            .id(vendor.getVendorId())
-                            .name(vendor.getName())
-                            .address(vendor.getAddress())
-                            .emailId(vendor.getEmailId())
-                            .contactNumber(vendor.getContactNumber())
-                            .costFactorValues(costFactorValues)
-                            .build();
-                })
-                .toList();
+    public List<VendorCostDto> createVendorCostList(List<PartCost> partCostList) {
+        // Group PartCost objects by Vendor
+        Map<Vendor, List<PartCost>> vendorToPartCostMap = partCostList.stream()
+                .collect(Collectors.groupingBy(PartCost::getVendor));
+
+        List<VendorCostDto> vendorCostList = new ArrayList<>();
+
+        // Iterate through each vendor and their corresponding PartCost list
+        for (Map.Entry<Vendor, List<PartCost>> entry : vendorToPartCostMap.entrySet()) {
+            Vendor vendor = entry.getKey();
+            List<PartCost> vendorPartCosts = entry.getValue();
+
+            // Extract cost factor values for the vendor
+            List<CostFactorValueDto> costFactorValues = new ArrayList<>();
+            for (PartCost partCost : vendorPartCosts) {
+                for (PartCostCostFactor partCostCostFactor : partCost.getCostFactorList()) {
+                    CostFactor costFactor = partCostCostFactor.getCostFactor();
+                    costFactorValues.add(new CostFactorValueDto(
+                            costFactor.getFactorId(),
+                            costFactor.getFactorName(),
+                            partCostCostFactor.getValue()
+                    ));
+                }
+            }
+
+            // Build and add VendorCostDto to the result list
+            VendorCostDto vendorCostDto = VendorCostDto.superBuilder()
+                    .id(vendor.getVendorId())
+                    .name(vendor.getName())
+                    .address(vendor.getAddress())
+                    .emailId(vendor.getEmailId())
+                    .contactNumber(vendor.getContactNumber())
+                    .costFactorValues(costFactorValues)
+                    .build();
+
+            vendorCostList.add(vendorCostDto);
+        }
+
+        return vendorCostList;
     }
+
 
     @Override
     @Transactional

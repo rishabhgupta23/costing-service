@@ -1,7 +1,6 @@
 package com.jubeiwato.costing_service.dtos;
 
 import java.util.List;
-import java.util.Map;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -29,7 +28,7 @@ public class PartRequestDto {
     @NotBlank(message = "Invalid Measuring Unit")
     private String unit;
 
-    private List<VendorCostDto> vendorCostList; // <VendorId, Cost Details>
+    private List<VendorCostDto> vendorCostList;
 
     private List<BomDto> bom;
 }

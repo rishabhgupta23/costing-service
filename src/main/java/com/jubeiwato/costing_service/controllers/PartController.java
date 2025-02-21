@@ -56,15 +56,18 @@ public class PartController {
         return new ResponseEntity<>(updatedPart, HttpStatus.OK);
     }
 
-    @PostMapping()
-    public ResponseEntity<String> createPart(@RequestBody PartRequestDto request) {
-        this.partService.createPart(request);
-        return new ResponseEntity<>("{\"message\": \"Successful\"}", HttpStatus.OK);
+    @PostMapping
+    public ResponseEntity<GeneralResponseDto> createPart(@RequestBody PartRequestDto request) {
+        partService.createPart(request);
+        GeneralResponseDto response = new GeneralResponseDto("Successful", HttpStatus.OK.value());
+        return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{partId}")
-    public ResponseEntity<String> deletePartById(@PathVariable Long partId) {
+    public ResponseEntity<GeneralResponseDto> deletePartById(@PathVariable Long partId) {
         partService.deletePartById(partId);
-        return new ResponseEntity<>("Part deleted successfully", HttpStatus.OK);
+        GeneralResponseDto response = new GeneralResponseDto("Part deleted successfully", HttpStatus.OK.value());
+        return ResponseEntity.ok(response);
     }
+
 }
