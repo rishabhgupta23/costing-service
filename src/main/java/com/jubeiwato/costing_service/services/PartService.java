@@ -9,6 +9,7 @@ import com.jubeiwato.costing_service.dtos.CostFactorDto;
 import com.jubeiwato.costing_service.dtos.PartDataDto;
 import com.jubeiwato.costing_service.dtos.PartDto;
 import com.jubeiwato.costing_service.dtos.PartRequestDto;
+import com.jubeiwato.costing_service.entities.PartCost;
 
 public interface PartService {
 
@@ -25,9 +26,9 @@ public interface PartService {
 
     public PartDto getPartById(Long partId);
 
-    public PartDto updatePartById(Long partId, String partName, PartType type, PartUnit unit,
-            String categoryName);
+    public PartDto updatePartById(Long partId, PartRequestDto request);
 
     void deletePartById(Long partId);
+
 
 }

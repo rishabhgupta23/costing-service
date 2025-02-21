@@ -35,4 +35,5 @@ public class Vendor extends BaseEntity {
 
     @Column(name = "contact_number")
     private String contactNumber;
+
 }

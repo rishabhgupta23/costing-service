@@ -2,16 +2,12 @@ package com.jubeiwato.costing_service.controllers;
 
 import java.util.List;
 
+import com.jubeiwato.costing_service.dtos.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.jubeiwato.costing_service.constants.AppConstants;
-import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
-import com.jubeiwato.costing_service.dtos.CostFactorDto;
-import com.jubeiwato.costing_service.dtos.PartDataDto;
-import com.jubeiwato.costing_service.dtos.PartDto;
-import com.jubeiwato.costing_service.dtos.PartRequestDto;
 import com.jubeiwato.costing_service.services.PartService;
 
 
@@ -29,7 +25,7 @@ public class PartController {
 
     @GetMapping()
     public ResponseEntity<ApiPageResponseDto<PartDataDto>> getParts(@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNumber, @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE + "") int pageSize) {
-         ApiPageResponseDto<PartDataDto> response = partService.getParts(pageNumber, pageSize);
+        ApiPageResponseDto<PartDataDto> response = partService.getParts(pageNumber, pageSize);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
@@ -55,22 +51,23 @@ public class PartController {
     }
     
     @PostMapping("/{partId}")
-    public ResponseEntity<PartDto> updatePartById(@PathVariable Long partId, @RequestBody PartDto partDto) {
-        PartDto updatedPart = this.partService.updatePartById(partId, partDto.getPartName(),
-         partDto.getType(), partDto.getUnit(), partDto.getCategoryName());
+    public ResponseEntity<PartDto> updatePartById(@PathVariable Long partId, @RequestBody PartRequestDto request) {
+        PartDto updatedPart = this.partService.updatePartById(partId, request);
         return new ResponseEntity<>(updatedPart, HttpStatus.OK);
     }
 
-    @PostMapping()
-    public ResponseEntity<String> createPart(@RequestBody PartRequestDto request) {
-        this.partService.createPart(request);
-        return new ResponseEntity<>("{\"message\": \"Successful\"}", HttpStatus.OK);
+    @PostMapping
+    public ResponseEntity<GeneralResponseDto> createPart(@RequestBody PartRequestDto request) {
+        partService.createPart(request);
+        GeneralResponseDto response = new GeneralResponseDto("Successful", HttpStatus.CREATED.value());
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @DeleteMapping("/{partId}")
-    public ResponseEntity<String> deletePartById(@PathVariable Long partId) {
+    public ResponseEntity<GeneralResponseDto> deletePartById(@PathVariable Long partId) {
         partService.deletePartById(partId);
-        return new ResponseEntity<>("Part deleted successfully", HttpStatus.OK);
+        GeneralResponseDto response = new GeneralResponseDto("Part deleted successfully", HttpStatus.OK.value());
+        return ResponseEntity.ok(response);
     }
 
 }

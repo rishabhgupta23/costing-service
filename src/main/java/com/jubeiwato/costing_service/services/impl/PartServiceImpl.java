@@ -5,7 +5,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.function.Function;
 
+import com.jubeiwato.costing_service.dtos.*;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -17,14 +19,13 @@ import com.jubeiwato.costing_service.constants.PartUnit;
 import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
 import com.jubeiwato.costing_service.dtos.CostFactorDto;
 import com.jubeiwato.costing_service.dtos.PageInfoDto;
-import com.jubeiwato.costing_service.dtos.PartDataDto;
 import com.jubeiwato.costing_service.dtos.PartDto;
 import com.jubeiwato.costing_service.dtos.PartRequestDto;
-import com.jubeiwato.costing_service.dtos.PartRowDto;
 import com.jubeiwato.costing_service.entities.Bom;
 import com.jubeiwato.costing_service.entities.Part;
 import com.jubeiwato.costing_service.entities.PartCost;
 import com.jubeiwato.costing_service.entities.PartCostCostFactor;
+import com.jubeiwato.costing_service.entities.Vendor;
 import com.jubeiwato.costing_service.exceptions.BadRequestException;
 import com.jubeiwato.costing_service.exceptions.NotFoundException;
 import com.jubeiwato.costing_service.repositories.BomRepository;
@@ -74,9 +75,8 @@ public class PartServiceImpl implements PartService {
         partRepository.save(part);
 
         // save part cost details
-        if(request.getVendorCostMap() != null && !request.getVendorCostMap().isEmpty()) {
-            List<PartCost> partCostList = request.getVendorCostMap()
-            .entrySet().stream().map(entry -> createPartCostEntity(part, entry.getKey(), entry.getValue().getCostFactorValues())).toList();
+        if(request.getVendorCostList() != null && !request.getVendorCostList().isEmpty()) {
+            List<PartCost> partCostList = request.getVendorCostList().stream().map(vendorCost -> createPartCostEntity(part, vendorCost)).toList();
             partCostRepository.saveAll(partCostList);
         }
 
@@ -84,7 +84,7 @@ public class PartServiceImpl implements PartService {
             List<Bom> bomList = request.getBom().stream().map(bomDto -> {
                 Part childPart = partRepository.findById(bomDto.getChildPartId()).orElseThrow(() -> new BadRequestException("Invalid Child Part"));
                 return new Bom(part, childPart, bomDto.getQuantity());
-            }).toList(); 
+            }).toList();
             bomRepository.saveAll(bomList);
         }
     }
@@ -93,6 +93,7 @@ public class PartServiceImpl implements PartService {
         if(request.getCategoryId() != null) {
             categoryRepository.findById(request.getCategoryId()).orElseThrow(() -> new BadRequestException("Invalid Category"));
         }
+
         PartType.valueOf(request.getType());
         PartUnit.valueOf(request.getUnit());
     }
@@ -110,11 +111,11 @@ public class PartServiceImpl implements PartService {
         return part;
     }
 
-    private PartCost createPartCostEntity(Part part, Long vendorId, Map<Long, Double> costFactorValues) {
+    private PartCost createPartCostEntity(Part part, VendorCostDto vendorCost) {
         PartCost partCost = PartCost.builder()
         .part(part)
-        .vendor(vendorRepository.findById(vendorId).get())
-        .costFactorList(costFactorValues.entrySet().stream().map(entry -> createPartCostCostFactor(entry.getKey(), entry.getValue())).toList())
+        .vendor(vendorRepository.findById(vendorCost.getId()).get())
+        .costFactorList(vendorCost.getCostFactorValues().stream().map(cf -> createPartCostCostFactor(cf.getId(), cf.getValue())).toList())
         .build();
 
         for (PartCostCostFactor costFactor : partCost.getCostFactorList()) {
@@ -162,9 +163,9 @@ public class PartServiceImpl implements PartService {
             .unit(unit)
             .vendorNames(vendorNames)
             .build();
-    }) 
+    })
              .toList();
-      
+
     PartDataDto partDataDto = PartDataDto.builder()
         .partsList(partList)
         .maxVendorCount(maxVendorCount != null ? maxVendorCount : 0)
@@ -176,9 +177,9 @@ public class PartServiceImpl implements PartService {
         .pageSize(size)
         .totalRecords(partVendorList.getTotalElements())
         .build();
-    
+
     return ApiPageResponseDto.<PartDataDto>builder()
-        .data(partDataDto) 
+        .data(partDataDto)
         .pageInfo(pageInfo)
         .build();
 }
@@ -188,23 +189,113 @@ public class PartServiceImpl implements PartService {
           Part part = this.partRepository.findById(partId)
         .orElseThrow(() -> new NotFoundException("Part does not exist"));
 
-        //step 2 - fetch Part Cost
-        //Step 3 -BOM
+          //Fetch Part Cost
+        List<PartCost> partCostList = partCostRepository.findByPartId(partId);
+          //Fetch Bom
+        List<Bom> bomDetails = bomRepository.findByParentPart(part);
 
-        return PartDto.enitityToDto(part);
+        //Map everything and return
+        return createPartResponseDto(part, partCostList, bomDetails);
     }
 
+    PartResponseDto createPartResponseDto(Part part, List<PartCost> partCostList, List<Bom> bom) {
+        List<BomResponseDto> bomDtoList = bom.stream().map(BomResponseDto::entityToDto).toList();
+        PartResponseDto responseDto = PartResponseDto.superBuilder()
+                .partId(part.getPartId())
+                .partName(part.getPartName())
+                .partNumber(part.getPartNumber())
+                .unit(part.getUnit())
+                .categoryName(part.getCategoryName())
+                .type(part.getType())
+                .bom(bomDtoList)
+                .vendorCostList(createVendorCostList(partCostList))
+                .build();
+        return  responseDto;
+    }
+
+    public List<VendorCostDto> createVendorCostList(List<PartCost> partCostList) {
+        // Since each vendor has at most one PartCost, use toMap instead of groupingBy
+        Map<Vendor, PartCost> vendorToPartCostMap = partCostList.stream()
+                .collect(Collectors.toMap(PartCost::getVendor, Function.identity()));
+
+        List<VendorCostDto> vendorCostList = new ArrayList<>();
+
+        // Iterate through each vendor and their corresponding PartCost
+        for (Map.Entry<Vendor, PartCost> entry : vendorToPartCostMap.entrySet()) {
+            Vendor vendor = entry.getKey();
+            PartCost partCost = entry.getValue();
+
+            // Extract cost factor values for the vendor
+            List<CostFactorValueDto> costFactorValues = partCost.getCostFactorList().stream()
+                    .map(pc -> new CostFactorValueDto(
+                            pc.getCostFactor().getFactorId(),
+                            pc.getCostFactor().getFactorName(),
+                            pc.getValue()
+                    ))
+                    .collect(Collectors.toList());
+
+            // Build and add VendorCostDto to the result list
+            VendorCostDto vendorCostDto = VendorCostDto.superBuilder()
+                    .id(vendor.getVendorId())
+                    .name(vendor.getName())
+                    .address(vendor.getAddress())
+                    .emailId(vendor.getEmailId())
+                    .contactNumber(vendor.getContactNumber())
+                    .costFactorValues(costFactorValues)
+                    .build();
+
+            vendorCostList.add(vendorCostDto);
+        }
+
+        return vendorCostList;
+    }
+
+
+
     @Override
-    public PartDto updatePartById(Long partId, String partName, PartType type, PartUnit unit,
-            String categoryName) {
-                Part part = this.partRepository.getReferenceById(partId);
-                part.setPartName(partName);
-                part.setUnit(unit);
-                part.setType(type);
-                part.setCategoryName(categoryName);
-        
-                return PartDto.enitityToDto(this.partRepository.save(part));
+    @Transactional
+    public PartDto updatePartById(Long partId, @Valid PartRequestDto request) {
+        Part existingPart = partRepository.findById(partId)
+                .orElseThrow(() -> new NotFoundException("Part with ID " + partId + " does not exist"));
+
+        // Validate and update fields
+        validateCreatePartRequest(request);
+        existingPart.setPartName(request.getPartName());
+        existingPart.setPartNumber(request.getPartNumber());
+        existingPart.setType(PartType.valueOf(request.getType()));
+        existingPart.setUnit(PartUnit.valueOf(request.getUnit()));
+
+        if (request.getCategoryId() != null) {
+            existingPart.setCategoryName(categoryRepository.findById(request.getCategoryId())
+                    .orElseThrow(() -> new BadRequestException("Invalid Category"))
+                    .getName());
+        }
+
+        partRepository.save(existingPart);
+
+        // Update vendor cost map if present
+        if (request.getVendorCostList() != null && !request.getVendorCostList().isEmpty()) {
+//            List<PartCost> partCosts = partCostRepository.findByPart(existingPart);
+//            partCostRepository.deleteAll(partCosts); // Clear existing costs
+            List<PartCost> newCosts = request.getVendorCostList().stream().map(vendorCost -> createPartCostEntity( existingPart, vendorCost)).toList();
+            partCostRepository.saveAll(newCosts);
+        }
+
+        // Update BOM if type is MASTER
+        if (request.getType().equalsIgnoreCase(PartType.MASTER.name())) {
+            bomRepository.deleteByParentPart(existingPart); // Clear existing BOM
+            if (request.getBom() != null && !request.getBom().isEmpty()) {
+                List<Bom> newBom = request.getBom().stream().map(bomDto -> {
+                    Part childPart = partRepository.findById(bomDto.getChildPartId())
+                            .orElseThrow(() -> new BadRequestException("Invalid Child Part"));
+                    return new Bom(existingPart, childPart, bomDto.getQuantity());
+                }).toList();
+                bomRepository.saveAll(newBom);
             }
+        }
+
+        return createPartResponseDto(existingPart, partCostRepository.findByPart(existingPart), bomRepository.findByParentPart(existingPart));
+    }
 
     @Override
     @Transactional
