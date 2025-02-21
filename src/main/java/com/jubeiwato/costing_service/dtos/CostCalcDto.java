@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 public class CostCalcDto {
     private String partName;
     private String partNumber;
-    //private Integer quantity;
+    private Integer quantity;
     private Double price;
+    private String vendorName;
 }

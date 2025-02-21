@@ -4,6 +4,8 @@ import com.jubeiwato.costing_service.dtos.CostCalcDto;
 import com.jubeiwato.costing_service.services.CostCalcService;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 
 @CrossOrigin
 @RestController
@@ -16,7 +18,7 @@ public class CostController {
     }
 
     @GetMapping("/calculate/{partId}")
-    public CostCalcDto calculateCost(@PathVariable Long partId, @RequestParam String priceMode) {
+    public List<CostCalcDto> calculateCost(@PathVariable Long partId, @RequestParam String priceMode) {
         return costService.calculatePrice(partId, priceMode);
     }
 

@@ -5,6 +5,7 @@ import com.jubeiwato.costing_service.entities.Part;
 import com.jubeiwato.costing_service.entities.PartCost;
 import com.jubeiwato.costing_service.entities.PartCostCostFactor;
 import com.jubeiwato.costing_service.exceptions.BadRequestException;
+import com.jubeiwato.costing_service.repositories.BomRepository;
 import com.jubeiwato.costing_service.repositories.PartCostRepository;
 import com.jubeiwato.costing_service.repositories.PartRepository;
 import com.jubeiwato.costing_service.services.CostCalcService;
@@ -17,39 +18,55 @@ import java.util.stream.Collectors;
 public class CostCalcServiceImpl implements CostCalcService {
     private final PartRepository partRepository;
     private final PartCostRepository partCostRepository;
+    private final BomRepository  bomRepository;
 
-    public CostCalcServiceImpl(PartRepository partRepository, PartCostRepository partCostRepository) {
+    public CostCalcServiceImpl(PartRepository partRepository, PartCostRepository partCostRepository,BomRepository  bomRepository) {
         this.partRepository = partRepository;
         this.partCostRepository = partCostRepository;
+        this.bomRepository = bomRepository;
     }
 
     @Override
-    public CostCalcDto calculatePrice(Long partId, String priceMode) {
-        // Fetch part details from DB
-        Part part = partRepository.findById(partId)
-                .orElseThrow(() -> new BadRequestException("Part not found with ID: " + partId));
+    public List<CostCalcDto> calculatePrice(Long partId, String priceMode) {
 
-        ///Fetch Part Cost
-        List<PartCost> partCostDetails = partCostRepository.findByPartId(partId);
+            List<Long> childPartIds = bomRepository.findChildPartIdsByMasterPartId(partId)
+                    .stream().distinct().collect(Collectors.toList());
 
-//         Extract prices
-        List<Double> vendorPrices = partCostDetails.stream()
-                .map(pc -> {
-                    if (pc.getCostFactorList() == null) return 0.0;
-                    return (pc.getCostFactorList() != null) ?
-                            pc.getCostFactorList().stream().mapToDouble(PartCostCostFactor::getValue).sum() : 0.0;
+        return childPartIds.stream()
+                .map(childPartId -> {
+
+                    Part childPart = partRepository.findById(childPartId)
+                            .orElseThrow(() -> new BadRequestException("Child Part not found with ID: " + childPartId));
+
+                    double calculatedPrice=0.0;
+                    String vendorName = "Unknown Vendor";
+
+                    if("MASTER".equals(childPart.getType().name())){
+
+                        List<CostCalcDto> childCosts = calculatePrice(childPartId, priceMode);
+                        calculatedPrice = childCosts.stream().mapToDouble(CostCalcDto::getPrice).sum();
+
+                    } else {
+                        List<PartCost> partCostDetails = partCostRepository.findByPartId(childPartId);
+
+                        vendorName = partCostDetails.get(0).getVendor().getName();
+
+                        List<Double> vendorPrices = partCostDetails.stream()
+                                .map(pc -> (pc.getCostFactorList() == null) ? 0.0 :
+                                        pc.getCostFactorList().stream().mapToDouble(PartCostCostFactor::getValue).sum())
+                                .collect(Collectors.toList());
+
+                        calculatedPrice = calculatePriceFromList(vendorPrices, priceMode);
+                    }
+                    return CostCalcDto.builder()
+                            .partName(childPart.getPartName())
+                            .partNumber(childPart.getPartNumber())
+                            .quantity(bomRepository.findQuantityByParentAndChild(partId, childPartId))
+                            .price(calculatedPrice)
+                            .vendorName(vendorName)
+                            .build();
                 })
                 .collect(Collectors.toList());
-
-//         Compute price based on selected mode
-        Double price = calculatePriceFromList(vendorPrices, priceMode);
-
-        // Return response DTO
-        return CostCalcDto.builder()
-                .partName(part.getPartName())
-                .partNumber(part.getPartNumber())
-                .price(price)
-                .build();
     }
 
     private Double calculatePriceFromList(List<Double> vendorPrices, String priceMode) {
@@ -65,11 +82,9 @@ public class CostCalcServiceImpl implements CostCalcService {
             case "AVG":
                 double avg = vendorPrices.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
 
-                // Check if the exact average exists in the list
                 if (vendorPrices.contains(avg)) {
                     result = avg;
                 } else {
-                    // Return the nearest price to avg
                     result = vendorPrices.stream()
                             .min((p1, p2) -> Double.compare(Math.abs(p1 - avg), Math.abs(p2 - avg)))
                             .orElse(0.0);
