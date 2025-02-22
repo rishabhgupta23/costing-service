@@ -118,6 +118,17 @@ CREATE TABLE IF NOT EXISTS app.part_cost_cost_factor
         ON UPDATE NO ACTION
         ON DELETE NO ACTION
 );
+CREATE TABLE IF NOT EXISTS app.part_unit (
+    delete_flag integer DEFAULT 0,
+    created_by bigint,
+    created_date_time timestamp(6) without time zone,
+    unit_id bigserial NOT NULL,
+    updated_by bigint,
+    updated_date_time timestamp(6) without time zone, 
+    unit_name character varying(50) COLLATE pg_catalog."default",
+    CONSTRAINT part_unit_pkey PRIMARY KEY (unit_id),
+    CONSTRAINT part_unit_unit_id_key UNIQUE (unit_name)
+);
 CREATE TABLE IF NOT EXISTS app.bom
 (
     delete_flag integer DEFAULT 0,
@@ -147,6 +158,7 @@ DROP TABLE app.part_category CASCADE;
 DROP TABLE app.cost_factor CASCADE;
 DROP TABLE app.part_cost CASCADE;
 DROP TABLE app.part_cost_cost_factor CASCADE;
+DROP TABLE app.part_unit CASCADE;
 DROP TABLE app.bom CASCADE;
 */
 
