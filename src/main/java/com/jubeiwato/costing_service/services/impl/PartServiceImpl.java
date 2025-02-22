@@ -112,10 +112,11 @@ public class PartServiceImpl implements PartService {
         }
 
         PartType.valueOf(request.getType()); 
-        if (request.getUnit() != null) {
-            partUnitRepository.findByUnitName(request.getUnit())
-                .orElseThrow(() -> new BadRequestException("Invalid Unit"));
+        if (request.getUnit() == null || request.getUnit().isEmpty()) {
+            throw new BadRequestException("Unit cannot be null or empty");
         }
+        partUnitRepository.findByUnitName(request.getUnit())
+            .orElseThrow(() -> new BadRequestException("Invalid Unit"));
     }
 
     private Part createPartEntity(PartRequestDto request) {
@@ -301,11 +302,12 @@ public class PartServiceImpl implements PartService {
         existingPart.setPartName(request.getPartName());
         existingPart.setPartNumber(request.getPartNumber());
         existingPart.setType(PartType.valueOf(request.getType()));
-       if(request.getUnit()!=null){
+        if (request.getUnit() == null || request.getUnit().isEmpty()) {
+            throw new BadRequestException("Unit cannot be null or empty");
+        }      
         existingPart.setUnit(partUnitRepository.findByUnitName(request.getUnit())
                 .orElseThrow(() -> new BadRequestException("Invalid Unit"))
                 .getUnitName());
-       } 
 
         if (request.getCategoryId() != null) {
             existingPart.setCategoryName(categoryRepository.findById(request.getCategoryId())
