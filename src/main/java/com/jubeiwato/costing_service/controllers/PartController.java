@@ -41,14 +41,14 @@ public class PartController {
     }
 
      @GetMapping("/units")
-   public ResponseEntity<ApiPageResponseDto<List<PartUnitDto>>> getPartUnits(@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNo,@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int size) {
-        ApiPageResponseDto<List<PartUnitDto>> response = partService.getPartUnits(pageNo, size);
+   public ResponseEntity<ApiPageResponseDto<List<PartUnitDto>>> getPartUnits(@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNo,@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int pageSize) {
+        ApiPageResponseDto<List<PartUnitDto>> response = partService.getPartUnits(pageNo, pageSize);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/cost-factors")
-    public ResponseEntity<ApiPageResponseDto<List<CostFactorDto>>> getCostFactors(@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNo,@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int size) {
-       ApiPageResponseDto<List<CostFactorDto>> response = partService.getCostFactors(pageNo, size);
+    public ResponseEntity<ApiPageResponseDto<List<CostFactorDto>>> getCostFactors(@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNo,@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int pageSize) {
+       ApiPageResponseDto<List<CostFactorDto>> response = partService.getCostFactors(pageNo, pageSize);
        return new ResponseEntity<>(response, HttpStatus.OK);
 }
 

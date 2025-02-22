@@ -42,8 +42,8 @@ public class VendorServiceImpl implements VendorService {
     }
 
     @Override
-    public ApiPageResponseDto<List<VendorDto>> getVendorList(int pageNo, int size) {
-        Pageable pageable = PageRequest.of(pageNo, size); 
+    public ApiPageResponseDto<List<VendorDto>> getVendorList(int pageNo, int pageSize) {
+        Pageable pageable = PageRequest.of(pageNo, pageSize); 
         Page<Vendor> vendorPage = this.vendorRepository.findAll(pageable); 
 
         List<VendorDto> vendorDtos = vendorPage.getContent().stream()
@@ -53,7 +53,7 @@ public class VendorServiceImpl implements VendorService {
         PageInfoDto pageInfo = PageInfoDto.builder()
              .totalPages(vendorPage.getTotalPages())
              .pageNumber(pageNo)
-             .pageSize(size)
+             .pageSize(pageSize)
              .totalRecords(vendorPage.getTotalElements())
                 .build();
 
@@ -90,8 +90,8 @@ public class VendorServiceImpl implements VendorService {
     }
     
     @Override
-    public ApiPageResponseDto<List<PartDto>> getVendorParts(Long vendorId, int pageNo, int size) {
-    PageRequest pageable = PageRequest.of(pageNo, size);
+    public ApiPageResponseDto<List<PartDto>> getVendorParts(Long vendorId, int pageNo, int pageSize) {
+    PageRequest pageable = PageRequest.of(pageNo, pageSize);
     Page<Part> partVendorList = partRepository.getVendorParts(vendorId, pageable);
 
     List<PartDto> partDtos = partVendorList.getContent().stream()
@@ -101,7 +101,7 @@ public class VendorServiceImpl implements VendorService {
     PageInfoDto pageInfo = PageInfoDto.builder()
         .totalPages(partVendorList.getTotalPages())
         .pageNumber(pageNo)
-        .pageSize(size)
+        .pageSize(pageSize)
         .totalRecords(partVendorList.getTotalElements())
         .build();
 

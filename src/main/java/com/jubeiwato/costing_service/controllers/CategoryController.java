@@ -31,8 +31,8 @@ public class CategoryController {
     }
 
     @GetMapping()
-    public ResponseEntity<ApiPageResponseDto<List<CategoryDto>>> getCategoryList( @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNo,@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int size) {
-      ApiPageResponseDto<List<CategoryDto>> response = categoryService.getCategoryList(pageNo, size);
+    public ResponseEntity<ApiPageResponseDto<List<CategoryDto>>> getCategoryList( @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNo,@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int pageSize) {
+      ApiPageResponseDto<List<CategoryDto>> response = categoryService.getCategoryList(pageNo, pageSize);
       return ResponseEntity.ok(response);
 }
 

@@ -11,11 +11,13 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class PartUnitDto {
+    private Long unitId;
     private String unitName;
 
     
     public static PartUnitDto entityToDto(PartUnit unit) {
         return PartUnitDto.builder()
+                .unitId(unit.getUnitId())
                 .unitName(unit.getUnitName())
                 .build();
     }

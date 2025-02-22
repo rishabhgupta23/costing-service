@@ -26,8 +26,8 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-       public ApiPageResponseDto<List<CategoryDto>> getCategoryList(int pageNo, int size) {
-        Pageable pageable = PageRequest.of(pageNo, size);
+       public ApiPageResponseDto<List<CategoryDto>> getCategoryList(int pageNo, int pageSize) {
+        Pageable pageable = PageRequest.of(pageNo, pageSize);
         Page<Category> categoryPage = categoryRepository.findAll(pageable);
 
           List<CategoryDto> categoryDtos = categoryPage.getContent().stream()
@@ -36,7 +36,7 @@ public class CategoryServiceImpl implements CategoryService {
    
         PageInfoDto pageInfo = PageInfoDto.builder()
                 .pageNumber(pageNo)
-                .pageSize(size)
+                .pageSize(pageSize)
                 .totalPages(categoryPage.getTotalPages())
                 .totalRecords(categoryPage.getTotalElements())
                 .build();

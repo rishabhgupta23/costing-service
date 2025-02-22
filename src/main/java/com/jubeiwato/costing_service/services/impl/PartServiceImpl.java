@@ -16,13 +16,6 @@ import org.springframework.stereotype.Service;
 
 import com.jubeiwato.costing_service.constants.PartType;
 import com.jubeiwato.costing_service.entities.PartUnit;
-import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
-import com.jubeiwato.costing_service.dtos.CostFactorDto;
-import com.jubeiwato.costing_service.dtos.PageInfoDto;
-import com.jubeiwato.costing_service.dtos.PartDto;
-import com.jubeiwato.costing_service.dtos.PartRequestDto;
-import com.jubeiwato.costing_service.dtos.PartRowDto;
-import com.jubeiwato.costing_service.dtos.PartUnitDto;
 import com.jubeiwato.costing_service.entities.Bom;
 import com.jubeiwato.costing_service.entities.CostFactor;
 import com.jubeiwato.costing_service.entities.Part;
@@ -70,8 +63,8 @@ public class PartServiceImpl implements PartService {
     }
 
     @Override
-    public  ApiPageResponseDto<List<PartUnitDto>> getPartUnits(int pageNo, int size) {
-        Pageable pageable = PageRequest.of(pageNo, size);
+    public  ApiPageResponseDto<List<PartUnitDto>> getPartUnits(int pageNo, int pageSize) {
+        Pageable pageable = PageRequest.of(pageNo, pageSize);
         Page<PartUnit> partUnitPage = partUnitRepository.findAll(pageable);
         
         List<PartUnitDto> partUnitDtos = partUnitPage.getContent()
@@ -81,7 +74,7 @@ public class PartServiceImpl implements PartService {
 
         PageInfoDto pageInfo = PageInfoDto.builder()
                 .pageNumber(pageNo)
-                .pageSize(size)
+                .pageSize(pageSize)
                 .totalPages(partUnitPage.getTotalPages())
                 .totalRecords(partUnitPage.getTotalElements())
                 .build();
@@ -118,8 +111,11 @@ public class PartServiceImpl implements PartService {
             categoryRepository.findById(request.getCategoryId()).orElseThrow(() -> new BadRequestException("Invalid Category"));
         }
 
-        PartType.valueOf(request.getType());
-        request.getUnit();
+        PartType.valueOf(request.getType()); 
+        if (request.getUnit() != null) {
+            partUnitRepository.findByUnitName(request.getUnit())
+                .orElseThrow(() -> new BadRequestException("Invalid Unit"));
+        }
     }
 
     private Part createPartEntity(PartRequestDto request) {
@@ -156,8 +152,8 @@ public class PartServiceImpl implements PartService {
     }
 
     @Override
-    public ApiPageResponseDto<List<CostFactorDto>> getCostFactors(int pageNo, int size) {
-    Pageable pageable = PageRequest.of(pageNo, size);
+    public ApiPageResponseDto<List<CostFactorDto>> getCostFactors(int pageNo, int pageSize) {
+    Pageable pageable = PageRequest.of(pageNo, pageSize);
     Page<CostFactor> costFactorPage = costFactorRepository.findAll(pageable);
     
        List<CostFactorDto> costFactorDtos = costFactorPage.getContent()
@@ -168,7 +164,7 @@ public class PartServiceImpl implements PartService {
        PageInfoDto pageInfo = PageInfoDto.builder()
         .totalPages(costFactorPage.getTotalPages())
         .pageNumber(pageNo)
-        .pageSize(size)
+        .pageSize(pageSize)
         .totalRecords(costFactorPage.getTotalElements())
         .build();
     
@@ -179,8 +175,8 @@ public class PartServiceImpl implements PartService {
 } 
 
     @Override
-    public ApiPageResponseDto<PartDataDto> getParts(int pageNo, int size) {
-        Pageable pageable = PageRequest.of(pageNo, size);
+    public ApiPageResponseDto<PartDataDto> getParts(int pageNo, int pageSize) {
+        Pageable pageable = PageRequest.of(pageNo, pageSize);
     Page<Object[]> partVendorList = partCostRepository.getPartVendorList(pageable);
 
       Integer maxVendorCount = partCostRepository.getMaxVendorCount();
@@ -216,7 +212,7 @@ public class PartServiceImpl implements PartService {
     PageInfoDto pageInfo = PageInfoDto.builder()
         .totalPages(partVendorList.getTotalPages())
         .pageNumber(pageNo)
-        .pageSize(size)
+        .pageSize(pageSize)
         .totalRecords(partVendorList.getTotalElements())
         .build();
 
@@ -301,11 +297,15 @@ public class PartServiceImpl implements PartService {
                 .orElseThrow(() -> new NotFoundException("Part with ID " + partId + " does not exist"));
 
         // Validate and update fields
-        validateCreatePartRequest(request);
+        validateCreatePartRequest(request);       
         existingPart.setPartName(request.getPartName());
         existingPart.setPartNumber(request.getPartNumber());
         existingPart.setType(PartType.valueOf(request.getType()));
-        existingPart.setUnit(request.getUnit());
+       if(request.getUnit()!=null){
+        existingPart.setUnit(partUnitRepository.findByUnitName(request.getUnit())
+                .orElseThrow(() -> new BadRequestException("Invalid Unit"))
+                .getUnitName());
+       } 
 
         if (request.getCategoryId() != null) {
             existingPart.setCategoryName(categoryRepository.findById(request.getCategoryId())
