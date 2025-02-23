@@ -2,9 +2,15 @@ package com.jubeiwato.costing_service.services.impl;
 
 import java.util.List;
 
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import com.jubeiwato.costing_service.constants.DeleteFlag;
+import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
+import com.jubeiwato.costing_service.dtos.CategoryDto;
+import com.jubeiwato.costing_service.dtos.PageInfoDto;
 import com.jubeiwato.costing_service.entities.Category;
 import com.jubeiwato.costing_service.repositories.CategoryRepository;
 import com.jubeiwato.costing_service.services.CategoryService;
@@ -20,8 +26,25 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public List<String> getCategoryList() {
-        return categoryRepository.findAll().stream().map(Category::getName).toList();
+       public ApiPageResponseDto<List<CategoryDto>> getCategoryList(int pageNo, int pageSize) {
+        Pageable pageable = PageRequest.of(pageNo, pageSize);
+        Page<Category> categoryPage = categoryRepository.findAll(pageable);
+
+          List<CategoryDto> categoryDtos = categoryPage.getContent().stream()
+                .map(CategoryDto::entityToDto)
+                .toList();
+   
+        PageInfoDto pageInfo = PageInfoDto.builder()
+                .pageNumber(pageNo)
+                .pageSize(pageSize)
+                .totalPages(categoryPage.getTotalPages())
+                .totalRecords(categoryPage.getTotalElements())
+                .build();
+
+        return ApiPageResponseDto.<List<CategoryDto>>builder()
+                .data(categoryDtos)
+                .pageInfo(pageInfo)
+                .build();
     }
 
     @Override

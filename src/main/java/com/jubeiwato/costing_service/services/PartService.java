@@ -7,16 +7,17 @@ import com.jubeiwato.costing_service.dtos.CostFactorDto;
 import com.jubeiwato.costing_service.dtos.PartDataDto;
 import com.jubeiwato.costing_service.dtos.PartDto;
 import com.jubeiwato.costing_service.dtos.PartRequestDto;
+import com.jubeiwato.costing_service.dtos.PartUnitDto;
 
 public interface PartService {
 
-    public ApiPageResponseDto<PartDataDto> getParts(int page, int size);
+    public ApiPageResponseDto<PartDataDto> getParts(int pageNo, int pageSize);
 
     public List<String> getPartTypes();
 
-    public List<String> getPartUnits();
+    public ApiPageResponseDto<List<PartUnitDto>> getPartUnits(int pageNo, int pageSize);
 
-    public List<CostFactorDto> getCostFactors();
+    public ApiPageResponseDto<List<CostFactorDto>> getCostFactors(int pageNo, int pageSize);
 
     public void createPart(PartRequestDto request);
 
