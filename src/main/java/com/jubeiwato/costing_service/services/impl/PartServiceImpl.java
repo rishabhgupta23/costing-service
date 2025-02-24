@@ -1,9 +1,6 @@
 package com.jubeiwato.costing_service.services.impl;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.function.Function;
 
@@ -316,8 +313,14 @@ public class PartServiceImpl implements PartService {
 
         // Update vendor cost map if present
             List<PartCost> partCosts = partCostRepository.findByPart(existingPart);
-            partCostRepository.deleteAll(partCosts); // Clear existing costs
-            List<VendorCostDto> vendorCostList =  request.getVendorCostList();
+            List<VendorCostDto> vendorCostList = request.getVendorCostList();
+            Set<Long> incomingVendorCostIds = vendorCostList.stream()
+                .map(VendorCostDto::getId)
+                .collect(Collectors.toSet());
+            List<PartCost> toDelete = partCosts.stream()
+                    .filter(partCost -> !incomingVendorCostIds.contains(partCost.getVendor().getVendorId()))
+                    .toList();
+            partCostRepository.deleteAll(toDelete);
             List<PartCost> newCosts = vendorCostList.stream().map(vendorCost -> createPartCostEntity( existingPart, vendorCost)).toList();
             partCostRepository.saveAll(newCosts);
 
