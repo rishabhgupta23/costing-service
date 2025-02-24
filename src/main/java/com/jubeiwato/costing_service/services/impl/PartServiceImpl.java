@@ -140,7 +140,7 @@ public class PartServiceImpl implements PartService {
         .build();
 
         for (PartCostCostFactor costFactor : partCost.getCostFactorList()) {
-            costFactor.setPartCost(partCost);  // Set the partCost reference in each CostFactor
+            costFactor.setPartCost(partCost);
         }
         return partCost;
     }
@@ -302,9 +302,6 @@ public class PartServiceImpl implements PartService {
         existingPart.setPartName(request.getPartName());
         existingPart.setPartNumber(request.getPartNumber());
         existingPart.setType(PartType.valueOf(request.getType()));
-        if (request.getUnit() == null || request.getUnit().isEmpty()) {
-            throw new BadRequestException("Unit cannot be null or empty");
-        }      
         existingPart.setUnit(partUnitRepository.findByUnitName(request.getUnit())
                 .orElseThrow(() -> new BadRequestException("Invalid Unit"))
                 .getUnitName());
@@ -318,15 +315,13 @@ public class PartServiceImpl implements PartService {
         partRepository.save(existingPart);
 
         // Update vendor cost map if present
-        if (request.getVendorCostList() != null && !request.getVendorCostList().isEmpty()) {
-//            List<PartCost> partCosts = partCostRepository.findByPart(existingPart);
-//            partCostRepository.deleteAll(partCosts); // Clear existing costs
-            List<PartCost> newCosts = request.getVendorCostList().stream().map(vendorCost -> createPartCostEntity( existingPart, vendorCost)).toList();
+            List<PartCost> partCosts = partCostRepository.findByPart(existingPart);
+            partCostRepository.deleteAll(partCosts); // Clear existing costs
+            List<VendorCostDto> vendorCostList =  request.getVendorCostList();
+            List<PartCost> newCosts = vendorCostList.stream().map(vendorCost -> createPartCostEntity( existingPart, vendorCost)).toList();
             partCostRepository.saveAll(newCosts);
-        }
 
         // Update BOM if type is MASTER
-        if (request.getType().equalsIgnoreCase(PartType.MASTER.name())) {
             bomRepository.deleteByParentPart(existingPart); // Clear existing BOM
             if (request.getBom() != null && !request.getBom().isEmpty()) {
                 List<Bom> newBom = request.getBom().stream().map(bomDto -> {
@@ -336,9 +331,9 @@ public class PartServiceImpl implements PartService {
                 }).toList();
                 bomRepository.saveAll(newBom);
             }
-        }
 
-        return createPartResponseDto(existingPart, partCostRepository.findByPart(existingPart), bomRepository.findByParentPart(existingPart));
+
+        return createPartResponseDto(existingPart, partCostRepository.findByPartId(existingPart.getPartId()), bomRepository.findByParentPart(existingPart));
     }
 
     @Override
