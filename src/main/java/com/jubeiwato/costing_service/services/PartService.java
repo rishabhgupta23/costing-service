@@ -8,6 +8,7 @@ import com.jubeiwato.costing_service.dtos.PartDataDto;
 import com.jubeiwato.costing_service.dtos.PartDto;
 import com.jubeiwato.costing_service.dtos.PartRequestDto;
 import com.jubeiwato.costing_service.dtos.PartUnitDto;
+import com.jubeiwato.costing_service.entities.Part;
 
 public interface PartService {
     
@@ -28,5 +29,6 @@ public interface PartService {
 
     void deletePartById(Long partId);
 
+    public List<Part> getFilteredParts(Part filter);
 
 }

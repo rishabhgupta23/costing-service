@@ -354,5 +354,9 @@ public class PartServiceImpl implements PartService {
         partRepository.delete(part);
     }
 
-
+    @Override
+    public List<Part> getFilteredParts(Part filter) {
+        PartSpecification spec = new PartSpecification(filter);
+        return partRepository.findAll(spec);
+    }
 }
