@@ -44,10 +44,13 @@ public class VendorController {
     }
 
     @GetMapping()
-    public ResponseEntity<ApiPageResponseDto<List<VendorDto>>> getVendorList(@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNo,
-    @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int pageSize) {
-        ApiPageResponseDto<List<VendorDto>> response = this.vendorService.getVendorList(pageNo, pageSize);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<ApiPageResponseDto<List<VendorDto>>> getVendorList( @RequestParam(required = false) String name,
+    @RequestParam(required = false) String address,
+    @RequestParam(required = false) String emailId,
+    @RequestParam(required = false) String contactNumber,@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNo,
+    @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int size) {
+            ApiPageResponseDto<List<VendorDto>> response = this.vendorService.getVendorList(name, address, emailId, contactNumber, pageNo, size);
+            return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
