@@ -30,7 +30,7 @@ public class CostCalcServiceImpl implements CostCalcService {
     public List<CostCalcDto> calculatePrice(Long partId, String priceMode) {
 
             List<Long> childPartIds = bomRepository.findChildPartIdsByMasterPartId(partId)
-                    .stream().distinct().collect(Collectors.toList());
+                    .stream().collect(Collectors.toList());
 
         return childPartIds.stream()
                 .map(childPartId -> {
