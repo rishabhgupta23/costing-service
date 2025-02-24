@@ -297,7 +297,6 @@ public class PartServiceImpl implements PartService {
         // Validate and update fields
         validateCreatePartRequest(request);       
         existingPart.setPartName(request.getPartName());
-        existingPart.setPartNumber(request.getPartNumber());
         existingPart.setType(PartType.valueOf(request.getType()));
         existingPart.setUnit(partUnitRepository.findByUnitName(request.getUnit())
                 .orElseThrow(() -> new BadRequestException("Invalid Unit"))
