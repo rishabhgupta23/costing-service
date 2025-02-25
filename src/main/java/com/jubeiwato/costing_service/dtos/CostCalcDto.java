@@ -15,4 +15,5 @@ public class CostCalcDto {
     private Integer quantity;
     private Double price;
     private String vendorName;
+    private Double rate;
 }
