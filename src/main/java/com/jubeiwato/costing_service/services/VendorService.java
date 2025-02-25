@@ -9,7 +9,7 @@ import com.jubeiwato.costing_service.dtos.VendorDto;
 public interface VendorService {
     void createVendor(String name, String emailId, String contactNumber, String address);
     
-    ApiPageResponseDto<List<VendorDto>> getVendorList(int pageNo, int partSize);
+    ApiPageResponseDto<List<VendorDto>> getVendorList(String name, String address, String emailId, String contactNumber,int pageNo, int pageSize);
 
     VendorDto getVendorById(Long id);
 
@@ -17,6 +17,6 @@ public interface VendorService {
 
     void deleteVendorById(Long id);
 
-    ApiPageResponseDto<List<PartDto>> getVendorParts(Long vendorId,int pageNo, int partSize);
+    ApiPageResponseDto<List<PartDto>> getVendorParts(Long vendorId,int pageNo, int pageSize);
     
 }
