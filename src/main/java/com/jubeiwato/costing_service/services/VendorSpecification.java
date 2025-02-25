@@ -32,28 +32,16 @@ public class VendorSpecification {
             }
     
 
-            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+            return criteriaBuilder.and(predicates.toArray(new Predicate[predicates.size()]));
         };
     }
 
     private static boolean isValidInput(String input) {
         if (input == null || input.trim().isEmpty()) return true;
-        
-        // Prohibited characters to prevent SQL injection
-        String prohibitedChars = "';--#% _*/=";
-        
-        for (char c : prohibitedChars.toCharArray()) {
-            if (input.indexOf(c) != -1) {
-                return false;
-            }
-        }
-
-            for (char c : input.toCharArray()) {
-            if (c < 32 || c > 126) { 
-                return false;
-            }
-        }
-        return true;
+    
+        String regex = ".*[';#% _*/=\\-].*"; 
+    
+        return !input.matches(regex);
     }
 
 }
