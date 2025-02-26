@@ -7,6 +7,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import com.jubeiwato.costing_service.entities.Part;
 import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
 import com.jubeiwato.costing_service.dtos.PageInfoDto;
@@ -17,6 +18,7 @@ import com.jubeiwato.costing_service.exceptions.NotFoundException;
 import com.jubeiwato.costing_service.repositories.PartRepository;
 import com.jubeiwato.costing_service.repositories.VendorRepository;
 import com.jubeiwato.costing_service.services.VendorService;
+import com.jubeiwato.costing_service.services.VendorSpecification;
 
 @Service
 public class VendorServiceImpl implements VendorService {
@@ -42,9 +44,10 @@ public class VendorServiceImpl implements VendorService {
     }
 
     @Override
-    public ApiPageResponseDto<List<VendorDto>> getVendorList(int pageNo, int pageSize) {
+    public ApiPageResponseDto<List<VendorDto>> getVendorList(String name, String address, String emailId, String contactNumber,int pageNo, int pageSize) {
         Pageable pageable = PageRequest.of(pageNo, pageSize); 
-        Page<Vendor> vendorPage = this.vendorRepository.findAll(pageable); 
+           Specification<Vendor> spec = VendorSpecification.getFilteredVendors(name, address, emailId, contactNumber);
+        Page<Vendor> vendorPage = vendorRepository.findAll(spec, pageable);
 
         List<VendorDto> vendorDtos = vendorPage.getContent().stream()
                 .map(VendorDto::entityToDto)
@@ -61,7 +64,7 @@ public class VendorServiceImpl implements VendorService {
                 .data(vendorDtos)
                 .pageInfo(pageInfo)
                 .build();
-    } 
+    }
 
     @Override
     public VendorDto getVendorById(Long id) {
