@@ -1,10 +1,9 @@
 package com.jubeiwato.costing_service.services;
 
-import com.jubeiwato.costing_service.dtos.CostCalcDto;
+import com.jubeiwato.costing_service.dtos.ResultCostDto;
 
-import java.util.List;
 
 
 public interface CostCalcService {
-    public List<CostCalcDto> calculatePrice(Long partId, String priceMode);
+    public ResultCostDto calculatePrice(Long partId, String priceMode);
 }

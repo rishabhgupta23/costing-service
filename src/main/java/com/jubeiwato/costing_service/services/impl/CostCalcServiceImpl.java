@@ -1,6 +1,7 @@
 package com.jubeiwato.costing_service.services.impl;
 
 import com.jubeiwato.costing_service.dtos.CostCalcDto;
+import com.jubeiwato.costing_service.dtos.ResultCostDto;
 import com.jubeiwato.costing_service.entities.Part;
 import com.jubeiwato.costing_service.entities.PartCost;
 import com.jubeiwato.costing_service.entities.PartCostCostFactor;
@@ -15,7 +16,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.AbstractMap;
 
 
 @Service
@@ -69,7 +69,7 @@ public class CostCalcServiceImpl implements CostCalcService {
         List<PartCost> partCostDetails = partCostRepository.findByPartId(partId);
 
         List<Map.Entry<Double, String>> vendorPricePairs = partCostDetails.stream()
-                .map(pc -> new AbstractMap.SimpleEntry<>(
+                .map(pc -> Map.entry(
                         (pc.getCostFactorList() == null) ? 0.0 :
                                 pc.getCostFactorList().stream().mapToDouble(PartCostCostFactor::getValue).sum(),
                         pc.getVendor().getName()
@@ -88,20 +88,27 @@ public class CostCalcServiceImpl implements CostCalcService {
     }
 
     @Override
-    public List<CostCalcDto> calculatePrice(Long partId, String priceMode) {
+    public ResultCostDto calculatePrice(Long partId, String priceMode) {
         List<CostCalcDto> res;
         Integer quantity = 1;
+        Double totalCost=0.0;
         Part part = partRepository.findById(partId)
                 .orElseThrow(() -> new BadRequestException("Child Part not found with ID: " + partId));
 
         if("UNIT".equals(part.getType().name())){
             res = new ArrayList<>();
             res.add(calculateUnitPart(partId,priceMode,quantity));
+            totalCost= res.get(0).getPrice();
+
         } else {
             res = calculateMasterPart(partId,priceMode, quantity);
+            totalCost = res.stream().mapToDouble(CostCalcDto::getPrice).sum();
         }
 
-        return res;
+        return ResultCostDto.builder()
+                .costCalcDtoList(res)
+                .totalCost(totalCost)
+                .build();
     }
 
 
@@ -112,13 +119,13 @@ public class CostCalcServiceImpl implements CostCalcService {
             case "MIN":
                 resultEntry = vendorPricePairs.stream()
                         .min(Map.Entry.comparingByKey())
-                        .orElse(new AbstractMap.SimpleEntry<>(0.0, "Unknown Vendor"));
+                        .orElse(Map.entry(0.0, "Unknown Vendor"));
                 break;
 
             case "MAX":
                 resultEntry = vendorPricePairs.stream()
                         .max(Map.Entry.comparingByKey())
-                        .orElse(new AbstractMap.SimpleEntry<>(0.0, "Unknown Vendor"));
+                        .orElse(Map.entry(0.0, "Unknown Vendor"));
                 break;
 
             case "AVG":
@@ -128,7 +135,7 @@ public class CostCalcServiceImpl implements CostCalcService {
 
                 resultEntry = vendorPricePairs.stream()
                         .min((p1, p2) -> Double.compare(Math.abs(p1.getKey() - avg), Math.abs(p2.getKey() - avg)))
-                        .orElse(new AbstractMap.SimpleEntry<>(0.0, "Unknown Vendor"));
+                        .orElse(Map.entry(0.0, "Unknown Vendor"));
                 break;
 
             default:
