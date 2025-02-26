@@ -13,7 +13,6 @@ import com.jubeiwato.costing_service.services.CostCalcService;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -127,8 +126,15 @@ public class CostCalcServiceImpl implements CostCalcService {
                         .average().orElse(0.0);
 
                 return vendorCostMap.entrySet().stream()
-                        .min(Comparator.comparingDouble(entry -> Math.abs(entry.getValue() - avg)))
-                        .orElse(Map.entry(new Vendor(0L, "Unknown Vendor", "", "", ""), 0.0));
+                        .min((entry1, entry2) -> {
+                            double diff1 = Math.abs(entry1.getValue() - avg);
+                            double diff2 = Math.abs(entry2.getValue() - avg);
+
+                            if (Double.compare(diff1, diff2) == 0) {
+                                return Double.compare(entry1.getValue(), entry2.getValue());
+                            }
+                            return Double.compare(diff1, diff2);
+                        }).orElse(Map.entry(new Vendor(0L, "Unknown Vendor", "", "", ""), 0.0));
 
             default:
                 throw new IllegalArgumentException("Invalid price mode.");
