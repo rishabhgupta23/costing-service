@@ -5,15 +5,13 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CostCalcDto {
-    private String partName;
-    private String partNumber;
-    private Double quantity;
-    private Double price;
-    private String vendorName;
-    private Double rate;
+public class CostCalcResultDto {
+    private List<CostItemDto> costCalcDtoList;
+    private Double totalCost;
 }

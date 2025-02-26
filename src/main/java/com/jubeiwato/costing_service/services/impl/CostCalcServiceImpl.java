@@ -2,12 +2,9 @@ package com.jubeiwato.costing_service.services.impl;
 
 import com.jubeiwato.costing_service.constants.PartType;
 import com.jubeiwato.costing_service.constants.PriceMode;
-import com.jubeiwato.costing_service.dtos.CostCalcDto;
-import com.jubeiwato.costing_service.dtos.ResultCostDto;
-import com.jubeiwato.costing_service.entities.Bom;
-import com.jubeiwato.costing_service.entities.Part;
-import com.jubeiwato.costing_service.entities.PartCost;
-import com.jubeiwato.costing_service.entities.PartCostCostFactor;
+import com.jubeiwato.costing_service.dtos.CostItemDto;
+import com.jubeiwato.costing_service.dtos.CostCalcResultDto;
+import com.jubeiwato.costing_service.entities.*;
 import com.jubeiwato.costing_service.exceptions.BadRequestException;
 import com.jubeiwato.costing_service.repositories.BomRepository;
 import com.jubeiwato.costing_service.repositories.PartCostRepository;
@@ -16,6 +13,7 @@ import com.jubeiwato.costing_service.services.CostCalcService;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -33,20 +31,20 @@ public class CostCalcServiceImpl implements CostCalcService {
         this.bomRepository = bomRepository;
     }
 
-    private List<CostCalcDto> calculateMasterPart(Long partId, PriceMode priceMode, Double quantity) {
+    private List<CostItemDto> calculateMasterPart(Long partId, String priceMode, Double quantity) {
         double calculatedPrice = 0.0;
         String vendorName = "";
 
-        List<CostCalcDto> masterDto = new ArrayList<>();
-        List<Bom> childParts = bomRepository.findChildPartIdsByMasterPartId(partId).stream().collect(Collectors.toList());
+        List<CostItemDto> masterDto = new ArrayList<>();
+        List<Bom> childParts = bomRepository.findByParentPart_PartId(partId).stream().collect(Collectors.toList());
 
         for (Bom childPart : childParts) {
 
             if (childPart.getChildPart().getType() == PartType.MASTER)  {
 
-                List<CostCalcDto> childCosts = calculateMasterPart(childPart.getChildPart().getPartId(), priceMode, childPart.getQuantity());
-                calculatedPrice = childCosts.stream().mapToDouble(CostCalcDto::getPrice).sum();
-                masterDto.add(CostCalcDto.builder()
+                List<CostItemDto> childCosts = calculateMasterPart(childPart.getChildPart().getPartId(), priceMode, childPart.getQuantity());
+                calculatedPrice = childCosts.stream().mapToDouble(CostItemDto::getPrice).sum();
+                masterDto.add(CostItemDto.builder()
                         .partName(childPart.getChildPart().getPartName())
                         .partNumber(childPart.getChildPart().getPartNumber())
                         .quantity(quantity)
@@ -55,41 +53,40 @@ public class CostCalcServiceImpl implements CostCalcService {
                         .rate(quantity*calculatedPrice)
                         .build());
             } else {
-                CostCalcDto unitDto = calculateUnitPart(childPart.getChildPart().getPartId(), priceMode, quantity);
+                CostItemDto unitDto = calculateUnitPart(childPart.getChildPart().getPartId(), priceMode, quantity);
                 masterDto.add(unitDto);
             }
         }
         return masterDto;
     }
 
-    private CostCalcDto calculateUnitPart(Long partId, PriceMode priceMode, Double qt) {
+    private CostItemDto calculateUnitPart(Long partId, String  priceMode, Double qt) {
             Part part = partRepository.findById(partId)
                     .orElseThrow(() -> new BadRequestException("Child Part not found with ID: " + partId));
 
         List<PartCost> partCostDetails = partCostRepository.findByPartId(partId);
 
-        List<Map.Entry<Double, String>> vendorPricePairs = partCostDetails.stream()
-                .map(pc -> Map.entry(
-                        (pc.getCostFactorList() == null) ? 0.0 :
-                                pc.getCostFactorList().stream().mapToDouble(PartCostCostFactor::getValue).sum(),
-                        pc.getVendor().getName()
-                ))
-                .collect(Collectors.toList());
-        Map.Entry<Double, String> result = calculateMinMaxAvgCost(vendorPricePairs, priceMode);
+        Map<Vendor, Double> vendorCostMap = partCostDetails.stream()
+                .collect(Collectors.toMap(
+                        PartCost::getVendor,
+                        pc -> (pc.getCostFactorList() == null) ? 0.0 :
+                                pc.getCostFactorList().stream().mapToDouble(PartCostCostFactor::getValue).sum()
+                ));
+        Map.Entry<Vendor, Double> result = calculateMinMaxAvgCost(vendorCostMap, priceMode);
 
-       return CostCalcDto.builder()
+       return CostItemDto.builder()
                 .partName(part.getPartName())
                 .partNumber(part.getPartNumber())
                 .quantity(qt)
-                .price(result.getKey())
-                .vendorName(result.getValue())
-               .rate(qt*result.getKey())
+                .price(result.getValue())
+                .vendorName(result.getKey().getName())
+               .rate(qt*result.getValue())
                 .build();
     }
 
     @Override
-    public ResultCostDto calculatePrice(Long partId, PriceMode priceMode) {
-        List<CostCalcDto> res;
+    public CostCalcResultDto calculatePrice(Long partId, String priceMode) {
+        List<CostItemDto> res;
         Double quantity = 1.0;
         Double totalCost=0.0;
         Part part = partRepository.findById(partId)
@@ -102,36 +99,36 @@ public class CostCalcServiceImpl implements CostCalcService {
 
         } else {
             res = calculateMasterPart(partId,priceMode, quantity);
-            totalCost = res.stream().mapToDouble(CostCalcDto::getPrice).sum();
+            totalCost = res.stream().mapToDouble(CostItemDto::getPrice).sum();
         }
 
-        return ResultCostDto.builder()
+        return CostCalcResultDto.builder()
                 .costCalcDtoList(res)
                 .totalCost(totalCost)
                 .build();
     }
 
 
-    private Map.Entry<Double, String> calculateMinMaxAvgCost(List<Map.Entry<Double, String>> vendorPricePairs, PriceMode priceMode) {
-        switch (priceMode) {
+    private Map.Entry<Vendor, Double> calculateMinMaxAvgCost(Map<Vendor, Double> vendorCostMap, String priceMode) {
+        switch (PriceMode.fromString(priceMode)) {
             case MIN:
-                return vendorPricePairs.stream()
-                        .min(Map.Entry.comparingByKey())
-                        .orElse(Map.entry(0.0, "Unknown Vendor"));
+                return vendorCostMap.entrySet().stream()
+                        .min(Map.Entry.comparingByValue())
+                        .orElse(Map.entry(new Vendor(0L, "Unknown Vendor", "", "", ""), 0.0));
 
             case MAX:
-                return vendorPricePairs.stream()
-                        .max(Map.Entry.comparingByKey())
-                        .orElse(Map.entry(0.0, "Unknown Vendor"));
+                return vendorCostMap.entrySet().stream()
+                        .max(Map.Entry.comparingByValue())
+                        .orElse(Map.entry(new Vendor(0L, "Unknown Vendor", "", "", ""), 0.0));
 
             case AVG:
-                double avg = vendorPricePairs.stream()
-                        .mapToDouble(Map.Entry::getKey)
+                double avg = vendorCostMap.values().stream()
+                        .mapToDouble(Double::doubleValue)
                         .average().orElse(0.0);
 
-                return vendorPricePairs.stream()
-                        .min((p1, p2) -> Double.compare(Math.abs(p1.getKey() - avg), Math.abs(p2.getKey() - avg)))
-                        .orElse(Map.entry(0.0, "Unknown Vendor"));
+                return vendorCostMap.entrySet().stream()
+                        .min(Comparator.comparingDouble(entry -> Math.abs(entry.getValue() - avg)))
+                        .orElse(Map.entry(new Vendor(0L, "Unknown Vendor", "", "", ""), 0.0));
 
             default:
                 throw new IllegalArgumentException("Invalid price mode.");

@@ -1,10 +1,9 @@
 package com.jubeiwato.costing_service.services;
 
-import com.jubeiwato.costing_service.constants.PriceMode;
-import com.jubeiwato.costing_service.dtos.ResultCostDto;
+import com.jubeiwato.costing_service.dtos.CostCalcResultDto;
 
 
 
 public interface CostCalcService {
-    public ResultCostDto calculatePrice(Long partId, PriceMode priceMode);
+    public CostCalcResultDto calculatePrice(Long partId, String priceMode);
 }
