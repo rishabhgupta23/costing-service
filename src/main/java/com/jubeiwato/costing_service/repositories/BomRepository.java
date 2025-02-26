@@ -16,11 +16,9 @@ public interface BomRepository extends JpaRepository<Bom, BomId> {
 
     void deleteByParentPart(Part parentPart);
 
-    @Query("SELECT b.childPart.partId, b.quantity FROM Bom b WHERE b.parentPart.partId = :parentPartId")
-    List<Long> findChildPartIdsByMasterPartId(@Param("parentPartId") Long parentPartId);
+    @Query("SELECT b.childPart, b.quantity FROM Bom b WHERE b.parentPart.partId = :parentPartId")
+    List<Bom> findChildPartIdsByMasterPartId(@Param("parentPartId") Long parentPartId);
 
-    @Query("SELECT b.quantity FROM Bom b WHERE b.parentPart.partId = :parentPartId AND b.childPart.partId = :childPartId")
-    Integer findQuantityByParentAndChild(@Param("parentPartId") Long parentPartId, @Param("childPartId") Long childPartId);
 
 
 }
