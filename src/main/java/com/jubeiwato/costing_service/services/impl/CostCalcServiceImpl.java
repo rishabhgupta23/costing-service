@@ -30,18 +30,19 @@ public class CostCalcServiceImpl implements CostCalcService {
         this.bomRepository = bomRepository;
     }
 
-    private List<CostItemDto> calculateMasterPart(Long partId, String priceMode, Double quantity) {
+    private List<CostItemDto> calculateMasterPart(Long partId, String priceMode) {
         double calculatedPrice = 0.0;
         String vendorName = "";
 
         List<CostItemDto> masterDto = new ArrayList<>();
+
         List<Bom> childParts = bomRepository.findByParentPart_PartId(partId).stream().collect(Collectors.toList());
 
         for (Bom childPart : childParts) {
-
+            Double quantity = childPart.getQuantity();
             if (childPart.getChildPart().getType() == PartType.MASTER)  {
 
-                List<CostItemDto> childCosts = calculateMasterPart(childPart.getChildPart().getPartId(), priceMode, childPart.getQuantity());
+                List<CostItemDto> childCosts = calculateMasterPart(childPart.getChildPart().getPartId(), priceMode);
                 calculatedPrice = childCosts.stream().mapToDouble(CostItemDto::getPrice).sum();
                 masterDto.add(CostItemDto.builder()
                         .partName(childPart.getChildPart().getPartName())
@@ -49,7 +50,7 @@ public class CostCalcServiceImpl implements CostCalcService {
                         .quantity(quantity)
                         .price(calculatedPrice)
                         .vendorName(vendorName)
-                        .rate(quantity*calculatedPrice)
+                        .rate(quantity * calculatedPrice)
                         .build());
             } else {
                 CostItemDto unitDto = calculateUnitPart(childPart.getChildPart().getPartId(), priceMode, quantity);
@@ -97,7 +98,7 @@ public class CostCalcServiceImpl implements CostCalcService {
             totalCost= res.get(0).getPrice();
 
         } else {
-            res = calculateMasterPart(partId,priceMode, quantity);
+            res = calculateMasterPart(partId,priceMode);
             totalCost = res.stream().mapToDouble(CostItemDto::getPrice).sum();
         }
 
