@@ -78,9 +78,9 @@ public class CostCalcServiceImpl implements CostCalcService {
                 .partName(part.getPartName())
                 .partNumber(part.getPartNumber())
                 .quantity(qt)
-                .price(result.getValue())
+                .rate(result.getValue())
                 .vendorName(result.getKey().getName())
-               .rate(qt*result.getValue())
+               .price(qt*result.getValue())
                 .build();
     }
 
