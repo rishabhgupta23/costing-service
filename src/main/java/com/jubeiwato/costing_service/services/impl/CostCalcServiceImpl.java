@@ -43,14 +43,14 @@ public class CostCalcServiceImpl implements CostCalcService {
             if (childPart.getChildPart().getType() == PartType.MASTER)  {
 
                 List<CostItemDto> childCosts = calculateMasterPart(childPart.getChildPart().getPartId(), priceMode);
-                calculatedPrice = childCosts.stream().mapToDouble(CostItemDto::getPrice).sum();
+                calculatedPrice = childCosts.stream().mapToDouble(CostItemDto::getRate).sum();
                 masterDto.add(CostItemDto.builder()
                         .partName(childPart.getChildPart().getPartName())
                         .partNumber(childPart.getChildPart().getPartNumber())
                         .quantity(quantity)
-                        .price(calculatedPrice)
+                        .rate(calculatedPrice)
                         .vendorName(vendorName)
-                        .rate(quantity * calculatedPrice)
+                        .subTotal(quantity * calculatedPrice)
                         .build());
             } else {
                 CostItemDto unitDto = calculateUnitPart(childPart.getChildPart().getPartId(), priceMode, quantity);
@@ -80,7 +80,7 @@ public class CostCalcServiceImpl implements CostCalcService {
                 .quantity(qt)
                 .rate(result.getValue())
                 .vendorName(result.getKey().getName())
-               .price(qt*result.getValue())
+               .subTotal(qt*result.getValue())
                 .build();
     }
 
@@ -95,11 +95,11 @@ public class CostCalcServiceImpl implements CostCalcService {
         if(part.getType() == PartType.UNIT) {
             res = new ArrayList<>();
             res.add(calculateUnitPart(partId,priceMode,quantity));
-            totalCost= res.get(0).getPrice();
+            totalCost= res.get(0).getSubTotal();
 
         } else {
             res = calculateMasterPart(partId,priceMode);
-            totalCost = res.stream().mapToDouble(CostItemDto::getPrice).sum();
+            totalCost = res.stream().mapToDouble(CostItemDto::getSubTotal).sum();
         }
 
         return CostCalcResultDto.builder()

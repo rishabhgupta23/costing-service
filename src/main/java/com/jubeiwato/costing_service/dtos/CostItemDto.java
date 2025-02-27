@@ -13,7 +13,7 @@ public class CostItemDto {
     private String partName;
     private String partNumber;
     private Double quantity;
-    private Double price;
-    private String vendorName;
     private Double rate;
+    private Double subTotal;
+    private String vendorName;
 }
