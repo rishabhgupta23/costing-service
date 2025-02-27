@@ -43,7 +43,7 @@ public class CostCalcServiceImpl implements CostCalcService {
             if (childPart.getChildPart().getType() == PartType.MASTER)  {
 
                 List<CostItemDto> childCosts = calculateMasterPart(childPart.getChildPart().getPartId(), priceMode);
-                calculatedPrice = childCosts.stream().mapToDouble(CostItemDto::getRate).sum();
+                calculatedPrice = childCosts.stream().mapToDouble(CostItemDto::getSubTotal).sum();
                 masterDto.add(CostItemDto.builder()
                         .partName(childPart.getChildPart().getPartName())
                         .partNumber(childPart.getChildPart().getPartNumber())
