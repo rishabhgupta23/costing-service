@@ -32,10 +32,28 @@ public class PartController {
 
 
     @GetMapping()
-    public ResponseEntity<ApiPageResponseDto<PartDataDto>> getParts(@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNo, @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE + "") int pageSize) {
-        ApiPageResponseDto<PartDataDto> response = partService.getParts(pageNo, pageSize);
-        return new ResponseEntity<>(response, HttpStatus.OK);
+    public ResponseEntity<ApiPageResponseDto<PartDataDto>> getParts(
+            @RequestParam(required = false) String partName,
+            @RequestParam(required = false) String partNumber,
+            @RequestParam(required = false) String categoryName,
+            @RequestParam(required = false) PartType type,
+            @RequestParam(required = false) String unit,
+            @RequestParam(defaultValue = "0") int pageNo,
+            @RequestParam(defaultValue = "10") int pageSize
+    ) {
+        Part filter = Part.builder()
+                .partName(partName)
+                .partNumber(partNumber)
+                .categoryName(categoryName)
+                .type(type)
+                .unit(unit)
+                .build();
+
+        ApiPageResponseDto<PartDataDto> response = partService.getParts(filter, pageNo, pageSize);
+        return ResponseEntity.ok(response);
     }
+
+
 
     @GetMapping("/types")
     public ResponseEntity<List<String>> getPartTypes() {
@@ -78,25 +96,6 @@ public class PartController {
         partService.deletePartById(partId);
         GeneralResponseDto response = new GeneralResponseDto("Part deleted successfully", HttpStatus.OK.value());
         return ResponseEntity.ok(response);
-    }
-
-    @GetMapping("/filter")
-    public ResponseEntity<List<Part>> filterParts(
-            @RequestParam(required = false) String partName,
-            @RequestParam(required = false) String partNumber,
-            @RequestParam(required = false) String categoryName,
-            @RequestParam(required = false) PartType type,
-            @RequestParam(required = false) String unit
-    ) {
-        Part filter = new Part();
-        filter.setPartName(partName);
-        filter.setPartNumber(partNumber);
-        filter.setCategoryName(categoryName);
-        filter.setType(type);
-        filter.setUnit(unit);
-
-        List<Part> filteredParts = partService.getFilteredParts(filter);
-        return ResponseEntity.ok(filteredParts);
     }
 
 }

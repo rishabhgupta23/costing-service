@@ -48,8 +48,11 @@ public class VendorController {
     @RequestParam(required = false) String address,
     @RequestParam(required = false) String emailId,
     @RequestParam(required = false) String contactNumber,@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNo,
-    @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int size) {
-            ApiPageResponseDto<List<VendorDto>> response = this.vendorService.getVendorList(name, address, emailId, contactNumber, pageNo, size);
+    @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int size,
+    @RequestParam(required = false, defaultValue = "name") String sortColumn,
+    @RequestParam(required = false, defaultValue = "ASC") String sortMode
+    ) {
+            ApiPageResponseDto<List<VendorDto>> response = this.vendorService.getVendorList(name, address, emailId, contactNumber, pageNo, size, sortColumn, sortMode);
             return ResponseEntity.ok(response);
     }
 

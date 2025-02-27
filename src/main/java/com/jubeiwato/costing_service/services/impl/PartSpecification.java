@@ -1,16 +1,11 @@
 package com.jubeiwato.costing_service.services.impl;
 
-import com.jubeiwato.costing_service.constants.PartType;
 import com.jubeiwato.costing_service.entities.Part;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.*;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.List;
-import jakarta.persistence.criteria.Predicate;
 
 public class PartSpecification implements Specification<Part> {
     private final transient Part filter;
@@ -25,6 +20,7 @@ public class PartSpecification implements Specification<Part> {
             return cb.conjunction();
         }
         List<Predicate> predicates = new ArrayList<>();
+
 
         if (!isValidInput(filter.getPartName()) ||
                 !isValidInput(filter.getPartNumber()) ||
@@ -49,6 +45,7 @@ public class PartSpecification implements Specification<Part> {
             predicates.add(cb.equal(cb.lower(root.get("unit")), filter.getUnit().toLowerCase()));
         }
 
+        query.distinct(true);
         return cb.and(predicates.toArray(new Predicate[0]));
     }
 

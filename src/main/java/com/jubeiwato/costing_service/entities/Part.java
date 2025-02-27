@@ -8,6 +8,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 
 @Data
 @NoArgsConstructor
@@ -36,4 +38,7 @@ public class Part extends BaseEntity{
 
         @Column(name = "unit")
         private String unit;
+
+        @OneToMany(mappedBy = "part", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+        private List<PartCost> partCosts;
 }
