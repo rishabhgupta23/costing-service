@@ -226,15 +226,15 @@ public class PartServiceImpl implements PartService {
         .orElseThrow(() -> new NotFoundException("Part does not exist"));
 
           //Fetch Part Cost
-        List<PartCost> partCostList = partCostRepository.findByPartId(partId);
+        List<PartCost> partCostDetails = partCostRepository.findByPartId(partId);
           //Fetch Bom
         List<Bom> bomDetails = bomRepository.findByParentPart(part);
 
         //Map everything and return
-        return createPartResponseDto(part, partCostList, bomDetails);
+        return createPartResponseDto(part, partCostDetails, bomDetails);
     }
 
-    PartResponseDto createPartResponseDto(Part part, List<PartCost> partCostList, List<Bom> bom) {
+    PartResponseDto createPartResponseDto(Part part, List<PartCost> partCost, List<Bom> bom) {
         List<BomResponseDto> bomDtoList = bom.stream().map(BomResponseDto::entityToDto).toList();
         PartResponseDto responseDto = PartResponseDto.superBuilder()
                 .partId(part.getPartId())
@@ -244,7 +244,7 @@ public class PartServiceImpl implements PartService {
                 .categoryName(part.getCategoryName())
                 .type(part.getType())
                 .bom(bomDtoList)
-                .vendorCostList(createVendorCostList(partCostList))
+                .vendorCostList(createVendorCostList(partCost))
                 .build();
         return  responseDto;
     }
@@ -285,8 +285,6 @@ public class PartServiceImpl implements PartService {
 
         return vendorCostList;
     }
-
-
 
     @Override
     @Transactional
@@ -350,6 +348,5 @@ public class PartServiceImpl implements PartService {
         }
         partRepository.delete(part);
     }
-
 
 }

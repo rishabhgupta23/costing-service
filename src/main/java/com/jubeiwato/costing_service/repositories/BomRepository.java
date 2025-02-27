@@ -12,6 +12,7 @@ public interface BomRepository extends JpaRepository<Bom, BomId> {
     boolean existsByChildPart(Part childPart);
     List<Bom> findByParentPart(Part parentPart);
 
-    void deleteByParentPart(Part parentPart);
+    List<Bom> findByParentPart_PartId(Long partId);
 
+    void deleteByParentPart(Part parentPart);
 }

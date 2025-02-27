@@ -1,0 +1,19 @@
+package com.jubeiwato.costing_service.dtos;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class CostItemDto {
+    private String partName;
+    private String partNumber;
+    private Double quantity;
+    private Double rate;
+    private Double subTotal;
+    private String vendorName;
+}

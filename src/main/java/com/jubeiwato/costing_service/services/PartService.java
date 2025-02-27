@@ -10,7 +10,7 @@ import com.jubeiwato.costing_service.dtos.PartRequestDto;
 import com.jubeiwato.costing_service.dtos.PartUnitDto;
 
 public interface PartService {
-    
+
     public ApiPageResponseDto<PartDataDto> getParts(int pageNo, int pageSize);
 
     public List<String> getPartTypes();

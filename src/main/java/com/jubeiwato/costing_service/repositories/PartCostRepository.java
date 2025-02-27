@@ -2,8 +2,9 @@ package com.jubeiwato.costing_service.repositories;
 
 import com.jubeiwato.costing_service.entities.Part;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+
 import com.jubeiwato.costing_service.entities.PartCost;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.query.Param;
@@ -19,6 +20,7 @@ public interface PartCostRepository extends JpaRepository<PartCost, Long> {
             "    FROM PartCost p2 " +
             "    WHERE p2.part.id = :partId AND p2.vendor.id = p1.vendor.id" +
             ") AND p1.part.id = :partId")
+
     List<PartCost> findByPartId(@Param("partId") Long partId);
     @Query(value = "SELECT p.part_id, p.part_name, p.part_number, p.category_name, p.type, p.unit, " +
     "STRING_AGG(DISTINCT v.name, ', ') AS vendors " +
