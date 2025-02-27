@@ -26,7 +26,12 @@ public class PartSpecification implements Specification<Part> {
         }
         List<Predicate> predicates = new ArrayList<>();
 
-        validateInput(filter);
+        if (!isValidInput(filter.getPartName()) ||
+                !isValidInput(filter.getPartNumber()) ||
+                !isValidInput(filter.getCategoryName()) ||
+                !isValidInput(filter.getUnit())) {
+            throw new IllegalArgumentException("Invalid input: Prohibited characters detected.");
+        }
 
         if (filter.getPartName() != null && !filter.getPartName().isEmpty()) {
             predicates.add(cb.like(cb.lower(root.get("partName")), "%" + filter.getPartName().toLowerCase() + "%"));
@@ -47,23 +52,10 @@ public class PartSpecification implements Specification<Part> {
         return cb.and(predicates.toArray(new Predicate[0]));
     }
 
-    private void validateInput(Part filter) {
-        if (filter == null) return;
-
-        validateField(filter.getPartName(), "partName", "^[a-zA-Z0-9 _-]+$");
-        validateField(filter.getPartNumber(), "partNumber", "^[a-zA-Z0-9_-]+$");
-        validateField(filter.getCategoryName(), "categoryName", "^[a-zA-Z0-9 _-]+$");
-        validateField(filter.getUnit(), "unit", "^[a-zA-Z]+$");
-
-        if (filter.getType() != null && !EnumSet.allOf(PartType.class).contains(filter.getType())) {
-            throw new IllegalArgumentException("Invalid part type");
-        }
-    }
-
-    private void validateField(String value, String fieldName, String regex) {
-        if (value != null && !value.matches(regex)) {
-            throw new IllegalArgumentException("Invalid " + fieldName);
-        }
+    private static boolean isValidInput(String input) {
+        if (input == null || input.trim().isEmpty()) return true;
+        String regex = ".*[';#% _*/=\\-].*";
+        return !input.matches(regex);
     }
 
 }
