@@ -38,8 +38,8 @@ public class PartController {
             @RequestParam(required = false) String categoryName,
             @RequestParam(required = false) PartType type,
             @RequestParam(required = false) String unit,
-            @RequestParam(defaultValue = "0") int pageNo,
-            @RequestParam(defaultValue = "10") int pageSize
+            @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNo,
+            @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int pageSize
     ) {
         Part filter = Part.builder()
                 .partName(partName)
