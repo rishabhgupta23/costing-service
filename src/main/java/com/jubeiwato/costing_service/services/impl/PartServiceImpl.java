@@ -187,10 +187,10 @@ public class PartServiceImpl implements PartService {
         // Convert Parts to DTO
         List<PartRowDto> partList = partPage.getContent().stream()
                 .map(part -> {
-                    List<String> vendorNames = part.getPartCosts().stream()  // Fetch vendor names correctly
+                    Set<String> vendorNames = part.getPartCosts().stream()
                             .map(PartCost::getVendor)
                             .map(Vendor::getName)
-                            .toList();
+                            .collect(Collectors.toSet());
 
                     return PartRowDto.superBuilder()
                             .partId(part.getPartId())
@@ -199,7 +199,7 @@ public class PartServiceImpl implements PartService {
                             .categoryName(part.getCategoryName())
                             .type(part.getType())
                             .unit(part.getUnit())
-                            .vendorNames(vendorNames)
+                            .vendorNames(new ArrayList<>(vendorNames))
                             .build();
                 })
                 .toList();
