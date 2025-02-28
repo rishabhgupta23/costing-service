@@ -1,5 +1,6 @@
 package com.jubeiwato.costing_service.controllers;
 
+import com.jubeiwato.costing_service.constants.Sorting;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.jubeiwato.costing_service.constants.AppConstants;
@@ -50,7 +51,7 @@ public class VendorController {
     @RequestParam(required = false) String contactNumber,@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNo,
     @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int pageSize,
     @RequestParam(required = false, defaultValue = "name") String sortColumn,
-    @RequestParam(required = false, defaultValue = "ASC") String sortMode
+    @RequestParam(required = false, defaultValue = "ASC") Sorting sortMode
     ) {
             ApiPageResponseDto<List<VendorDto>> response = this.vendorService.getVendorList(name, address, emailId, contactNumber, pageNo, pageSize, sortColumn, sortMode);
             return ResponseEntity.ok(response);
