@@ -2,6 +2,7 @@ package com.jubeiwato.costing_service.services;
 
 import java.util.List;
 
+import com.jubeiwato.costing_service.constants.Sorting;
 import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
 import com.jubeiwato.costing_service.dtos.CostFactorDto;
 import com.jubeiwato.costing_service.dtos.PartDataDto;
@@ -12,7 +13,7 @@ import com.jubeiwato.costing_service.entities.Part;
 
 public interface PartService {
 
-    public ApiPageResponseDto<PartDataDto> getParts(Part filter, int pageNo, int pageSize);
+    public ApiPageResponseDto<PartDataDto> getParts(Part filter, int pageNo, int pageSize, String sortBy, Sorting sortDir);
 
     public List<String> getPartTypes();
 

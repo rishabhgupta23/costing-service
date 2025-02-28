@@ -3,6 +3,7 @@ package com.jubeiwato.costing_service.controllers;
 import java.util.List;
 
 import com.jubeiwato.costing_service.constants.PartType;
+import com.jubeiwato.costing_service.constants.Sorting;
 import com.jubeiwato.costing_service.dtos.*;
 import com.jubeiwato.costing_service.entities.Part;
 import org.springframework.http.HttpStatus;
@@ -39,7 +40,9 @@ public class PartController {
             @RequestParam(required = false) PartType type,
             @RequestParam(required = false) String unit,
             @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNo,
-            @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int pageSize
+            @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int pageSize,
+            @RequestParam(defaultValue = "partName") String sortColumn,
+            @RequestParam(defaultValue = "ASC") Sorting sortMode
     ) {
         Part filter = Part.builder()
                 .partName(partName)
@@ -49,7 +52,7 @@ public class PartController {
                 .unit(unit)
                 .build();
 
-        ApiPageResponseDto<PartDataDto> response = partService.getParts(filter, pageNo, pageSize);
+        ApiPageResponseDto<PartDataDto> response = partService.getParts(filter, pageNo, pageSize, sortColumn, sortMode);
         return ResponseEntity.ok(response);
     }
 

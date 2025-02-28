@@ -2,6 +2,7 @@ package com.jubeiwato.costing_service.services.impl;
 
 import java.util.List;
 
+import com.jubeiwato.costing_service.constants.Sorting;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -45,8 +46,10 @@ public class VendorServiceImpl implements VendorService {
     }
 
     @Override
-    public ApiPageResponseDto<List<VendorDto>> getVendorList(String name, String address, String emailId, String contactNumber,int pageNo, int pageSize, String sortColumn, String sortMode) {
-        Sort sort = Sort.by(Sort.Direction.fromString(sortMode), sortColumn);
+    public ApiPageResponseDto<List<VendorDto>> getVendorList(String name, String address, String emailId, String contactNumber,int pageNo, int pageSize, String sortColumn, Sorting sortMode) {
+        Sort.Direction direction = (sortMode == Sorting.DESC) ? Sort.Direction.DESC : Sort.Direction.ASC;
+
+        Sort sort = Sort.by(direction, sortColumn);
         Pageable pageable = PageRequest.of(pageNo, pageSize, sort); 
         Specification<Vendor> spec = VendorSpecification.getFilteredVendors(name, address, emailId, contactNumber);
         Page<Vendor> vendorPage = vendorRepository.findAll(spec, pageable);
