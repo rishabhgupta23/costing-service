@@ -187,7 +187,7 @@ public class PartServiceImpl implements PartService {
         // Convert Parts to DTO
         List<PartRowDto> partList = partPage.getContent().stream()
                 .map(part -> {
-                    List<String> vendorNames = part.getPartCosts().stream()  // Fetch vendor names correctly
+                    List<String> vendorNames = part.getPartCosts().stream()
                             .map(PartCost::getVendor)
                             .map(Vendor::getName)
                             .toList();
