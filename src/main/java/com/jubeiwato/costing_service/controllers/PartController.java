@@ -39,7 +39,7 @@ public class PartController {
             @RequestParam(required = false) PartType type,
             @RequestParam(required = false) String unit,
             @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNo,
-            @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int size
+            @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int pageSize
     ) {
         Part filter = Part.builder()
                 .partName(partName)
@@ -49,7 +49,7 @@ public class PartController {
                 .unit(unit)
                 .build();
 
-        ApiPageResponseDto<PartDataDto> response = partService.getParts(filter, pageNo, size);
+        ApiPageResponseDto<PartDataDto> response = partService.getParts(filter, pageNo, pageSize);
         return ResponseEntity.ok(response);
     }
 
