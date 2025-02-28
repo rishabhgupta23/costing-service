@@ -2,7 +2,9 @@ package com.jubeiwato.costing_service.controllers;
 
 import java.util.List;
 
+import com.jubeiwato.costing_service.constants.PartType;
 import com.jubeiwato.costing_service.dtos.*;
+import com.jubeiwato.costing_service.entities.Part;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -30,10 +32,28 @@ public class PartController {
 
 
     @GetMapping()
-    public ResponseEntity<ApiPageResponseDto<PartDataDto>> getParts(@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNo, @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE + "") int pageSize) {
-        ApiPageResponseDto<PartDataDto> response = partService.getParts(pageNo, pageSize);
-        return new ResponseEntity<>(response, HttpStatus.OK);
+    public ResponseEntity<ApiPageResponseDto<PartDataDto>> getParts(
+            @RequestParam(required = false) String partName,
+            @RequestParam(required = false) String partNumber,
+            @RequestParam(required = false) String categoryName,
+            @RequestParam(required = false) PartType type,
+            @RequestParam(required = false) String unit,
+            @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNo,
+            @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int pageSize
+    ) {
+        Part filter = Part.builder()
+                .partName(partName)
+                .partNumber(partNumber)
+                .categoryName(categoryName)
+                .type(type)
+                .unit(unit)
+                .build();
+
+        ApiPageResponseDto<PartDataDto> response = partService.getParts(filter, pageNo, pageSize);
+        return ResponseEntity.ok(response);
     }
+
+
 
     @GetMapping("/types")
     public ResponseEntity<List<String>> getPartTypes() {
