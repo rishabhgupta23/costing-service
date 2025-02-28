@@ -39,6 +39,6 @@ public class Part extends BaseEntity{
         @Column(name = "unit")
         private String unit;
 
-        @OneToMany(mappedBy = "part", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+        @OneToMany(mappedBy = "part", fetch = FetchType.LAZY)
         private List<PartCost> partCosts;
 }

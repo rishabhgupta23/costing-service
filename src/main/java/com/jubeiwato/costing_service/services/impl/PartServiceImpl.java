@@ -9,6 +9,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
@@ -174,8 +175,9 @@ public class PartServiceImpl implements PartService {
     }
 
     @Override
-    public ApiPageResponseDto<PartDataDto> getParts(Part filter, int pageNo, int pageSize) {
-        Pageable pageable = PageRequest.of(pageNo, pageSize);
+    public ApiPageResponseDto<PartDataDto> getParts(Part filter, int pageNo, int pageSize, String sortBy, String sortDir) {
+        Sort sort = sortDir.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
 
         // Apply Specification
         Specification<Part> spec = new PartSpecification(filter);
