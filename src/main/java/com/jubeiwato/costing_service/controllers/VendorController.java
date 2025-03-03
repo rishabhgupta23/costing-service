@@ -1,6 +1,9 @@
 package com.jubeiwato.costing_service.controllers;
 
 import com.jubeiwato.costing_service.constants.Sorting;
+import com.jubeiwato.costing_service.services.impl.ExcelService;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.jubeiwato.costing_service.constants.AppConstants;
@@ -25,9 +28,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-
-
-
+import java.io.IOException;
 
 @CrossOrigin
 @RestController
@@ -37,11 +38,9 @@ public class VendorController {
     
     private final VendorService vendorService;
     
-    
 
-    public VendorController(VendorService vendorService) {
+    public VendorController(VendorService vendorService, ExcelService excelService) {
         this.vendorService = vendorService;
-        
     }
 
     @GetMapping()
@@ -89,6 +88,16 @@ public class VendorController {
     public ResponseEntity<ApiPageResponseDto<List<PartDto>>> getVendorParts(    @PathVariable("id") Long vendorId,@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNo, @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int pageSize ) {
         ApiPageResponseDto<List<PartDto>> response = vendorService.getVendorParts(vendorId, pageNo, pageSize);
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/download")
+    public ResponseEntity<byte[]> downloadExcel() throws IOException {
+        byte[] excelBytes = vendorService.downloadVendorExcel();
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=vendors.xlsx")
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(excelBytes);
     }
 
 }
