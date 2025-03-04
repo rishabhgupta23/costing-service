@@ -125,10 +125,10 @@ public class VendorServiceImpl implements VendorService {
 
     @Override
     public byte[] downloadVendorExcel() throws IOException {
-        // Fetch data from the database
         List<Vendor> vendors = vendorRepository.findAll();
 
-        // Map Vendor entities to List<String[]>
+        String[] headers = {"ID", "Name", "Email", "Address", "Contact Number"};
+
         List<String[]> data = vendors.stream()
                 .map(vendor -> new String[]{
                         String.valueOf(vendor.getVendorId()),
@@ -139,8 +139,7 @@ public class VendorServiceImpl implements VendorService {
                 })
                 .toList();
 
-        // Generate Excel using the mapped data
-        return excelService.generateExcel(data);
+        return excelService.generateExcel(data, headers);
     }
     
 

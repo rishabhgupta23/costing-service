@@ -1,23 +1,19 @@
 package com.jubeiwato.costing_service.controllers;
 
 import com.jubeiwato.costing_service.constants.Sorting;
-import com.jubeiwato.costing_service.services.impl.ExcelService;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
+import com.jubeiwato.costing_service.dtos.*;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.jubeiwato.costing_service.constants.AppConstants;
-import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
-import com.jubeiwato.costing_service.dtos.GeneralResponseDto;
-import com.jubeiwato.costing_service.dtos.PartDto;
-import com.jubeiwato.costing_service.dtos.VendorDto;
 
 import com.jubeiwato.costing_service.services.VendorService;
 
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.text.SimpleDateFormat;
 import java.util.Base64;
+import java.util.Date;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -58,15 +54,21 @@ public class VendorController {
     }
 
     @GetMapping("/download")
-    public ResponseEntity<String> downloadExcel() throws IOException {
+    public ResponseEntity<FileResponseDto> downloadExcel() throws IOException {
         byte[] excelBytes = vendorService.downloadVendorExcel();
 
         String base64Excel = Base64.getEncoder().encodeToString(excelBytes);
 
+        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String filename = "vendorList_" + timestamp + ".xlsx";
+
+        FileResponseDto responseDto = FileResponseDto.builder()
+                .data(base64Excel)
+                .filename(filename)
+                .build();
+
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=vendors.xlsx")
-                .contentType(MediaType.TEXT_PLAIN)
-                .body(base64Excel);
+                .body(responseDto);
     }
 
     @GetMapping("/{id}")
