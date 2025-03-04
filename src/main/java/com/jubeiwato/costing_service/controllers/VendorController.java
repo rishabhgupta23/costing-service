@@ -17,6 +17,7 @@ import com.jubeiwato.costing_service.services.VendorService;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.util.Base64;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -39,7 +40,7 @@ public class VendorController {
     private final VendorService vendorService;
     
 
-    public VendorController(VendorService vendorService, ExcelService excelService) {
+    public VendorController(VendorService vendorService) {
         this.vendorService = vendorService;
     }
 
@@ -54,6 +55,18 @@ public class VendorController {
     ) {
             ApiPageResponseDto<List<VendorDto>> response = this.vendorService.getVendorList(name, address, emailId, contactNumber, pageNo, pageSize, sortColumn, sortMode);
             return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/download")
+    public ResponseEntity<String> downloadExcel() throws IOException {
+        byte[] excelBytes = vendorService.downloadVendorExcel();
+
+        String base64Excel = Base64.getEncoder().encodeToString(excelBytes);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=vendors.xlsx")
+                .contentType(MediaType.TEXT_PLAIN)
+                .body(base64Excel);
     }
 
     @GetMapping("/{id}")
@@ -88,16 +101,6 @@ public class VendorController {
     public ResponseEntity<ApiPageResponseDto<List<PartDto>>> getVendorParts(    @PathVariable("id") Long vendorId,@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNo, @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int pageSize ) {
         ApiPageResponseDto<List<PartDto>> response = vendorService.getVendorParts(vendorId, pageNo, pageSize);
         return ResponseEntity.ok(response);
-    }
-
-    @GetMapping("/download")
-    public ResponseEntity<byte[]> downloadExcel() throws IOException {
-        byte[] excelBytes = vendorService.downloadVendorExcel();
-
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=vendors.xlsx")
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .body(excelBytes);
     }
 
 }
