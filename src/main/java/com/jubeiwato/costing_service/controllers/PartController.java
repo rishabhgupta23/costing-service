@@ -11,13 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.jubeiwato.costing_service.constants.AppConstants;
-import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
-import com.jubeiwato.costing_service.dtos.CostFactorDto;
-import com.jubeiwato.costing_service.dtos.PartDataDto;
-import com.jubeiwato.costing_service.dtos.PartDto;
-import com.jubeiwato.costing_service.dtos.PartRequestDto;
-import com.jubeiwato.costing_service.dtos.PartUnitDto;
 import com.jubeiwato.costing_service.services.PartService;
+import io.jsonwebtoken.io.IOException;
 
 
 @CrossOrigin
@@ -100,5 +95,14 @@ public class PartController {
         GeneralResponseDto response = new GeneralResponseDto("Part deleted successfully", HttpStatus.OK.value());
         return ResponseEntity.ok(response);
     }
-
+    @GetMapping("/export")
+    public ResponseEntity<FileResponseDto> exportPartsToExcel() throws IOException{
+        try {
+            FileResponseDto fileResponse = partService.exportPartsToExcel();
+            return ResponseEntity.ok(fileResponse);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new FileResponseDto(null, "Error generating Excel file"));
+        }
+    }
 }

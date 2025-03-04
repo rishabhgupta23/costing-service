@@ -92,6 +92,12 @@
 			<artifactId>liquibase-core</artifactId>
 			<version>4.30.0</version>
 		</dependency>
+		<!--Import Excel-->
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi-ooxml</artifactId>
+			<version>5.2.3</version>
+		</dependency>
 
 	</dependencies>
 
