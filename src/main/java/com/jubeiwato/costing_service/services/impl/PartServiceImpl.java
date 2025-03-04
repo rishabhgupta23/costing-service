@@ -360,4 +360,31 @@ public class PartServiceImpl implements PartService {
         }
         partRepository.delete(part);
     }
+
+    @Override
+    public CostHistoryResponseDto getPartCostsByPartAndVendor(Long partId, Long vendorId) {
+        List<PartCost> partCosts = partCostRepository.findByPartIdAndVendorIdOrderByUpdatedDateTimeDesc(partId, vendorId);
+
+        List<CostHistoryDto> costHistoryList = partCosts.stream().map(partCost -> {
+            List<CostFactorValueDto> costFactorValueList = partCost.getCostFactorList().stream()
+                    .map(partCostFactor -> new CostFactorValueDto(
+                            partCostFactor.getCostFactor().getFactorId(),
+                            partCostFactor.getCostFactor().getFactorName(),
+                            partCostFactor.getValue()
+                    ))
+                    .toList();
+
+            return CostHistoryDto.builder()
+                    .costFactorValueList(costFactorValueList)
+                    .updatedDateTime(partCost.getUpdatedDateTime())
+                    .build();
+        }).toList();
+
+        return CostHistoryResponseDto.builder()
+                .partId(partId)
+                .vendorId(vendorId)
+                .costHistoryList(costHistoryList)
+                .build();
+    }
+
 }

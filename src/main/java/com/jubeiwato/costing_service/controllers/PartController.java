@@ -73,7 +73,14 @@ public class PartController {
     public ResponseEntity<ApiPageResponseDto<List<CostFactorDto>>> getCostFactors(@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNo,@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int pageSize) {
        ApiPageResponseDto<List<CostFactorDto>> response = partService.getCostFactors(pageNo, pageSize);
        return new ResponseEntity<>(response, HttpStatus.OK);
-}
+    }
+
+    @GetMapping("/cost-history")
+    public CostHistoryResponseDto getPartCostsByPartAndVendor(
+            @RequestParam Long partId,
+            @RequestParam Long vendorId) {
+        return partService.getPartCostsByPartAndVendor(partId, vendorId);
+    }
 
     @GetMapping("/{partId}")
     public ResponseEntity<PartDto> getPartById(@PathVariable Long partId) {
@@ -100,5 +107,6 @@ public class PartController {
         GeneralResponseDto response = new GeneralResponseDto("Part deleted successfully", HttpStatus.OK.value());
         return ResponseEntity.ok(response);
     }
+
 
 }

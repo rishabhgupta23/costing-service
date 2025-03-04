@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CostFactorDto {
+public class  CostFactorDto {
     private Long id;
     private String name;
 
