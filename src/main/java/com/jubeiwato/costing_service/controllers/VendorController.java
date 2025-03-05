@@ -1,6 +1,8 @@
 package com.jubeiwato.costing_service.controllers;
 
+import com.jubeiwato.costing_service.constants.DateFormat;
 import com.jubeiwato.costing_service.constants.Sorting;
+import com.jubeiwato.costing_service.constants.SpreadsheetExtention;
 import com.jubeiwato.costing_service.dtos.*;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -54,17 +56,17 @@ public class VendorController {
     }
 
     @GetMapping("/download")
-    public ResponseEntity<FileResponseDto> downloadExcel() throws IOException {
+    public ResponseEntity<FileResponseDto> downloadVendorListData() throws IOException {
         byte[] excelBytes = vendorService.downloadVendorExcel();
 
         String base64Excel = Base64.getEncoder().encodeToString(excelBytes);
 
-        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-        String filename = "vendorList_" + timestamp + ".xlsx";
+        String timestamp = new SimpleDateFormat(DateFormat.yyyyMMdd_HHmmss.getFormat()).format(new Date());
+        String filename = "vendorList_" + timestamp + "."+SpreadsheetExtention.xlsx.getValue();
 
         FileResponseDto responseDto = FileResponseDto.builder()
-                .data(base64Excel)
-                .filename(filename)
+                .fileData(base64Excel)
+                .fileName(filename)
                 .build();
 
         return ResponseEntity.ok()
