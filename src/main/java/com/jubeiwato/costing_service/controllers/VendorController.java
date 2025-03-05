@@ -2,7 +2,7 @@ package com.jubeiwato.costing_service.controllers;
 
 import com.jubeiwato.costing_service.constants.DateFormat;
 import com.jubeiwato.costing_service.constants.Sorting;
-import com.jubeiwato.costing_service.constants.SpreadsheetExtention;
+import com.jubeiwato.costing_service.constants.FileExtension;
 import com.jubeiwato.costing_service.dtos.*;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -62,7 +62,7 @@ public class VendorController {
         String base64Excel = Base64.getEncoder().encodeToString(excelBytes);
 
         String timestamp = new SimpleDateFormat(DateFormat.yyyyMMdd_HHmmss.getFormat()).format(new Date());
-        String filename = "vendorList_" + timestamp + "."+SpreadsheetExtention.xlsx.getValue();
+        String filename = "vendorList_" + timestamp + "."+ FileExtension.SPREADSHEET.getValue();
 
         FileResponseDto responseDto = FileResponseDto.builder()
                 .fileData(base64Excel)
