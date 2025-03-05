@@ -2,15 +2,13 @@ package com.jubeiwato.costing_service.dtos;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+
 import lombok.NoArgsConstructor;
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class FileResponseDto {
- 
-   private String fileData;
-   private String fileName;
+    String fileData;
+    String fileName;
 }

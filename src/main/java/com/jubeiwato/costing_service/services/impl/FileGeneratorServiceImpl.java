@@ -11,7 +11,7 @@ import java.util.List;
 
 @Service
 public class FileGeneratorServiceImpl implements FileGeneratorService {
-    public byte[] generateSpreadsheet(List<String[]> data, String[] headers) {
+    public byte[] generateSpreadsheet(List<String[]> data, String[] headers) throws IOException {
         Workbook workbook = new XSSFWorkbook();
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
@@ -48,14 +48,13 @@ public class FileGeneratorServiceImpl implements FileGeneratorService {
 
         } catch (IOException e) {
             e.printStackTrace();
-            return new byte[0];
-        } finally {
-            try {
-                workbook.close();
-                out.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            throw e;
+        } catch(Exception e){
+            throw e;
+        }
+        finally {
+            workbook.close();
+            out.close();
         }
     }
 }

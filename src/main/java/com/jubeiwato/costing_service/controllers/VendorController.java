@@ -1,19 +1,21 @@
 package com.jubeiwato.costing_service.controllers;
 
+import com.jubeiwato.costing_service.constants.DateFormat;
 import com.jubeiwato.costing_service.constants.Sorting;
+import com.jubeiwato.costing_service.constants.FileExtension;
+import com.jubeiwato.costing_service.dtos.*;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.jubeiwato.costing_service.constants.AppConstants;
-import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
-import com.jubeiwato.costing_service.dtos.GeneralResponseDto;
-import com.jubeiwato.costing_service.dtos.PartDto;
-import com.jubeiwato.costing_service.dtos.VendorDto;
 
 import com.jubeiwato.costing_service.services.VendorService;
 
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.text.SimpleDateFormat;
+import java.util.Base64;
+import java.util.Date;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -25,9 +27,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-
-
-
+import java.io.IOException;
 
 @CrossOrigin
 @RestController
@@ -37,11 +37,9 @@ public class VendorController {
     
     private final VendorService vendorService;
     
-    
 
     public VendorController(VendorService vendorService) {
         this.vendorService = vendorService;
-        
     }
 
     @GetMapping()
@@ -55,6 +53,24 @@ public class VendorController {
     ) {
             ApiPageResponseDto<List<VendorDto>> response = this.vendorService.getVendorList(name, address, emailId, contactNumber, pageNo, pageSize, sortColumn, sortMode);
             return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/download")
+    public ResponseEntity<FileResponseDto> downloadVendorListData() throws IOException {
+        byte[] excelBytes = vendorService.downloadVendorExcel();
+
+        String base64Excel = Base64.getEncoder().encodeToString(excelBytes);
+
+        String timestamp = new SimpleDateFormat(DateFormat.yyyyMMdd_HHmmss.getFormat()).format(new Date());
+        String filename = "vendorList_" + timestamp + "."+ FileExtension.SPREADSHEET.getValue();
+
+        FileResponseDto responseDto = FileResponseDto.builder()
+                .fileData(base64Excel)
+                .fileName(filename)
+                .build();
+
+        return ResponseEntity.ok()
+                .body(responseDto);
     }
 
     @GetMapping("/{id}")
