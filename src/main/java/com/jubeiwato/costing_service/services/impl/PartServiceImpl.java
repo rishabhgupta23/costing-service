@@ -31,6 +31,7 @@ import com.jubeiwato.costing_service.repositories.PartCostRepository;
 import com.jubeiwato.costing_service.repositories.PartRepository;
 import com.jubeiwato.costing_service.repositories.VendorRepository;
 import com.jubeiwato.costing_service.repositories.PartUnitRepository;
+import com.jubeiwato.costing_service.services.FileGeneratorService;
 import com.jubeiwato.costing_service.services.PartService;
 
 import java.io.IOException;
@@ -46,10 +47,10 @@ public class PartServiceImpl implements PartService {
     private PartCostRepository partCostRepository;
     private BomRepository bomRepository;
     private PartUnitRepository partUnitRepository;
-    private ExcelService excelService;
+    private FileGeneratorService excelService;
 
     public PartServiceImpl(PartRepository partRepository, CategoryRepository categoryRepository, VendorRepository vendorRepository
-            , CostFactorRepository costFactorRepository, PartCostRepository partCostRepository, BomRepository bomRepository,PartUnitRepository partUnitRepository, ExcelService excelService) {
+            , CostFactorRepository costFactorRepository, PartCostRepository partCostRepository, BomRepository bomRepository,PartUnitRepository partUnitRepository, FileGeneratorService excelService) {
         this.partRepository = partRepository;
         this.categoryRepository = categoryRepository;
         this.vendorRepository = vendorRepository;
@@ -365,7 +366,7 @@ public class PartServiceImpl implements PartService {
     }
 
     @Override
-    public FileResponseDto exportPartsToExcel() throws IOException {
+    public byte[] downloadPartsToExcel() throws IOException {
     
     List<Part> parts = partRepository.findAll();
 
@@ -390,14 +391,8 @@ public class PartServiceImpl implements PartService {
 
     String[] headers = {"Part ID", "Part Name", "Part Number", "Category", "Type", "Unit", "Vendor Names"};
 
-        byte[] excelBytes = excelService.generateExcel(partList, headers);
+       return  excelService.generateSpreadsheet(partList, headers);
 
-        String fileData = Base64.getEncoder().encodeToString(excelBytes);
-
-        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-        String fileName = "partList_" + timestamp + ".xlsx";
-
-        return new FileResponseDto(fileData, fileName);
 
 }
     
