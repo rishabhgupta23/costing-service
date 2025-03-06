@@ -1,5 +1,9 @@
 package com.jubeiwato.costing_service.controllers;
 
+import com.jubeiwato.costing_service.constants.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Base64;
+import java.util.Date;
 import java.util.List;
 
 import com.jubeiwato.costing_service.constants.PartType;
@@ -11,13 +15,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.jubeiwato.costing_service.constants.AppConstants;
-import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
-import com.jubeiwato.costing_service.dtos.CostFactorDto;
-import com.jubeiwato.costing_service.dtos.PartDataDto;
-import com.jubeiwato.costing_service.dtos.PartDto;
-import com.jubeiwato.costing_service.dtos.PartRequestDto;
-import com.jubeiwato.costing_service.dtos.PartUnitDto;
+import com.jubeiwato.costing_service.constants.FileExtension;
 import com.jubeiwato.costing_service.services.PartService;
+import java.io.IOException;
 
 
 @CrossOrigin
@@ -100,5 +100,21 @@ public class PartController {
         GeneralResponseDto response = new GeneralResponseDto("Part deleted successfully", HttpStatus.OK.value());
         return ResponseEntity.ok(response);
     }
+    @GetMapping("/download")
+    public ResponseEntity<FileResponseDto> exportPartsToExcel() throws IOException{
+        
+            byte[] fileResponse = partService.downloadPartsToExcel();
+            String base64Excel = Base64.getEncoder().encodeToString(fileResponse);
+            
+            String timestamp = new SimpleDateFormat(DateFormat.yyyyMMdd_HHmmss.getFormat()).format(new Date());
+            String filename = "partList_" + timestamp + "."+ FileExtension.SPREADSHEET.getValue();
+            
+            FileResponseDto responseDto = FileResponseDto.builder()
+                .fileData(base64Excel)
+                .fileName(filename)
+                .build();
 
+                return ResponseEntity.ok()
+                .body(responseDto);
+    }
 }

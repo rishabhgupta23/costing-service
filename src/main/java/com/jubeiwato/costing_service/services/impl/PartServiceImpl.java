@@ -13,7 +13,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
-
 import com.jubeiwato.costing_service.constants.PartType;
 import com.jubeiwato.costing_service.entities.PartUnit;
 import com.jubeiwato.costing_service.entities.Bom;
@@ -31,8 +30,10 @@ import com.jubeiwato.costing_service.repositories.PartCostRepository;
 import com.jubeiwato.costing_service.repositories.PartRepository;
 import com.jubeiwato.costing_service.repositories.VendorRepository;
 import com.jubeiwato.costing_service.repositories.PartUnitRepository;
+import com.jubeiwato.costing_service.services.FileGeneratorService;
 import com.jubeiwato.costing_service.services.PartService;
 
+import java.io.IOException;
 import jakarta.validation.Valid;
 
 @Service
@@ -45,9 +46,10 @@ public class PartServiceImpl implements PartService {
     private PartCostRepository partCostRepository;
     private BomRepository bomRepository;
     private PartUnitRepository partUnitRepository;
+    private FileGeneratorService excelService;
 
     public PartServiceImpl(PartRepository partRepository, CategoryRepository categoryRepository, VendorRepository vendorRepository
-            , CostFactorRepository costFactorRepository, PartCostRepository partCostRepository, BomRepository bomRepository,PartUnitRepository partUnitRepository) {
+            , CostFactorRepository costFactorRepository, PartCostRepository partCostRepository, BomRepository bomRepository,PartUnitRepository partUnitRepository, FileGeneratorService excelService) {
         this.partRepository = partRepository;
         this.categoryRepository = categoryRepository;
         this.vendorRepository = vendorRepository;
@@ -55,6 +57,7 @@ public class PartServiceImpl implements PartService {
         this.partCostRepository = partCostRepository;
         this.bomRepository = bomRepository;
         this.partUnitRepository=partUnitRepository;
+        this.excelService=excelService;
     }
 
     @Override
@@ -360,4 +363,36 @@ public class PartServiceImpl implements PartService {
         }
         partRepository.delete(part);
     }
+
+    @Override
+    public byte[] downloadPartsToExcel() throws IOException {
+    
+    List<Part> parts = partRepository.findAll();
+
+    List<String[]> partList = parts.stream()
+            .map(part -> {
+                Set<String> vendorNames = part.getPartCosts().stream()
+                        .map(PartCost::getVendor)
+                        .map(Vendor::getName)
+                        .collect(Collectors.toSet());
+
+                return new String[]{
+                        String.valueOf(part.getPartId()),
+                        part.getPartName(),
+                        part.getPartNumber(),
+                        part.getCategoryName(),
+                        part.getType().toString(),
+                        part.getUnit(),
+                        String.join(", ", vendorNames) 
+                };
+            })
+            .toList();
+
+    String[] headers = {"Part ID", "Part Name", "Part Number", "Category", "Type", "Unit", "Vendor Names"};
+
+       return  excelService.generateSpreadsheet(partList, headers);
+
+
+}
+    
 }

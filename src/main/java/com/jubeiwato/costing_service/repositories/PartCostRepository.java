@@ -1,13 +1,10 @@
 package com.jubeiwato.costing_service.repositories;
 
-import com.jubeiwato.costing_service.constants.PartType;
 import com.jubeiwato.costing_service.entities.Part;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.jubeiwato.costing_service.entities.PartCost;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;

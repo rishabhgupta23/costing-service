@@ -10,6 +10,7 @@ import com.jubeiwato.costing_service.dtos.PartDto;
 import com.jubeiwato.costing_service.dtos.PartRequestDto;
 import com.jubeiwato.costing_service.dtos.PartUnitDto;
 import com.jubeiwato.costing_service.entities.Part;
+import java.io.IOException;
 
 public interface PartService {
 
@@ -30,5 +31,6 @@ public interface PartService {
 
     void deletePartById(Long partId);
 
+    byte[] downloadPartsToExcel() throws IOException;
 
 }
