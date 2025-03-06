@@ -1,8 +1,10 @@
 package com.jubeiwato.costing_service.services.impl;
 
+import java.io.IOException;
 import java.util.List;
 
 import com.jubeiwato.costing_service.constants.Sorting;
+import com.jubeiwato.costing_service.services.FileGeneratorService;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -27,10 +29,14 @@ public class VendorServiceImpl implements VendorService {
 
     private final VendorRepository vendorRepository;
     private final PartRepository partRepository;
-    
-    public VendorServiceImpl(VendorRepository vendorRepository,PartRepository partRepository) {
+
+    private final FileGeneratorService excelService;
+
+
+    public VendorServiceImpl(VendorRepository vendorRepository,PartRepository partRepository, FileGeneratorService excelService) {
         this.vendorRepository = vendorRepository;
         this.partRepository= partRepository;
+        this.excelService = excelService;
          }
 
     @Override
@@ -99,25 +105,45 @@ public class VendorServiceImpl implements VendorService {
     
     @Override
     public ApiPageResponseDto<List<PartDto>> getVendorParts(Long vendorId, int pageNo, int pageSize) {
-    PageRequest pageable = PageRequest.of(pageNo, pageSize);
-    Page<Part> partVendorList = partRepository.getVendorParts(vendorId, pageable);
+        PageRequest pageable = PageRequest.of(pageNo, pageSize);
+        Page<Part> partVendorList = partRepository.getVendorParts(vendorId, pageable);
 
-    List<PartDto> partDtos = partVendorList.getContent().stream()
-        .map(PartDto::enitityToDto)
-        .toList();
+        List<PartDto> partDtos = partVendorList.getContent().stream()
+            .map(PartDto::enitityToDto)
+            .toList();
 
-    PageInfoDto pageInfo = PageInfoDto.builder()
-        .totalPages(partVendorList.getTotalPages())
-        .pageNumber(pageNo)
-        .pageSize(pageSize)
-        .totalRecords(partVendorList.getTotalElements())
-        .build();
+        PageInfoDto pageInfo = PageInfoDto.builder()
+            .totalPages(partVendorList.getTotalPages())
+            .pageNumber(pageNo)
+            .pageSize(pageSize)
+            .totalRecords(partVendorList.getTotalElements())
+            .build();
 
-        return ApiPageResponseDto.<List<PartDto>>builder()
-        .data(partDtos)
-        .pageInfo(pageInfo)
-        .build();
-}
+            return ApiPageResponseDto.<List<PartDto>>builder()
+            .data(partDtos)
+            .pageInfo(pageInfo)
+            .build();
+    }
+
+    @Override
+    public byte[] downloadVendorExcel() throws IOException {
+        List<Vendor> vendors = vendorRepository.findAll();
+
+        String[] headers = {"ID", "Name", "Email", "Address", "Contact Number"};
+
+        //data in String[] is in same order as respective headers
+        List<String[]> data = vendors.stream()
+                .map(vendor -> new String[]{
+                        String.valueOf(vendor.getVendorId()),
+                        vendor.getName(),
+                        vendor.getEmailId(),
+                        vendor.getAddress(),
+                        vendor.getContactNumber()
+                })
+                .toList();
+
+        return excelService.generateSpreadsheet(data, headers);
+    }
     
 
 }

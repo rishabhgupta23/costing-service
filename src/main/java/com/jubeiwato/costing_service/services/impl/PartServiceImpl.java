@@ -6,6 +6,7 @@ import java.util.function.Function;
 
 import com.jubeiwato.costing_service.constants.Sorting;
 import com.jubeiwato.costing_service.dtos.*;
+import com.jubeiwato.costing_service.services.FileGeneratorService;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -33,6 +34,7 @@ import com.jubeiwato.costing_service.repositories.VendorRepository;
 import com.jubeiwato.costing_service.repositories.PartUnitRepository;
 import com.jubeiwato.costing_service.services.PartService;
 
+import java.io.IOException;
 import jakarta.validation.Valid;
 
 @Service
@@ -45,9 +47,10 @@ public class PartServiceImpl implements PartService {
     private PartCostRepository partCostRepository;
     private BomRepository bomRepository;
     private PartUnitRepository partUnitRepository;
+    private FileGeneratorService excelService;
 
     public PartServiceImpl(PartRepository partRepository, CategoryRepository categoryRepository, VendorRepository vendorRepository
-            , CostFactorRepository costFactorRepository, PartCostRepository partCostRepository, BomRepository bomRepository,PartUnitRepository partUnitRepository) {
+            , CostFactorRepository costFactorRepository, PartCostRepository partCostRepository, BomRepository bomRepository,PartUnitRepository partUnitRepository, FileGeneratorService excelService) {
         this.partRepository = partRepository;
         this.categoryRepository = categoryRepository;
         this.vendorRepository = vendorRepository;
@@ -55,6 +58,7 @@ public class PartServiceImpl implements PartService {
         this.partCostRepository = partCostRepository;
         this.bomRepository = bomRepository;
         this.partUnitRepository=partUnitRepository;
+        this.excelService=excelService;
     }
 
     @Override
@@ -388,5 +392,37 @@ public class PartServiceImpl implements PartService {
                 .costHistoryList(costHistoryList)
                 .build();
     }
+
+
+    @Override
+    public byte[] downloadPartsToExcel() throws IOException {
+
+    List<Part> parts = partRepository.findAll();
+
+    List<String[]> partList = parts.stream()
+            .map(part -> {
+                Set<String> vendorNames = part.getPartCosts().stream()
+                        .map(PartCost::getVendor)
+                        .map(Vendor::getName)
+                        .collect(Collectors.toSet());
+
+                return new String[]{
+                        String.valueOf(part.getPartId()),
+                        part.getPartName(),
+                        part.getPartNumber(),
+                        part.getCategoryName(),
+                        part.getType().toString(),
+                        part.getUnit(),
+                        String.join(", ", vendorNames)
+                };
+            })
+            .toList();
+
+    String[] headers = {"Part ID", "Part Name", "Part Number", "Category", "Type", "Unit", "Vendor Names"};
+
+       return  excelService.generateSpreadsheet(partList, headers);
+
+
+}
 
 }

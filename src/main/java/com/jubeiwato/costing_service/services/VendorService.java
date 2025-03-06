@@ -6,6 +6,7 @@ import com.jubeiwato.costing_service.constants.Sorting;
 import com.jubeiwato.costing_service.dtos.PartDto;
 import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
 import com.jubeiwato.costing_service.dtos.VendorDto;
+import java.io.IOException;
 
 public interface VendorService {
     void createVendor(String name, String emailId, String contactNumber, String address);
@@ -19,5 +20,6 @@ public interface VendorService {
     void deleteVendorById(Long id);
 
     ApiPageResponseDto<List<PartDto>> getVendorParts(Long vendorId,int pageNo, int pageSize);
+    byte[] downloadVendorExcel() throws IOException;
     
 }
