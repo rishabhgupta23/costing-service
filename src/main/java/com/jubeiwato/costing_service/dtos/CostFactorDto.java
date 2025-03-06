@@ -14,11 +14,13 @@ import lombok.NoArgsConstructor;
 public class  CostFactorDto {
     private Long id;
     private String name;
+    private Double value;
 
-    public static CostFactorDto entityToDto(CostFactor costFactor) {
+    public static CostFactorDto entityToDto(CostFactor costFactor,Double value) {
         return CostFactorDto.builder()
         .id(costFactor.getFactorId())
         .name(costFactor.getFactorName())
+                .value(value)
         .build();
     }
 }

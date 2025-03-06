@@ -22,7 +22,7 @@ public interface PartCostRepository extends JpaRepository<PartCost, Long> {
     List<PartCost> findByPartId(@Param("partId") Long partId);
 
     @Query("SELECT pc FROM PartCost pc WHERE pc.part.partId = :partId AND pc.vendor.vendorId = :vendorId ORDER BY pc.updatedDateTime DESC")
-    List<PartCost> findByPartIdAndVendorIdOrderByUpdatedDateTimeDesc(@Param("partId") Long partId, @Param("vendorId") Long vendorId);
+    List<PartCost> fetchByPartIdAndVendorId(@Param("partId") Long partId, @Param("vendorId") Long vendorId);
 
 
     @Query(value = "SELECT MAX(vendor_count) FROM " +"(SELECT COUNT(DISTINCT vendor_id) AS vendor_count " +

@@ -159,7 +159,10 @@ public class PartServiceImpl implements PartService {
 
         List<CostFactorDto> costFactorDtos = costFactorPage.getContent()
                 .stream()
-                .map(CostFactorDto::entityToDto)
+                .map(costFactor -> CostFactorDto.builder()
+                        .id(costFactor.getFactorId())
+                        .name(costFactor.getFactorName())
+                        .build())
                 .toList();
 
         PageInfoDto pageInfo = PageInfoDto.builder()
@@ -272,8 +275,8 @@ public class PartServiceImpl implements PartService {
             PartCost partCost = entry.getValue();
 
             // Extract cost factor values for the vendor
-            List<CostFactorValueDto> costFactorValues = partCost.getCostFactorList().stream()
-                    .map(pc -> new CostFactorValueDto(
+            List<CostFactorDto> costFactorValues = partCost.getCostFactorList().stream()
+                    .map(pc -> new CostFactorDto(
                             pc.getCostFactor().getFactorId(),
                             pc.getCostFactor().getFactorName(),
                             pc.getValue()
@@ -363,19 +366,18 @@ public class PartServiceImpl implements PartService {
 
     @Override
     public CostHistoryResponseDto getPartCostsByPartAndVendor(Long partId, Long vendorId) {
-        List<PartCost> partCosts = partCostRepository.findByPartIdAndVendorIdOrderByUpdatedDateTimeDesc(partId, vendorId);
+        List<PartCost> partCosts = partCostRepository.fetchByPartIdAndVendorId(partId, vendorId);
 
         List<CostHistoryDto> costHistoryList = partCosts.stream().map(partCost -> {
-            List<CostFactorValueDto> costFactorValueList = partCost.getCostFactorList().stream()
-                    .map(partCostFactor -> new CostFactorValueDto(
-                            partCostFactor.getCostFactor().getFactorId(),
-                            partCostFactor.getCostFactor().getFactorName(),
+            List<CostFactorDto> costFactorList = partCost.getCostFactorList().stream()
+                    .map(partCostFactor -> CostFactorDto.entityToDto(
+                            partCostFactor.getCostFactor(),
                             partCostFactor.getValue()
                     ))
                     .toList();
 
             return CostHistoryDto.builder()
-                    .costFactorValueList(costFactorValueList)
+                    .costFactorList(costFactorList)
                     .updatedDateTime(partCost.getUpdatedDateTime())
                     .build();
         }).toList();

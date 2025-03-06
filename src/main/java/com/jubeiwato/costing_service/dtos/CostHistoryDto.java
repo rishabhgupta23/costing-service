@@ -13,7 +13,8 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class CostHistoryDto {
-    private List<CostFactorValueDto> costFactorValueList;
+    private List<CostFactorDto> costFactorList;
     private LocalDateTime updatedDateTime;
+
 }
 
