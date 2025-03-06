@@ -1,6 +1,5 @@
 package com.jubeiwato.costing_service.services.impl;
 
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.function.Function;
@@ -384,7 +383,7 @@ public class PartServiceImpl implements PartService {
                         part.getCategoryName(),
                         part.getType().toString(),
                         part.getUnit(),
-                        String.join(", ", vendorNames) // Join vendor names into a single string
+                        String.join(", ", vendorNames) 
                 };
             })
             .toList();

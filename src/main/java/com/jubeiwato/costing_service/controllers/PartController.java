@@ -1,5 +1,9 @@
 package com.jubeiwato.costing_service.controllers;
 
+import com.jubeiwato.costing_service.constants.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Base64;
+import java.util.Date;
 import java.util.List;
 
 import com.jubeiwato.costing_service.constants.PartType;
@@ -11,8 +15,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.jubeiwato.costing_service.constants.AppConstants;
+import com.jubeiwato.costing_service.constants.FileExtension;
 import com.jubeiwato.costing_service.services.PartService;
-import io.jsonwebtoken.io.IOException;
+import java.io.IOException;
 
 
 @CrossOrigin
@@ -97,12 +102,19 @@ public class PartController {
     }
     @GetMapping("/export")
     public ResponseEntity<FileResponseDto> exportPartsToExcel() throws IOException{
-        try {
-            FileResponseDto fileResponse = partService.exportPartsToExcel();
-            return ResponseEntity.ok(fileResponse);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new FileResponseDto(null, "Error generating Excel file"));
-        }
+        
+            byte[] fileResponse = partService.downloadPartsToExcel();
+            String base64Excel = Base64.getEncoder().encodeToString(fileResponse);
+            
+            String timestamp = new SimpleDateFormat(DateFormat.yyyyMMdd_HHmmss.getFormat()).format(new Date());
+            String filename = "partList_" + timestamp + "."+ FileExtension.SPREADSHEET.getValue();
+            
+            FileResponseDto responseDto = FileResponseDto.builder()
+                .fileData(base64Excel)
+                .fileName(filename)
+                .build();
+
+                return ResponseEntity.ok()
+                .body(responseDto);
     }
 }

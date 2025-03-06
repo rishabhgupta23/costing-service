@@ -5,7 +5,6 @@ import java.util.List;
 import com.jubeiwato.costing_service.constants.Sorting;
 import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
 import com.jubeiwato.costing_service.dtos.CostFactorDto;
-import com.jubeiwato.costing_service.dtos.FileResponseDto;
 import com.jubeiwato.costing_service.dtos.PartDataDto;
 import com.jubeiwato.costing_service.dtos.PartDto;
 import com.jubeiwato.costing_service.dtos.PartRequestDto;
@@ -32,6 +31,6 @@ public interface PartService {
 
     void deletePartById(Long partId);
 
-    FileResponseDto exportPartsToExcel() throws IOException;
+    byte[] downloadPartsToExcel() throws IOException;
 
 }
