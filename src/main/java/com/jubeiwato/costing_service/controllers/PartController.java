@@ -100,7 +100,7 @@ public class PartController {
         GeneralResponseDto response = new GeneralResponseDto("Part deleted successfully", HttpStatus.OK.value());
         return ResponseEntity.ok(response);
     }
-    @GetMapping("/export")
+    @GetMapping("/download")
     public ResponseEntity<FileResponseDto> exportPartsToExcel() throws IOException{
         
             byte[] fileResponse = partService.downloadPartsToExcel();
