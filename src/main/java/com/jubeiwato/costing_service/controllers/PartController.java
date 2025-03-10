@@ -115,9 +115,10 @@ public class PartController {
     }
 
     @GetMapping("/cost-history")
-    public CostHistoryResponseDto getPartCostsByPartAndVendor(
+    public ResponseEntity<CostHistoryResponseDto> getPartCostsByPartAndVendor(
             @RequestParam Long partId,
             @RequestParam Long vendorId) {
-        return partService.getPartCostsByPartAndVendor(partId, vendorId);
+        CostHistoryResponseDto response = partService.getPartCostsByPartAndVendor(partId, vendorId);
+        return ResponseEntity.ok(response);
     }
 }
