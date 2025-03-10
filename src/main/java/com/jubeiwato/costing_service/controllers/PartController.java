@@ -119,4 +119,12 @@ public class PartController {
     FileResponseDto responseDto = partService.downloadBomPartListToExcel(parentPartId);
     return ResponseEntity.ok().body(responseDto);
     }
+
+    @GetMapping("/cost-history")
+    public ResponseEntity<CostHistoryResponseDto> getPartCostsByPartAndVendor(
+            @RequestParam Long partId,
+            @RequestParam Long vendorId) {
+        CostHistoryResponseDto response = partService.getPartCostsByPartAndVendor(partId, vendorId);
+        return ResponseEntity.ok(response);
+    }
 }
