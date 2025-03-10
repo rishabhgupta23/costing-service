@@ -113,4 +113,12 @@ public class PartController {
                 return ResponseEntity.ok()
                 .body(responseDto);
     }
+
+    @GetMapping("/cost-history")
+    public ResponseEntity<CostHistoryResponseDto> getPartCostsByPartAndVendor(
+            @RequestParam Long partId,
+            @RequestParam Long vendorId) {
+        CostHistoryResponseDto response = partService.getPartCostsByPartAndVendor(partId, vendorId);
+        return ResponseEntity.ok(response);
+    }
 }
