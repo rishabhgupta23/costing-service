@@ -6,6 +6,7 @@ import java.util.function.Function;
 
 import com.jubeiwato.costing_service.constants.Sorting;
 import com.jubeiwato.costing_service.dtos.*;
+import com.jubeiwato.costing_service.services.FileGeneratorService;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -32,7 +33,6 @@ import com.jubeiwato.costing_service.repositories.PartCostRepository;
 import com.jubeiwato.costing_service.repositories.PartRepository;
 import com.jubeiwato.costing_service.repositories.VendorRepository;
 import com.jubeiwato.costing_service.repositories.PartUnitRepository;
-import com.jubeiwato.costing_service.services.FileGeneratorService;
 import com.jubeiwato.costing_service.services.PartService;
 
 import java.io.IOException;
@@ -166,7 +166,10 @@ public class PartServiceImpl implements PartService {
 
         List<CostFactorDto> costFactorDtos = costFactorPage.getContent()
                 .stream()
-                .map(CostFactorDto::entityToDto)
+                .map(costFactor -> CostFactorDto.builder()
+                        .id(costFactor.getFactorId())
+                        .name(costFactor.getFactorName())
+                        .build())
                 .toList();
 
         PageInfoDto pageInfo = PageInfoDto.builder()
@@ -279,8 +282,8 @@ public class PartServiceImpl implements PartService {
             PartCost partCost = entry.getValue();
 
             // Extract cost factor values for the vendor
-            List<CostFactorValueDto> costFactorValues = partCost.getCostFactorList().stream()
-                    .map(pc -> new CostFactorValueDto(
+            List<CostFactorDto> costFactorValues = partCost.getCostFactorList().stream()
+                    .map(pc -> new CostFactorDto(
                             pc.getCostFactor().getFactorId(),
                             pc.getCostFactor().getFactorName(),
                             pc.getValue()
@@ -369,8 +372,34 @@ public class PartServiceImpl implements PartService {
     }
 
     @Override
+    public CostHistoryResponseDto getPartCostsByPartAndVendor(Long partId, Long vendorId) {
+        List<PartCost> partCosts = partCostRepository.fetchByPartIdAndVendorId(partId, vendorId);
+
+        List<CostHistoryDto> costHistoryList = partCosts.stream().map(partCost -> {
+            List<CostFactorDto> costFactorList = partCost.getCostFactorList().stream()
+                    .map(partCostFactor -> CostFactorDto.entityToDto(
+                            partCostFactor.getCostFactor(),
+                            partCostFactor.getValue()
+                    ))
+                    .toList();
+
+            return CostHistoryDto.builder()
+                    .costFactorList(costFactorList)
+                    .updatedDateTime(partCost.getUpdatedDateTime())
+                    .build();
+        }).toList();
+
+        return CostHistoryResponseDto.builder()
+                .partId(partId)
+                .vendorId(vendorId)
+                .costHistoryList(costHistoryList)
+                .build();
+    }
+
+
+    @Override
     public byte[] downloadPartsToExcel() throws IOException {
-    
+
     List<Part> parts = partRepository.findAll();
 
     List<String[]> partList = parts.stream()
@@ -387,7 +416,7 @@ public class PartServiceImpl implements PartService {
                         part.getCategoryName(),
                         part.getType().toString(),
                         part.getUnit(),
-                        String.join(", ", vendorNames) 
+                        String.join(", ", vendorNames)
                 };
             })
             .toList();

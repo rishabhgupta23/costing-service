@@ -11,10 +11,10 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class VendorCostDto extends VendorDto{
-    List<CostFactorValueDto> costFactorValues;
+    List<CostFactorDto> costFactorValues;
 
     @Builder(builderMethodName = "superBuilder")
-    public VendorCostDto(Long id, String name, String address, String emailId, String contactNumber, List<CostFactorValueDto> costFactorValues) {
+    public VendorCostDto(Long id, String name, String address, String emailId, String contactNumber, List<CostFactorDto> costFactorValues) {
         super(id, name, address, emailId, contactNumber);
         this.costFactorValues = costFactorValues;
     }
