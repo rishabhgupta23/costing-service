@@ -118,7 +118,7 @@ public class PartController {
                 .body(responseDto);
     }
 
-    @GetMapping("/bom/{parentPartId}")
+    @GetMapping("/bom/{parentPartId}/download")
     public ResponseEntity<FileResponseDto> exportBomPartListToExcel(@PathVariable Long parentPartId) throws IOException {
     FileResponseDto responseDto = partService.downloadBomPartListToExcel(parentPartId);
     return ResponseEntity.ok().body(responseDto);
