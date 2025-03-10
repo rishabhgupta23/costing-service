@@ -13,6 +13,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import com.jubeiwato.costing_service.constants.DateFormat;
+import com.jubeiwato.costing_service.constants.FileExtension;
 import com.jubeiwato.costing_service.constants.PartType;
 import com.jubeiwato.costing_service.entities.PartUnit;
 import com.jubeiwato.costing_service.entities.Bom;
@@ -34,6 +36,8 @@ import com.jubeiwato.costing_service.services.FileGeneratorService;
 import com.jubeiwato.costing_service.services.PartService;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+
 import jakarta.validation.Valid;
 
 @Service
@@ -394,5 +398,34 @@ public class PartServiceImpl implements PartService {
 
 
 }
-    
+    @Override
+    public FileResponseDto downloadBomPartListToExcel(Long parentPartId) throws IOException {
+
+    List<Bom> bomList = bomRepository.findByParentPart_PartId(parentPartId);
+
+    String parentPartNumber = bomList.get(0).getParentPart().getPartNumber();
+
+    List<String[]> bomData = bomList.stream()
+            .map(bom -> new String[]{
+                    bom.getChildPart().getPartNumber(),
+                    bom.getChildPart().getPartName(),
+                    String.valueOf(bom.getQuantity())
+            })
+            .toList();
+    String[] headers = { "Child Part Number", "Child Part Name", "Quantity" };
+
+    byte[] fileResponse = excelService.generateSpreadsheet(bomData, headers);
+
+    String base64Excel = Base64.getEncoder().encodeToString(fileResponse);
+
+    String timestamp = new SimpleDateFormat(DateFormat.yyyyMMdd_HHmmss.getFormat()).format(new Date());
+    String filename = parentPartNumber + "_Bom_" + timestamp + "." + FileExtension.SPREADSHEET.getValue();
+
+    return FileResponseDto.builder()
+            .fileData(base64Excel)
+            .fileName(filename)
+            .build();
+  }            
+
 }
+    
