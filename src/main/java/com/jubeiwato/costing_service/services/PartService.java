@@ -29,4 +29,5 @@ public interface PartService {
     public CostHistoryResponseDto getPartCostsByPartAndVendor(Long partId, Long vendorId);
     byte[] downloadPartsToExcel() throws IOException;
 
+    FileResponseDto downloadBomPartListToExcel(Long parentPartId) throws IOException;
 }
