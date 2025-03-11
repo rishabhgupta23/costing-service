@@ -1,4 +1,6 @@
 package com.jubeiwato.costing_service.constants;
+import org.springframework.http.HttpStatus;
+import com.jubeiwato.costing_service.configue.AppException;
 
 public enum PriceMode {
     MIN, MAX, AVG;
@@ -9,6 +11,6 @@ public enum PriceMode {
                 return priceMode;
             }
         }
-        throw new IllegalArgumentException("Invalid price mode. Choose from MIN, MAX, AVG.");
+        throw new AppException("Invalid price mode. Choose from MIN, MAX, AVG.", HttpStatus.BAD_REQUEST);
     }
 }

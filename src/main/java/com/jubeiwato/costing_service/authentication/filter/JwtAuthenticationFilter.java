@@ -1,20 +1,20 @@
 package com.jubeiwato.costing_service.authentication.filter;
 
 import com.jubeiwato.costing_service.authentication.service.JwtService;
+import com.jubeiwato.costing_service.configue.AppException;
 import com.jubeiwato.costing_service.entities.User;
-import com.jubeiwato.costing_service.exceptions.NotFoundException;
 import com.jubeiwato.costing_service.repositories.UserRepository;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -55,7 +55,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             if (userEmail != null && authentication == null) {
                 User user = userRepository.findByEmailId(userEmail)
-                            .orElseThrow(() -> new NotFoundException("User does not exist"));
+                            .orElseThrow(() -> new AppException("User does not exist", HttpStatus.NOT_FOUND));
                 // this.userDetailsService.loadUserByUsername(userEmail);
 
                 if (jwtService.isTokenValid(jwt, user)) {

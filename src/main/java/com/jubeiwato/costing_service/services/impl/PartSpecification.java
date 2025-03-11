@@ -1,8 +1,10 @@
 package com.jubeiwato.costing_service.services.impl;
 
+import com.jubeiwato.costing_service.configue.AppException;
 import com.jubeiwato.costing_service.entities.Part;
 import jakarta.persistence.criteria.*;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.HttpStatus;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +28,7 @@ public class PartSpecification implements Specification<Part> {
                 !isValidInput(filter.getPartNumber()) ||
                 !isValidInput(filter.getCategoryName()) ||
                 !isValidInput(filter.getUnit())) {
-            throw new IllegalArgumentException("Invalid input: Prohibited characters detected.");
+            throw new AppException("Invalid input: Prohibited characters detected.", HttpStatus.BAD_REQUEST);
         }
 
         if (filter.getPartName() != null && !filter.getPartName().isEmpty()) {
