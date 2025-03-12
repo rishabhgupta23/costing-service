@@ -1,6 +1,5 @@
 package com.jubeiwato.costing_service.authentication.config;
 
-import com.jubeiwato.costing_service.configue.AppException;
 import com.jubeiwato.costing_service.repositories.UserRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,7 +23,7 @@ public class AppConfig {
     @Bean
     UserDetailsService userDetailsService(){
         return username -> userRepository.findByEmailId(username)
-                .orElseThrow(()->  new AppException("User does not exist", HttpStatus.NOT_FOUND));
+                .orElseThrow(()->  new AppException("User does not exist", HttpStatus.UNAUTHORIZED));
     }
 
     @Bean

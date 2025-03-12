@@ -1,7 +1,9 @@
 package com.jubeiwato.costing_service.authentication.filter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jubeiwato.costing_service.authentication.config.AppException;
 import com.jubeiwato.costing_service.authentication.service.JwtService;
-import com.jubeiwato.costing_service.configue.AppException;
+import com.jubeiwato.costing_service.dtos.ErrorResponseDto;
 import com.jubeiwato.costing_service.entities.User;
 import com.jubeiwato.costing_service.repositories.UserRepository;
 
@@ -55,7 +57,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             if (userEmail != null && authentication == null) {
                 User user = userRepository.findByEmailId(userEmail)
-                            .orElseThrow(() -> new AppException("User does not exist", HttpStatus.NOT_FOUND));
+                            .orElseThrow(() -> new AppException("User does not exist", HttpStatus.UNAUTHORIZED));
                 // this.userDetailsService.loadUserByUsername(userEmail);
 
                 if (jwtService.isTokenValid(jwt, user)) {
@@ -72,6 +74,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             filterChain.doFilter(request, response);
         } catch (Exception exception) {
+            
+            if (exception instanceof io.jsonwebtoken.ExpiredJwtException) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json");
+                ErrorResponseDto errorResponse = ErrorResponseDto.of("JWT token has expired", HttpStatus.UNAUTHORIZED);
+        
+                String jsonResponse = new ObjectMapper().writeValueAsString(errorResponse);
+                
+                response.getWriter().write(jsonResponse);
+                response.getWriter().flush();
+                return;
+            }
             exception.printStackTrace();
             handlerExceptionResolver.resolveException(request, response, null, exception);
         }

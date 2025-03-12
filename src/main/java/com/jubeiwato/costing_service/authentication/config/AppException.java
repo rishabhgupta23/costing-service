@@ -1,4 +1,4 @@
-package com.jubeiwato.costing_service.configue;
+package com.jubeiwato.costing_service.authentication.config;
 
 import org.springframework.http.HttpStatus;
 
