@@ -17,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import com.jubeiwato.costing_service.authentication.config.AppException;
 import com.jubeiwato.costing_service.constants.DateFormat;
+import com.jubeiwato.costing_service.constants.ErrorMessageConstant;
 import com.jubeiwato.costing_service.constants.FileExtension;
 import com.jubeiwato.costing_service.constants.PartType;
 import com.jubeiwato.costing_service.entities.PartUnit;
@@ -106,7 +107,7 @@ public class PartServiceImpl implements PartService {
 
         if(request.getType().equalsIgnoreCase(PartType.MASTER.name()) && request.getBom() != null && !request.getBom().isEmpty()) {
             List<Bom> bomList = request.getBom().stream().map(bomDto -> {
-                Part childPart = partRepository.findById(bomDto.getChildPartId()).orElseThrow(() -> new  AppException("Invalid Child Part ID", HttpStatus.BAD_REQUEST));
+                Part childPart = partRepository.findById(bomDto.getChildPartId()).orElseThrow(() -> new  AppException(ErrorMessageConstant.INVALID_CHILD_PART_ID, HttpStatus.BAD_REQUEST));
                 return new Bom(part, childPart, bomDto.getQuantity());
             }).toList();
             bomRepository.saveAll(bomList);
@@ -115,15 +116,15 @@ public class PartServiceImpl implements PartService {
 
     private void validateCreatePartRequest(PartRequestDto request) {
         if(request.getCategoryId() != null) {
-            categoryRepository.findById(request.getCategoryId()).orElseThrow(() -> new AppException("Invalid Category ID", HttpStatus.BAD_REQUEST));
+            categoryRepository.findById(request.getCategoryId()).orElseThrow(() -> new AppException(ErrorMessageConstant.INVALID_CATEGORY_ID, HttpStatus.BAD_REQUEST));
         }
 
         PartType.valueOf(request.getType());
         if (request.getUnit() == null || request.getUnit().isEmpty()) {
-            throw new AppException("Unit cannot be null or empty", HttpStatus.BAD_REQUEST);
+            throw new AppException(ErrorMessageConstant.UNIT_CANNOT_BE_NULL_OR_EMPTY, HttpStatus.BAD_REQUEST);
         }
         partUnitRepository.findByUnitName(request.getUnit())
-                .orElseThrow(() -> new AppException("Invalid Unit", HttpStatus.BAD_REQUEST));
+                .orElseThrow(() -> new AppException(ErrorMessageConstant.INVALID_UNIT, HttpStatus.BAD_REQUEST));
     }
 
     private Part createPartEntity(PartRequestDto request) {
@@ -243,7 +244,7 @@ public class PartServiceImpl implements PartService {
     @Override
     public PartDto getPartById(Long partId) {
         Part part = this.partRepository.findById(partId)
-                .orElseThrow(() -> new AppException("Part does not exist", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException(ErrorMessageConstant.PART_DOESNOT_EXIST, HttpStatus.NOT_FOUND));
 
         //Fetch Part Cost
         List<PartCost> partCostList = partCostRepository.findByPartId(partId);
@@ -312,19 +313,21 @@ public class PartServiceImpl implements PartService {
     @Transactional
     public PartDto updatePartById(Long partId, @Valid PartRequestDto request) {
         Part existingPart = partRepository.findById(partId)
-                .orElseThrow(() -> new AppException("Part with ID " + partId + " does not exist", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException(
+                        ErrorMessageConstant.getFormattedMessage(ErrorMessageConstant.PART_NOT_FOUND_TEMPLATE, partId), 
+                        HttpStatus.NOT_FOUND));
 
         // Validate and update fields
         validateCreatePartRequest(request);
         existingPart.setPartName(request.getPartName());
         existingPart.setType(PartType.valueOf(request.getType()));
         existingPart.setUnit(partUnitRepository.findByUnitName(request.getUnit())
-                .orElseThrow(() -> new AppException("Invalid Unit", HttpStatus.BAD_REQUEST))
+                .orElseThrow(() -> new AppException(ErrorMessageConstant.INVALID_UNIT, HttpStatus.BAD_REQUEST))
                 .getUnitName());
 
         if (request.getCategoryId() != null) {
             existingPart.setCategoryName(categoryRepository.findById(request.getCategoryId())
-                    .orElseThrow(() -> new AppException("Invalid Category", HttpStatus.BAD_REQUEST))
+                    .orElseThrow(() -> new AppException(ErrorMessageConstant.INVALID_CATEGORY , HttpStatus.BAD_REQUEST))
                     .getName());
         }
 
@@ -348,7 +351,7 @@ public class PartServiceImpl implements PartService {
         if (request.getBom() != null && !request.getBom().isEmpty()) {
             List<Bom> newBom = request.getBom().stream().map(bomDto -> {
                 Part childPart = partRepository.findById(bomDto.getChildPartId())
-                        .orElseThrow(() -> new AppException("Invalid Child Part", HttpStatus.BAD_REQUEST));
+                        .orElseThrow(() -> new AppException(ErrorMessageConstant.INVALID_CHILD_PART, HttpStatus.BAD_REQUEST));
                 return new Bom(existingPart, childPart, bomDto.getQuantity());
             }).toList();
             bomRepository.saveAll(newBom);
@@ -362,11 +365,12 @@ public class PartServiceImpl implements PartService {
     @Transactional
     public void deletePartById(Long partId) {
         Part part = partRepository.findById(partId)
-                .orElseThrow(() -> new AppException("Part with ID " + partId + " not found.", HttpStatus.BAD_REQUEST));
-
+                .orElseThrow(() -> new AppException(
+                        ErrorMessageConstant.getFormattedMessage(ErrorMessageConstant.PART_NOT_FOUND_TEMPLATE, partId), 
+                        HttpStatus.NOT_FOUND));
         boolean isChildPart = bomRepository.existsByChildPart(part);
         if (isChildPart) {
-            throw new AppException("Cannot Delete this part it is in BOM of other Part(s). Please remove from BOM first to delete the part.", HttpStatus.BAD_REQUEST);
+            throw new AppException(ErrorMessageConstant.CANNOT_DELETE, HttpStatus.BAD_REQUEST);
         }
         partRepository.delete(part);
     }

@@ -5,9 +5,10 @@ import java.time.LocalDateTime;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import com.jubeiwato.costing_service.configue.AppException;
+import com.jubeiwato.costing_service.authentication.config.AppException;
 import com.jubeiwato.costing_service.constants.AppConstants;
 import com.jubeiwato.costing_service.constants.DeleteFlag;
+import com.jubeiwato.costing_service.constants.ErrorMessageConstant;
 import com.jubeiwato.costing_service.dtos.UserDto;
 import com.jubeiwato.costing_service.entities.User;
 import com.jubeiwato.costing_service.repositories.UserRepository;
@@ -39,7 +40,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDto getUserById(Long id) {
         User userEntity = userRepository.findById(id)
-        .orElseThrow(() -> new AppException("User does not exist", HttpStatus.NOT_FOUND));
+        .orElseThrow(() -> new AppException(ErrorMessageConstant.USER_DOES_NOT_EXIST, HttpStatus.NOT_FOUND));
         
         return UserDto.entityToDto(userEntity);
     }
@@ -64,7 +65,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDto getUserByEmailId(String emailId) {
         User userEntity = userRepository.findByEmailId(emailId)
-        .orElseThrow(() -> new AppException("User does not exist", HttpStatus.NOT_FOUND));
+        .orElseThrow(() -> new AppException(ErrorMessageConstant.USER_DOES_NOT_EXIST, HttpStatus.NOT_FOUND));
         
         return UserDto.entityToDto(userEntity);
     }

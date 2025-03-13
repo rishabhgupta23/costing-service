@@ -1,7 +1,8 @@
 package com.jubeiwato.costing_service.services;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
-import com.jubeiwato.costing_service.configue.AppException;
+import com.jubeiwato.costing_service.authentication.config.AppException;
+import com.jubeiwato.costing_service.constants.ErrorMessageConstant;
 import com.jubeiwato.costing_service.entities.Vendor;
 import jakarta.persistence.criteria.Predicate;
 
@@ -15,7 +16,7 @@ public class VendorSpecification {
         !isValidInput(address) || 
         !isValidInput(emailId) || 
         !isValidInput(contactNumber)) {
-        throw new AppException("Invalid input: Prohibited characters detected.", HttpStatus.BAD_REQUEST);
+        throw new AppException(ErrorMessageConstant.INVALID_INPUT, HttpStatus.BAD_REQUEST);
     }
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();

@@ -1,6 +1,7 @@
 package com.jubeiwato.costing_service.services.impl;
 
-import com.jubeiwato.costing_service.configue.AppException;
+import com.jubeiwato.costing_service.authentication.config.AppException;
+import com.jubeiwato.costing_service.constants.ErrorMessageConstant;
 import com.jubeiwato.costing_service.constants.PartType;
 import com.jubeiwato.costing_service.constants.PriceMode;
 import com.jubeiwato.costing_service.dtos.CostItemDto;
@@ -63,7 +64,8 @@ public class CostCalcServiceImpl implements CostCalcService {
 
     private CostItemDto calculateUnitPart(Long partId, String  priceMode, Double qt) {
             Part part = partRepository.findById(partId)
-                    .orElseThrow(() -> new AppException("Child Part not found with ID: " + partId, HttpStatus.NOT_FOUND));
+                    .orElseThrow(() -> new AppException(ErrorMessageConstant.getFormattedMessage(ErrorMessageConstant.CHILD_PART_NOT_FOUND_TEMPLATE, partId), 
+                    HttpStatus.NOT_FOUND));
 
         List<PartCost> partCostDetails = partCostRepository.findByPartId(partId);
 
@@ -91,7 +93,8 @@ public class CostCalcServiceImpl implements CostCalcService {
         Double quantity = 1.0;
         Double totalCost=0.0;
         Part part = partRepository.findById(partId)
-                .orElseThrow(() -> new AppException("Child Part not found with ID: " + partId, HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException(ErrorMessageConstant.getFormattedMessage(ErrorMessageConstant.CHILD_PART_NOT_FOUND_TEMPLATE, partId), 
+                HttpStatus.NOT_FOUND));
 
         if(part.getType() == PartType.UNIT) {
             res = new ArrayList<>();
@@ -139,7 +142,7 @@ public class CostCalcServiceImpl implements CostCalcService {
                         }).orElse(Map.entry(new Vendor(0L, "Unknown Vendor", "", "", ""), 0.0));
 
             default:
-                throw new AppException("Invalid price mode provided" , HttpStatus.BAD_REQUEST);
+                throw new AppException(ErrorMessageConstant.INVALID_PRICE_MODE, HttpStatus.BAD_REQUEST);
         }
     }
 

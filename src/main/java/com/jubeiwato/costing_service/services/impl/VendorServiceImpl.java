@@ -3,7 +3,8 @@ package com.jubeiwato.costing_service.services.impl;
 import java.io.IOException;
 import java.util.List;
 
-import com.jubeiwato.costing_service.configue.AppException;
+import com.jubeiwato.costing_service.authentication.config.AppException;
+import com.jubeiwato.costing_service.constants.ErrorMessageConstant;
 import com.jubeiwato.costing_service.constants.Sorting;
 import com.jubeiwato.costing_service.services.FileGeneratorService;
 import org.springframework.data.domain.Sort;
@@ -81,7 +82,7 @@ public class VendorServiceImpl implements VendorService {
     @Override
     public VendorDto getVendorById(Long id) {
         Vendor vendor = this.vendorRepository.findById(id)
-        .orElseThrow(() -> new AppException("Vendor does not exist", HttpStatus.NOT_FOUND));
+        .orElseThrow(() -> new AppException(ErrorMessageConstant.VENDOR_DOES_NOT_EXIST, HttpStatus.NOT_FOUND));
 
         return VendorDto.entityToDto(vendor);
     }

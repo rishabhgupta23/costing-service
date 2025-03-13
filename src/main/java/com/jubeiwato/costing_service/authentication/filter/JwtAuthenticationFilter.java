@@ -3,6 +3,7 @@ package com.jubeiwato.costing_service.authentication.filter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jubeiwato.costing_service.authentication.config.AppException;
 import com.jubeiwato.costing_service.authentication.service.JwtService;
+import com.jubeiwato.costing_service.constants.ErrorMessageConstant;
 import com.jubeiwato.costing_service.dtos.ErrorResponseDto;
 import com.jubeiwato.costing_service.entities.User;
 import com.jubeiwato.costing_service.repositories.UserRepository;
@@ -57,7 +58,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             if (userEmail != null && authentication == null) {
                 User user = userRepository.findByEmailId(userEmail)
-                            .orElseThrow(() -> new AppException("User does not exist", HttpStatus.UNAUTHORIZED));
+                            .orElseThrow(() -> new AppException(ErrorMessageConstant.USER_DOES_NOT_EXIST, HttpStatus.UNAUTHORIZED));
                 // this.userDetailsService.loadUserByUsername(userEmail);
 
                 if (jwtService.isTokenValid(jwt, user)) {
@@ -78,7 +79,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (exception instanceof io.jsonwebtoken.ExpiredJwtException) {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 response.setContentType("application/json");
-                ErrorResponseDto errorResponse = ErrorResponseDto.of("JWT token has expired", HttpStatus.UNAUTHORIZED);
+                ErrorResponseDto errorResponse = ErrorResponseDto.of(ErrorMessageConstant.JWT_TOKEN_EXPIRED, HttpStatus.UNAUTHORIZED);
         
                 String jsonResponse = new ObjectMapper().writeValueAsString(errorResponse);
                 
