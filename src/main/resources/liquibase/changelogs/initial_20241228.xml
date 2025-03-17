@@ -7,8 +7,7 @@
 
     <!-- Tagging the database initialization -->
     <changeSet id="20241228-1" author="Rishabh">
-        <sql>--tagDatabase: 'init'</sql>
-        <rollback><sql>--rollback empty</sql></rollback>
+        <tagDatabase tag="init"/>
     </changeSet>
 
     <!-- Create schema -->
