@@ -107,7 +107,7 @@ public class PartServiceImpl implements PartService {
 
         if(request.getType().equalsIgnoreCase(PartType.MASTER.name()) && request.getBom() != null && !request.getBom().isEmpty()) {
             List<Bom> bomList = request.getBom().stream().map(bomDto -> {
-                Part childPart = partRepository.findById(bomDto.getChildPartId()).orElseThrow(() -> new  AppException(ErrorMessageConstant.INVALID_CHILD_PART_ID, HttpStatus.BAD_REQUEST));
+                Part childPart = partRepository.findById(bomDto.getChildPartId()).orElseThrow(() -> new  AppException(ErrorMessageConstant.INVALID_CHILD_PART, HttpStatus.BAD_REQUEST));
                 return new Bom(part, childPart, bomDto.getQuantity());
             }).toList();
             bomRepository.saveAll(bomList);
@@ -116,7 +116,7 @@ public class PartServiceImpl implements PartService {
 
     private void validateCreatePartRequest(PartRequestDto request) {
         if(request.getCategoryId() != null) {
-            categoryRepository.findById(request.getCategoryId()).orElseThrow(() -> new AppException(ErrorMessageConstant.INVALID_CATEGORY_ID, HttpStatus.BAD_REQUEST));
+            categoryRepository.findById(request.getCategoryId()).orElseThrow(() -> new AppException(ErrorMessageConstant.INVALID_CATEGORY, HttpStatus.BAD_REQUEST));
         }
 
         PartType.valueOf(request.getType());
@@ -370,7 +370,7 @@ public class PartServiceImpl implements PartService {
                         HttpStatus.NOT_FOUND));
         boolean isChildPart = bomRepository.existsByChildPart(part);
         if (isChildPart) {
-            throw new AppException(ErrorMessageConstant.CANNOT_DELETE, HttpStatus.BAD_REQUEST);
+            throw new AppException(ErrorMessageConstant.RESTRICT_CHILD_PART_DELETE, HttpStatus.BAD_REQUEST);
         }
         partRepository.delete(part);
     }
