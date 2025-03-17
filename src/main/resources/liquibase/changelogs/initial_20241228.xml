@@ -184,11 +184,11 @@
     <!-- Insert cost factors -->
     <changeSet id="20241228-5" author="Rishabh">
         <sql>
-            INSERT INTO app.cost_factor (delete_flag, created_by, created_date_time, factor_id, updated_by, updated_date_time, factor_name)
-            VALUES (0, -9, now(), 1, -9, now(), 'Labor Cost');
+            INSERT INTO app.cost_factor (delete_flag, created_by, created_date_time, updated_by, updated_date_time, factor_name)
+            VALUES (0, -9, now(), -9, now(), 'Labor Cost');
 
-            INSERT INTO app.cost_factor (delete_flag, created_by, created_date_time, factor_id, updated_by, updated_date_time, factor_name)
-            VALUES (0, -9, now(), 2, -9, now(), 'Cost Price');
+            INSERT INTO app.cost_factor (delete_flag, created_by, created_date_time, updated_by, updated_date_time, factor_name)
+            VALUES (0, -9, now(), -9, now(), 'Cost Price');
         </sql>
         <rollback>
             <sql>TRUNCATE app.cost_factor CASCADE;</sql>
