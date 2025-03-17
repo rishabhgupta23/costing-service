@@ -3,6 +3,8 @@ package com.jubeiwato.costing_service.services.impl;
 import java.io.IOException;
 import java.util.List;
 
+import com.jubeiwato.costing_service.authentication.config.AppException;
+import com.jubeiwato.costing_service.constants.ErrorMessageConstant;
 import com.jubeiwato.costing_service.constants.Sorting;
 import com.jubeiwato.costing_service.services.FileGeneratorService;
 import org.springframework.data.domain.Sort;
@@ -12,13 +14,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.HttpStatus;
 import com.jubeiwato.costing_service.entities.Part;
 import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
 import com.jubeiwato.costing_service.dtos.PageInfoDto;
 import com.jubeiwato.costing_service.dtos.PartDto;
 import com.jubeiwato.costing_service.dtos.VendorDto;
 import com.jubeiwato.costing_service.entities.Vendor;
-import com.jubeiwato.costing_service.exceptions.NotFoundException;
 import com.jubeiwato.costing_service.repositories.PartRepository;
 import com.jubeiwato.costing_service.repositories.VendorRepository;
 import com.jubeiwato.costing_service.services.VendorService;
@@ -80,7 +82,7 @@ public class VendorServiceImpl implements VendorService {
     @Override
     public VendorDto getVendorById(Long id) {
         Vendor vendor = this.vendorRepository.findById(id)
-        .orElseThrow(() -> new NotFoundException("Vendor does not exist"));
+        .orElseThrow(() -> new AppException(ErrorMessageConstant.VENDOR_DOES_NOT_EXIST, HttpStatus.NOT_FOUND));
 
         return VendorDto.entityToDto(vendor);
     }
