@@ -21,7 +21,7 @@ import java.io.IOException;
 @RequestMapping("/parts")
 public class PartController {
 
-    private PartService partService;
+    private final PartService partService;
 
     public PartController(PartService partService) {
         this.partService = partService;
