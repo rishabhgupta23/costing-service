@@ -54,7 +54,7 @@ public class PartSpecification implements Specification<Part> {
 
     private static boolean isValidInput(String input) {
         if (input == null || input.trim().isEmpty()) return true;
-        String regex = ".*[';#%_*/=\\-].*";
+        String regex = ".*[';#%*/=].*";
         return !input.matches(regex);
     }
 
