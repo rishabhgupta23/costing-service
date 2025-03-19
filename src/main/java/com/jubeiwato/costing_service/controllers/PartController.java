@@ -37,7 +37,7 @@ public class PartController {
             @RequestParam(required = false) String unit,
             @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNo,
             @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int pageSize,
-            @RequestParam(defaultValue = "partName") String sortColumn,
+            @RequestParam(defaultValue = "partNumber") String sortColumn,
             @RequestParam(defaultValue = "ASC") Sorting sortMode
     ) {
         Part filter = Part.builder()

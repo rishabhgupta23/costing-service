@@ -404,7 +404,7 @@ public class PartServiceImpl implements PartService {
     @Override
     public byte[] downloadPartsToExcel() throws IOException {
 
-    List<Part> parts = partRepository.findAll();
+        List<Part> parts = partRepository.findAll(Sort.by(Sort.Direction.ASC, "partNumber"));
 
     List<String[]> partList = parts.stream()
             .map(part -> {
