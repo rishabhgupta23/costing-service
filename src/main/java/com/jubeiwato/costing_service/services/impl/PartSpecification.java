@@ -3,6 +3,8 @@ package com.jubeiwato.costing_service.services.impl;
 import com.jubeiwato.costing_service.authentication.config.AppException;
 import com.jubeiwato.costing_service.constants.ErrorMessageConstant;
 import com.jubeiwato.costing_service.entities.Part;
+import com.jubeiwato.costing_service.utils.ValidationUtil;
+
 import jakarta.persistence.criteria.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
@@ -25,10 +27,10 @@ public class PartSpecification implements Specification<Part> {
         List<Predicate> predicates = new ArrayList<>();
 
 
-        if (!isValidInput(filter.getPartName()) ||
-                !isValidInput(filter.getPartNumber()) ||
-                !isValidInput(filter.getCategoryName()) ||
-                !isValidInput(filter.getUnit())) {
+        if (!ValidationUtil.isValidInput(filter.getPartName()) ||
+                !ValidationUtil.isValidInput(filter.getPartNumber()) ||
+                !ValidationUtil.isValidInput(filter.getCategoryName()) ||
+                !ValidationUtil.isValidInput(filter.getUnit())) {
             throw new AppException(ErrorMessageConstant.INVALID_INPUT, HttpStatus.BAD_REQUEST);
         }
 
@@ -50,12 +52,6 @@ public class PartSpecification implements Specification<Part> {
 
         query.distinct(true);
         return cb.and(predicates.toArray(new Predicate[0]));
-    }
-
-    private static boolean isValidInput(String input) {
-        if (input == null || input.trim().isEmpty()) return true;
-        String regex = ".*[';#% _*/=\\-].*";
-        return !input.matches(regex);
     }
 
 }

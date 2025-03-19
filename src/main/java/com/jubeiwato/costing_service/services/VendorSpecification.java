@@ -4,6 +4,8 @@ import org.springframework.http.HttpStatus;
 import com.jubeiwato.costing_service.authentication.config.AppException;
 import com.jubeiwato.costing_service.constants.ErrorMessageConstant;
 import com.jubeiwato.costing_service.entities.Vendor;
+import com.jubeiwato.costing_service.utils.ValidationUtil;
+
 import jakarta.persistence.criteria.Predicate;
 
 import java.util.ArrayList;
@@ -12,10 +14,10 @@ import java.util.List;
 public class VendorSpecification {
     public static Specification<Vendor> getFilteredVendors(String name, String address, String emailId, String contactNumber) {
 
-        if (!isValidInput(name) || 
-        !isValidInput(address) || 
-        !isValidInput(emailId) || 
-        !isValidInput(contactNumber)) {
+        if (!ValidationUtil.isValidInput(name) || 
+        !ValidationUtil.isValidInput(address) || 
+        !ValidationUtil.isValidInput(emailId) || 
+        !ValidationUtil.isValidInput(contactNumber)) {
         throw new AppException(ErrorMessageConstant.INVALID_INPUT, HttpStatus.BAD_REQUEST);
     }
         return (root, query, criteriaBuilder) -> {
@@ -37,14 +39,6 @@ public class VendorSpecification {
 
             return criteriaBuilder.and(predicates.toArray(new Predicate[predicates.size()]));
         };
-    }
-
-    private static boolean isValidInput(String input) {
-        if (input == null || input.trim().isEmpty()) return true;
-    
-        String regex = ".*[';#% _*/=\\-].*"; 
-    
-        return !input.matches(regex);
     }
 
 }
