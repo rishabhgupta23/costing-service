@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 @Data
@@ -14,7 +15,7 @@ import java.util.List;
 @Builder
 public class CostHistoryDto {
     private List<CostFactorDto> costFactorList;
-    private LocalDateTime updatedDateTime;
+    private ZonedDateTime updatedDateTime;
 
 }
 

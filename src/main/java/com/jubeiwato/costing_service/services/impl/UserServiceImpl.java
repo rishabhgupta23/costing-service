@@ -1,6 +1,7 @@
 package com.jubeiwato.costing_service.services.impl;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -31,8 +32,8 @@ public class UserServiceImpl implements UserService {
         .name(user.getName())
         .build();
         userEntity.setCreatedBy(AppConstants.APP_USER_ID);
-        userEntity.setCreatedDateTime(LocalDateTime.now());
-        userEntity.setUpdatedDateTime(LocalDateTime.now());
+        userEntity.setCreatedDateTime(ZonedDateTime.now());
+        userEntity.setUpdatedDateTime(ZonedDateTime.now());
         userEntity.setUpdatedBy(AppConstants.APP_USER_ID);
         userRepository.save(userEntity);
     }
