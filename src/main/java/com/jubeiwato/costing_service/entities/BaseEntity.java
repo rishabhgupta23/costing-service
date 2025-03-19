@@ -1,6 +1,7 @@
 package com.jubeiwato.costing_service.entities;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 
 import jakarta.persistence.EntityListeners;
 import org.hibernate.annotations.CreationTimestamp;
@@ -24,7 +25,7 @@ public class BaseEntity {
     
     @CreationTimestamp
     @Column(name = "created_date_time", updatable = false)
-    LocalDateTime createdDateTime;
+    ZonedDateTime createdDateTime;
 
     @LastModifiedBy
     @Column(name = "updated_by")
@@ -32,7 +33,7 @@ public class BaseEntity {
 
     @UpdateTimestamp
     @Column(name = "updated_date_time")
-    LocalDateTime updatedDateTime;
+    ZonedDateTime updatedDateTime;
 
     @Column(name = "delete_flag", columnDefinition = "integer default 0")
     Integer deleteFlag;
