@@ -54,7 +54,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType("application/json; charset=UTF-8");
+            response.setContentType("application/json");
         
             ErrorResponseDto errorResponse = ErrorResponseDto.of(ErrorMessageConstant.JWT_TOKEN_MISSING, HttpStatus.UNAUTHORIZED);
             String jsonResponse = new ObjectMapper().writeValueAsString(errorResponse);
