@@ -1,25 +1,25 @@
 package com.jubeiwato.costing_service.constants;
 
 public class ErrorMessageConstant {  
-    public static final String INVALID_CHILD_PART_ID = "Invalid Child Part ID";
-    public static final String INVALID_CATEGORY_ID = "Invalid Category ID";
     public static final String UNIT_CANNOT_BE_NULL_OR_EMPTY = "Unit cannot be null or empty";
     public static final String INVALID_UNIT = "Invalid Unit";
     public static final String INVALID_PART_ID = "Invalid Part ID";
-    public static final String PART_DOESNOT_EXIST = "Part doesnot exist";
+    public static final String PART_DOESNOT_EXIST = "Part does not exist";
     public static final String INVALID_CATEGORY = "Invalid Category";
     public static final String INVALID_CHILD_PART = "Invalid Child Part";
-    public static final String CANNOT_DELETE = "Cannot Delete this part it is in BOM of other Part(s). Please remove from BOM first to delete the part.";
+    public static final String RESTRICT_CHILD_PART_DELETE = "Cannot Delete this part it is in BOM of other Part(s). Please remove from BOM first to delete the part.";
     public static final String PART_NOT_FOUND_TEMPLATE = "Part with ID %s does not exist";
     public static final String USER_DOES_NOT_EXIST = "User does not exist";
     public static final String USER_NOT_FOUND_TEMPLATE = "User with ID %s does not exist";
     public static final String USER_EMAIL_NOT_FOUND_TEMPLATE = "User with email ID %s does not exist";
     public static final String INVALID_INPUT = "Invalid input: Prohibited characters detected.";
-    public static final String INVALID_PRICE_MODE_CHOOSE_MIN_MAX= "Invalid price mode. Choose from MIN, MAX, AVG.";
     public static final String CHILD_PART_NOT_FOUND_TEMPLATE= "Child Part not found with ID:  %s";
     public static final String INVALID_PRICE_MODE= "Invalid price mode provided.";
     public static final String VENDOR_DOES_NOT_EXIST= "Vendor does not exist";
     public static final String JWT_TOKEN_EXPIRED = "JWT token has expired";
+    public static final String UNEXPECTED_ERROR_OCCURED = "unexpected error occured";
+    public static final String JWT_TOKEN_MISSING = "JWT token is missing";
+    public static final String USER_ALREADY_EXISTS = "User with this email already exists";
 
 
 

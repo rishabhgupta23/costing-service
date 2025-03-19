@@ -11,6 +11,6 @@ public enum PriceMode {
                 return priceMode;
             }
         }
-        throw new AppException(ErrorMessageConstant.INVALID_PRICE_MODE_CHOOSE_MIN_MAX, HttpStatus.BAD_REQUEST);
+        throw new AppException(ErrorMessageConstant.INVALID_PRICE_MODE, HttpStatus.BAD_REQUEST);
     }
 }
