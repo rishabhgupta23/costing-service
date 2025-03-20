@@ -4,7 +4,7 @@ public class ErrorMessageConstant {
     public static final String UNIT_CANNOT_BE_NULL_OR_EMPTY = "Unit cannot be null or empty";
     public static final String INVALID_UNIT = "Invalid Unit";
     public static final String INVALID_PART_ID = "Invalid Part ID";
-    public static final String PART_DOESNOT_EXIST = "Part doesnot exist";
+    public static final String PART_DOESNOT_EXIST = "Part does not exist";
     public static final String INVALID_CATEGORY = "Invalid Category";
     public static final String INVALID_CHILD_PART = "Invalid Child Part";
     public static final String RESTRICT_CHILD_PART_DELETE = "Cannot Delete this part it is in BOM of other Part(s). Please remove from BOM first to delete the part.";
@@ -18,6 +18,8 @@ public class ErrorMessageConstant {
     public static final String VENDOR_DOES_NOT_EXIST= "Vendor does not exist";
     public static final String JWT_TOKEN_EXPIRED = "JWT token has expired";
     public static final String UNEXPECTED_ERROR_OCCURED = "unexpected error occured";
+    public static final String JWT_TOKEN_MISSING = "JWT token is missing";
+    public static final String USER_ALREADY_EXISTS = "User with this email already exists";
 
 
 

@@ -43,10 +43,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(@NonNull HttpServletRequest request,
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain filterChain) throws ServletException, IOException {
+
+        String requestPath = request.getServletPath();
+        if (requestPath.equals("/auth/signup") || requestPath.equals("/auth/login")) {
+            filterChain.doFilter(request, response);
+            return;
+            }
+
         final String authHeader = request.getHeader("Authorization");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            filterChain.doFilter(request, response);
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+        
+            ErrorResponseDto errorResponse = ErrorResponseDto.of(ErrorMessageConstant.JWT_TOKEN_MISSING, HttpStatus.UNAUTHORIZED);
+            String jsonResponse = new ObjectMapper().writeValueAsString(errorResponse);
+        
+            response.getWriter().write(jsonResponse);
+            response.getWriter().flush();
             return;
         }
 
@@ -78,7 +92,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             
             if (exception instanceof io.jsonwebtoken.ExpiredJwtException) {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.setContentType("application/json");
+                response.setContentType("application/json");           
                 ErrorResponseDto errorResponse = ErrorResponseDto.of(ErrorMessageConstant.JWT_TOKEN_EXPIRED, HttpStatus.UNAUTHORIZED);
         
                 String jsonResponse = new ObjectMapper().writeValueAsString(errorResponse);
