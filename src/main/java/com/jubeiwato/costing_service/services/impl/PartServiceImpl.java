@@ -404,7 +404,7 @@ public class PartServiceImpl implements PartService {
     @Override
     public byte[] downloadPartsToExcel() throws IOException {
 
-    List<Part> parts = partRepository.findAll();
+        List<Part> parts = partRepository.findAll(Sort.by(Sort.Direction.ASC, "partNumber"));
 
     List<String[]> partList = parts.stream()
             .map(part -> {
@@ -414,18 +414,17 @@ public class PartServiceImpl implements PartService {
                         .collect(Collectors.toSet());
 
                 return new String[]{
-                        String.valueOf(part.getPartId()),
-                        part.getPartName(),
                         part.getPartNumber(),
-                        part.getCategoryName(),
-                        part.getType().toString(),
+                        part.getPartName(),
                         part.getUnit(),
+                        part.getType().toString(),
+                        part.getCategoryName(),
                         String.join(", ", vendorNames)
                 };
             })
             .toList();
 
-    String[] headers = {"Part ID", "Part Name", "Part Number", "Category", "Type", "Unit", "Vendor Names"};
+    String[] headers = {"Part Number", "Part Name", "Measuring Unit", "Type", "Category", "Vendor Names"};
        
        return  excelService.generateSpreadsheet(partList, headers);
     

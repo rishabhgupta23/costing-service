@@ -131,16 +131,15 @@ public class VendorServiceImpl implements VendorService {
     public byte[] downloadVendorExcel() throws IOException {
         List<Vendor> vendors = vendorRepository.findAll();
 
-        String[] headers = {"ID", "Name", "Email", "Address", "Contact Number"};
+        String[] headers = {"Name", "Email ID", "Contact No.", "Address"};
 
         //data in String[] is in same order as respective headers
         List<String[]> data = vendors.stream()
                 .map(vendor -> new String[]{
-                        String.valueOf(vendor.getVendorId()),
                         vendor.getName(),
                         vendor.getEmailId(),
-                        vendor.getAddress(),
-                        vendor.getContactNumber()
+                        vendor.getContactNumber(),
+                        vendor.getAddress()            
                 })
                 .toList();
 
