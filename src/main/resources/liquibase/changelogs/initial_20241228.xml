@@ -23,6 +23,20 @@
     <!-- Create tables -->
     <changeSet id="20241228-3" author="Rishabh">
         <sql>
+            CREATE TABLE IF NOT EXISTS app.company (
+                company_id BIGSERIAL NOT NULL,
+                company_name VARCHAR(100) NOT NULL,
+                company_address VARCHAR(255),
+                company_email_id VARCHAR(50) NOT NULL,
+                max_users INTEGER,
+                created_by BIGINT,
+                created_date_time TIMESTAMPTZ(6),
+                updated_by BIGINT,
+                updated_date_time TIMESTAMPTZ(6),
+                CONSTRAINT company_pkey PRIMARY KEY (company_id),
+                CONSTRAINT company_email_id_key UNIQUE (company_email_id)
+            );
+        
             CREATE TABLE IF NOT EXISTS app.app_user (
             delete_flag INTEGER DEFAULT 0,
             created_by BIGINT,
@@ -33,9 +47,22 @@
             email_id VARCHAR(50) NOT NULL,
             name VARCHAR(50) NOT NULL,
             password VARCHAR(100) NOT NULL,
+            company_id BIGINT,
+            role_id BIGINT,
             CONSTRAINT app_user_pkey PRIMARY KEY (user_id),
-            CONSTRAINT app_user_email_id_key UNIQUE (email_id)
+            CONSTRAINT app_user_email_id_key UNIQUE (email_id),
+            CONSTRAINT app_user_company_id_fkey FOREIGN KEY (company_id)
+            REFERENCES app.company (company_id) ON DELETE CASCADE
             );
+
+            CREATE TABLE IF NOT EXISTS app.user_role (
+            role_id BIGINT NOT NULL PRIMARY KEY,
+            role_name VARCHAR(255),
+            created_by VARCHAR(255),
+            created_date_time TIMESTAMPTZ(6),
+            updated_by VARCHAR(255),
+            updated_date_time TIMESTAMPTZ(6)
+           );
 
             CREATE TABLE IF NOT EXISTS app.vendor (
             delete_flag INTEGER DEFAULT 0,
@@ -48,8 +75,11 @@
             contact_number VARCHAR(15),
             email_id VARCHAR(50) NOT NULL,
             name VARCHAR(50) NOT NULL,
+            company_id BIGINT,
             CONSTRAINT vendor_pkey PRIMARY KEY (vendor_id),
-            CONSTRAINT vendor_name_key UNIQUE (name)
+            CONSTRAINT vendor_name_key UNIQUE (name),
+            CONSTRAINT vendor_company_id_fkey FOREIGN KEY (company_id)
+            REFERENCES app.company (company_id) ON DELETE CASCADE
             );
 
             CREATE TABLE IF NOT EXISTS app.part (
@@ -64,8 +94,11 @@
             part_number VARCHAR(50),
             type VARCHAR(10),
             unit VARCHAR(10),
+            company_id BIGINT,
             CONSTRAINT part_pkey PRIMARY KEY (part_id),
-            CONSTRAINT part_part_number_key UNIQUE (part_number)
+            CONSTRAINT part_part_number_key UNIQUE (part_number),
+            CONSTRAINT part_company_id_fkey FOREIGN KEY (company_id)
+            REFERENCES app.company (company_id) ON DELETE CASCADE
             );
 
             CREATE TABLE IF NOT EXISTS app.part_category (
@@ -76,8 +109,11 @@
             updated_by BIGINT,
             updated_date_time TIMESTAMPTZ(6),
             name VARCHAR(50) NOT NULL,
+            company_id BIGINT,
             CONSTRAINT part_category_pkey PRIMARY KEY (category_id),
-            CONSTRAINT part_category_name_key UNIQUE (name)
+            CONSTRAINT part_category_name_key UNIQUE (name),
+            CONSTRAINT part_category_company_id_fkey FOREIGN KEY (company_id)
+            REFERENCES app.company (company_id) ON DELETE CASCADE
             );
 
             CREATE TABLE IF NOT EXISTS app.cost_factor (
@@ -88,7 +124,10 @@
             updated_by BIGINT,
             updated_date_time TIMESTAMPTZ(6),
             factor_name VARCHAR(50),
-            CONSTRAINT cost_factor_pkey PRIMARY KEY (factor_id)
+            company_id BIGINT,
+            CONSTRAINT cost_factor_pkey PRIMARY KEY (factor_id),
+            CONSTRAINT cost_factor_company_id_fkey FOREIGN KEY (company_id)
+            REFERENCES app.company (company_id) ON DELETE CASCADE
             );
 
             CREATE TABLE IF NOT EXISTS app.part_cost (
@@ -132,8 +171,11 @@
             updated_by BIGINT,
             updated_date_time TIMESTAMPTZ(6),
             unit_name VARCHAR(50),
+            company_id BIGINT,
             CONSTRAINT part_unit_pkey PRIMARY KEY (unit_id),
-            CONSTRAINT part_unit_unit_id_key UNIQUE (unit_name)
+            CONSTRAINT part_unit_unit_id_key UNIQUE (unit_name),
+            CONSTRAINT part_unit_company_id_fkey FOREIGN KEY (company_id)
+            REFERENCES app.company (company_id) ON DELETE CASCADE
             );
 
             CREATE TABLE IF NOT EXISTS app.bom (
@@ -154,7 +196,9 @@
         </sql>
         <rollback>
             <sql>
+                DROP TABLE app.company CASCADE;
                 DROP TABLE app.app_user CASCADE;
+                DROP TABLE app.user_role CASCADE;
                 DROP TABLE app.vendor CASCADE;
                 DROP TABLE app.part CASCADE;
                 DROP TABLE app.part_category CASCADE;
