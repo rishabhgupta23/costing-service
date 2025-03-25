@@ -4,15 +4,152 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
-
-    <changeSet id="20250306" author="Anjali">
+      
+      <changeSet id="20250307" author="Anusha">
         <sql>
-            INSERT INTO app.part_unit (unit_name)
+            CREATE TABLE IF NOT EXISTS app.company (
+                delete_flag INTEGER DEFAULT 0,
+                company_id BIGSERIAL NOT NULL,
+                company_name VARCHAR(100) NOT NULL,
+                company_address VARCHAR(255),
+                company_email_id VARCHAR(50) NOT NULL,
+                max_users INTEGER,
+                created_by BIGINT,
+                created_date_time TIMESTAMPTZ(6),
+                updated_by BIGINT,
+                updated_date_time TIMESTAMPTZ(6),
+                CONSTRAINT company_pkey PRIMARY KEY (company_id),
+                CONSTRAINT company_email_id_key UNIQUE (company_email_id)
+            );
+
+            CREATE TABLE IF NOT EXISTS app.user_role (
+            delete_flag INTEGER DEFAULT 0,
+            role_id BIGSERIAL NOT NULL PRIMARY KEY,
+            role_name VARCHAR(255),
+            created_by VARCHAR(255),
+            created_date_time TIMESTAMPTZ(6),
+            updated_by VARCHAR(255),
+            updated_date_time TIMESTAMPTZ(6)
+            );
+
+            ALTER TABLE app.app_user 
+            ADD COLUMN company_id BIGINT NOT NULL, 
+            ADD COLUMN role_id BIGINT NOT NULL,
+            ADD CONSTRAINT app_user_company_id_fkey 
+            FOREIGN KEY (company_id) REFERENCES app.company (company_id) ON DELETE CASCADE,
+            ADD CONSTRAINT app_user_role_id_fkey 
+            FOREIGN KEY (role_id) REFERENCES app.user_role (role_id) ON DELETE CASCADE;
+
+            ALTER TABLE app.vendor 
+            ADD COLUMN company_id BIGINT NOT NULL,
+            ADD CONSTRAINT vendor_company_id_fkey 
+            FOREIGN KEY (company_id) REFERENCES app.company (company_id) ON DELETE CASCADE;
+
+            ALTER TABLE app.part 
+            ADD COLUMN company_id BIGINT NOT NULL,
+            ADD CONSTRAINT part_company_id_fkey 
+            FOREIGN KEY (company_id) REFERENCES app.company (company_id) ON DELETE CASCADE;
+
+            ALTER TABLE app.part_cost 
+            ADD COLUMN company_id BIGINT NOT NULL,
+            ADD CONSTRAINT part_company_id_fkey 
+            FOREIGN KEY (company_id) REFERENCES app.company(company_id) ON DELETE CASCADE;
+
+            ALTER TABLE app.part_category 
+            ADD COLUMN company_id BIGINT NOT NULL,
+            ADD CONSTRAINT part_company_id_fkey 
+            FOREIGN KEY (company_id) REFERENCES app.company(company_id) ON DELETE CASCADE;
+
+            ALTER TABLE app.cost_factor 
+            ADD COLUMN company_id BIGINT NOT NULL,
+            ADD CONSTRAINT part_company_id_fkey 
+            FOREIGN KEY (company_id) REFERENCES app.company(company_id) ON DELETE CASCADE;
+
+            ALTER TABLE app.part_unit 
+            ADD COLUMN company_id BIGINT NOT NULL,
+            ADD CONSTRAINT part_company_id_fkey 
+            FOREIGN KEY (company_id) REFERENCES app.company(company_id) ON DELETE CASCADE;
+        
+        </sql>
+                <rollback>
+            <sql>
+                DROP TABLE app.company CASCADE;
+                DROP TABLE app.user_role CASCADE;
+                ALTER TABLE app.app_user 
+                DROP COLUMN company_id CASCADE, 
+                DROP COLUMN role_id CASCADE;
+                ALTER TABLE app.vendor DROP COLUMN company_id CASCADE;
+                ALTER TABLE app.part DROP COLUMN company_id CASCADE;
+                ALTER TABLE app.part_cost DROP COLUMN company_id CASCADE;
+                ALTER TABLE app.part_category DROP COLUMN company_id CASCADE;
+                ALTER TABLE app.cost_factor DROP COLUMN company_id CASCADE;
+                ALTER TABLE app.part_unit DROP COLUMN company_id CASCADE;
+            </sql>
+        </rollback>
+    </changeSet>
+
+     <changeSet id="20250308" author="Anusha">
+    <sql>
+        INSERT INTO app.company (delete_flag, company_name, company_address, company_email_id, max_users, created_by, created_date_time, updated_by, updated_date_time)
+        VALUES (0, 'Default company', 'zyxwvuts', 'defaultcompany123@gmail.com', 100, -9, now(), -9, now());
+
+        INSERT INTO app.user_role (delete_flag, role_name, created_by, created_date_time, updated_by, updated_date_time)
+        VALUES 
+        (0, 'Super Admin', -9, now(), -9, now()),
+        (0, 'Admin', -9, now(), -9, now()),
+        (0, 'Maintainer', -9, now(), -9, now()),
+        (0, 'Guest', -9 , now(), -9, now());
+
+        INSERT INTO app.app_user (delete_flag, created_by, created_date_time, updated_by, updated_date_time, email_id, name, password, company_id, role_id)
+        VALUES (0, -9, now(), -9, now(), 'superadmin@example.com', 'Super Admin', '$2a$10$U2xjy6u1xUnW056/xprt6uDx5tfvsenufjH0JrvptvkuthrVXXKu.', 1, 1);
+
+    </sql>
+    <rollback>
+        <sql>
+            TRUNCATE app.company CASCADE;
+            TRUNCATE app.user_role CASCADE;
+            TRUNCATE app.app_user CASCADE;
+        </sql>
+    </rollback>
+    </changeSet>
+    
+
+    <!-- Insert vendor data -->
+    <changeSet id="20241228-4" author="Rishabh">
+        <sql>
+            INSERT INTO app.vendor (delete_flag, created_by, created_date_time, updated_by, updated_date_time, address, contact_number, email_id, name, company_id)
+            VALUES (0, -9, now(), -9, now(), 'XYZ Company, Patna, Bihar', '9999999999', 'xyz@gmail.com', 'XYZ Company', 1);
+
+            INSERT INTO app.vendor (delete_flag, created_by, created_date_time, updated_by, updated_date_time, address, contact_number, email_id, name, company_id)
+            VALUES (0, -9, now(), -9, now(), 'ABC Company, Patna, Bihar', '9999999999', 'abc@gmail.com', 'ABC Company', 1);
+        </sql>
+        <rollback>
+            <sql>TRUNCATE app.vendor CASCADE;</sql>
+        </rollback>
+    </changeSet>
+
+        <!-- Insert cost factors -->
+    <changeSet id="20241228-5" author="Rishabh">
+        <sql>
+            INSERT INTO app.cost_factor (delete_flag, created_by, created_date_time, updated_by, updated_date_time, factor_name, company_id)
+            VALUES (0, -9, now(), -9, now(), 'Labor Cost', 1);
+
+            INSERT INTO app.cost_factor (delete_flag, created_by, created_date_time, updated_by, updated_date_time, factor_name, company_id)
+            VALUES (0, -9, now(), -9, now(), 'Cost Price', 1);
+        </sql>
+        <rollback>
+            <sql>TRUNCATE app.cost_factor CASCADE;</sql>
+        </rollback>
+    </changeSet>
+
+        <changeSet id="20250306" author="Anjali">
+        <sql>
+            INSERT INTO app.part_unit (unit_name, company_id)
             VALUES
-            ('KG'),
-            ('GM'),
-            ('LTR'),
-            ('NOS');
+            ('KG', 1),
+            ('GM', 1),
+            ('LTR', 1),
+            ('NOS', 1);
         </sql>
         <rollback>
             TRUNCATE app.part_unit CASCADE;
