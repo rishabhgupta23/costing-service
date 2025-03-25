@@ -5,6 +5,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -37,6 +39,13 @@ public class User extends BaseEntity implements UserDetails {
 
     @Column(name = "password", nullable = false)
     private String password;
+    // @Column(name = "company_id", nullable = false)
+    // private Long companyId;
+    // private Company company;
+
+    @ManyToOne
+    @JoinColumn(name = "company_id", referencedColumnName = "company_id", nullable = false)
+     private Company company;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -66,5 +75,9 @@ public class User extends BaseEntity implements UserDetails {
     @Override
     public boolean isEnabled() {
         return true;
+    }
+
+    public Company getCompany() {
+        return company;
     }
 }

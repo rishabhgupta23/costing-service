@@ -4,8 +4,10 @@ import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
-
+import org.springframework.security.core.Authentication;
 import com.jubeiwato.costing_service.authentication.config.AppException;
 import com.jubeiwato.costing_service.constants.AppConstants;
 import com.jubeiwato.costing_service.constants.DeleteFlag;
@@ -20,17 +22,23 @@ public class UserServiceImpl implements UserService {
 
     final private UserRepository userRepository;
 
-
     public UserServiceImpl(UserRepository userRepository) {
         this.userRepository = userRepository;
+    }
+
+    private Long getCurrentUserCompanyId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        User user = (User) userDetails;
+        return user.getCompanyId();
     }
 
     @Override
     public void createUser(UserDto user) {
         User userEntity = User.builder()
-        .emailId(user.getEmailId())
-        .name(user.getName())
-        .build();
+                .emailId(user.getEmailId())
+                .name(user.getName())
+                .build();
         userEntity.setCreatedBy(AppConstants.APP_USER_ID);
         userEntity.setCreatedDateTime(ZonedDateTime.now());
         userEntity.setUpdatedDateTime(ZonedDateTime.now());
@@ -41,8 +49,8 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDto getUserById(Long id) {
         User userEntity = userRepository.findById(id)
-        .orElseThrow(() -> new AppException(ErrorMessageConstant.USER_DOES_NOT_EXIST, HttpStatus.NOT_FOUND));
-        
+                .orElseThrow(() -> new AppException(ErrorMessageConstant.USER_DOES_NOT_EXIST, HttpStatus.NOT_FOUND));
+
         return UserDto.entityToDto(userEntity);
     }
 
@@ -66,13 +74,9 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDto getUserByEmailId(String emailId) {
         User userEntity = userRepository.findByEmailId(emailId)
-        .orElseThrow(() -> new AppException(ErrorMessageConstant.USER_DOES_NOT_EXIST, HttpStatus.NOT_FOUND));
-        
+                .orElseThrow(() -> new AppException(ErrorMessageConstant.USER_DOES_NOT_EXIST, HttpStatus.NOT_FOUND));
+
         return UserDto.entityToDto(userEntity);
     }
 
-    
-
-    
-    
 }
