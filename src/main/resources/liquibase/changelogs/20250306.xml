@@ -5,7 +5,7 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
       
-      <changeSet id="20250307" author="Anusha">
+      <changeSet id="20250325" author="Anusha">
         <sql>
             CREATE TABLE IF NOT EXISTS app.company (
                 delete_flag INTEGER DEFAULT 0,
@@ -25,7 +25,7 @@
             CREATE TABLE IF NOT EXISTS app.user_role (
             delete_flag INTEGER DEFAULT 0,
             role_id BIGSERIAL NOT NULL PRIMARY KEY,
-            role_name VARCHAR(255),
+            role_name VARCHAR(255) UNIQUE,
             created_by BIGINT,
             created_date_time TIMESTAMPTZ(6),
             updated_by BIGINT,
@@ -38,7 +38,7 @@
             ADD CONSTRAINT app_user_company_id_fkey 
             FOREIGN KEY (company_id) REFERENCES app.company (company_id) ON DELETE CASCADE,
             ADD CONSTRAINT app_user_role_id_fkey 
-            FOREIGN KEY (role_id) REFERENCES app.user_role (role_id) ON DELETE CASCADE;
+            FOREIGN KEY (role_id) REFERENCES app.user_role (role_id);
 
             ALTER TABLE app.vendor 
             ADD COLUMN company_id BIGINT NOT NULL,
@@ -50,11 +50,6 @@
             ADD CONSTRAINT part_company_id_fkey 
             FOREIGN KEY (company_id) REFERENCES app.company (company_id) ON DELETE CASCADE;
 
-            ALTER TABLE app.part_cost 
-            ADD COLUMN company_id BIGINT NOT NULL,
-            ADD CONSTRAINT part_company_id_fkey 
-            FOREIGN KEY (company_id) REFERENCES app.company(company_id) ON DELETE CASCADE;
-
             ALTER TABLE app.part_category 
             ADD COLUMN company_id BIGINT NOT NULL,
             ADD CONSTRAINT part_company_id_fkey 
@@ -65,11 +60,19 @@
             ADD CONSTRAINT part_company_id_fkey 
             FOREIGN KEY (company_id) REFERENCES app.company(company_id) ON DELETE CASCADE;
 
-            ALTER TABLE app.part_unit 
-            ADD COLUMN company_id BIGINT NOT NULL,
-            ADD CONSTRAINT part_company_id_fkey 
-            FOREIGN KEY (company_id) REFERENCES app.company(company_id) ON DELETE CASCADE;
-        
+            INSERT INTO app.company (delete_flag, company_name, company_address, company_email_id, max_users, created_by, created_date_time, updated_by, updated_date_time)
+            VALUES (0, 'Default company', 'Patna', 'defaultcompany123@gmail.com', 6, -9, now(), -9, now());
+
+            INSERT INTO app.user_role (delete_flag, role_name, created_by, created_date_time, updated_by, updated_date_time)
+            VALUES 
+            (0, 'Super Admin', -9, now(), -9, now()),
+            (0, 'Admin', -9, now(), -9, now()),
+            (0, 'Maintainer', -9, now(), -9, now()),
+            (0, 'Guest', -9 , now(), -9, now());
+
+            INSERT INTO app.app_user (delete_flag, created_by, created_date_time, updated_by, updated_date_time, email_id, name, password, company_id, role_id)
+            VALUES (0, -9, now(), -9, now(), 'superadmin@example.com', 'Super Admin', '$2a$10$U2xjy6u1xUnW056/xprt6uDx5tfvsenufjH0JrvptvkuthrVXXKu.', (SELECT company_id FROM app.company WHERE company_name = 'Default company'), (SELECT role_id FROM app.user_role WHERE role_name = 'Super Admin'));
+
         </sql>
                 <rollback>
             <sql>
@@ -80,39 +83,14 @@
                 DROP COLUMN role_id CASCADE;
                 ALTER TABLE app.vendor DROP COLUMN company_id CASCADE;
                 ALTER TABLE app.part DROP COLUMN company_id CASCADE;
-                ALTER TABLE app.part_cost DROP COLUMN company_id CASCADE;
                 ALTER TABLE app.part_category DROP COLUMN company_id CASCADE;
                 ALTER TABLE app.cost_factor DROP COLUMN company_id CASCADE;
-                ALTER TABLE app.part_unit DROP COLUMN company_id CASCADE;
+                TRUNCATE app.company CASCADE;
+                TRUNCATE app.user_role CASCADE;
+                TRUNCATE app.app_user CASCADE;
             </sql>
         </rollback>
     </changeSet>
-
-     <changeSet id="20250308" author="Anusha">
-    <sql>
-        INSERT INTO app.company (delete_flag, company_name, company_address, company_email_id, max_users, created_by, created_date_time, updated_by, updated_date_time)
-        VALUES (0, 'Default company', 'zyxwvuts', 'defaultcompany123@gmail.com', 100, -9, now(), -9, now());
-
-        INSERT INTO app.user_role (delete_flag, role_name, created_by, created_date_time, updated_by, updated_date_time)
-        VALUES 
-        (0, 'Super Admin', -9, now(), -9, now()),
-        (0, 'Admin', -9, now(), -9, now()),
-        (0, 'Maintainer', -9, now(), -9, now()),
-        (0, 'Guest', -9 , now(), -9, now());
-
-        INSERT INTO app.app_user (delete_flag, created_by, created_date_time, updated_by, updated_date_time, email_id, name, password, company_id, role_id)
-        VALUES (0, -9, now(), -9, now(), 'superadmin@example.com', 'Super Admin', '$2a$10$U2xjy6u1xUnW056/xprt6uDx5tfvsenufjH0JrvptvkuthrVXXKu.', 1, 1);
-
-    </sql>
-    <rollback>
-        <sql>
-            TRUNCATE app.company CASCADE;
-            TRUNCATE app.user_role CASCADE;
-            TRUNCATE app.app_user CASCADE;
-        </sql>
-    </rollback>
-    </changeSet>
-    
 
     <!-- Insert vendor data -->
     <changeSet id="20241228-4" author="Rishabh">
@@ -144,12 +122,12 @@
 
         <changeSet id="20250306" author="Anjali">
         <sql>
-            INSERT INTO app.part_unit (unit_name, company_id)
+            INSERT INTO app.part_unit (unit_name)
             VALUES
-            ('KG', 1),
-            ('GM', 1),
-            ('LTR', 1),
-            ('NOS', 1);
+            ('KG'),
+            ('GM'),
+            ('LTR'),
+            ('NOS');
         </sql>
         <rollback>
             TRUNCATE app.part_unit CASCADE;
