@@ -165,6 +165,34 @@
                 DROP TABLE app.bom CASCADE;
             </sql>
         </rollback>
+
+    </changeSet>
+    <!-- Insert vendor data -->
+    <changeSet id="20241228-4" author="Rishabh">
+        <sql>
+            INSERT INTO app.vendor (delete_flag, created_by, created_date_time, updated_by, updated_date_time, address, contact_number, email_id, name)
+            VALUES (0, -9, now(), -9, now(), 'XYZ Company, Patna, Bihar', '9999999999', 'xyz@gmail.com', 'XYZ Company');
+
+            INSERT INTO app.vendor (delete_flag, created_by, created_date_time, updated_by, updated_date_time, address, contact_number, email_id, name)
+            VALUES (0, -9, now(), -9, now(), 'ABC Company, Patna, Bihar', '9999999999', 'abc@gmail.com', 'ABC Company');
+        </sql>
+        <rollback>
+            <sql>TRUNCATE app.vendor CASCADE;</sql>
+        </rollback>
+    </changeSet>
+
+    <!-- Insert cost factors -->
+    <changeSet id="20241228-5" author="Rishabh">
+        <sql>
+            INSERT INTO app.cost_factor (delete_flag, created_by, created_date_time, updated_by, updated_date_time, factor_name)
+            VALUES (0, -9, now(), -9, now(), 'Labor Cost');
+
+            INSERT INTO app.cost_factor (delete_flag, created_by, created_date_time, updated_by, updated_date_time, factor_name)
+            VALUES (0, -9, now(), -9, now(), 'Cost Price');
+        </sql>
+        <rollback>
+            <sql>TRUNCATE app.cost_factor CASCADE;</sql>
+        </rollback>
     </changeSet>
 
 </databaseChangeLog>
