@@ -5,9 +5,9 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
-            <changeSet id="20250325" author="Anusha">
+    <changeSet id="20250325-1" author="Anusha">
         <sql>
-            CREATE TABLE IF NOT EXISTS app.company (
+             CREATE TABLE IF NOT EXISTS app.company (
                 delete_flag INTEGER DEFAULT 0,
                 company_id BIGSERIAL NOT NULL,
                 company_name VARCHAR(100) NOT NULL,
@@ -25,7 +25,7 @@
             CREATE TABLE IF NOT EXISTS app.user_role (
             delete_flag INTEGER DEFAULT 0,
             role_id BIGSERIAL NOT NULL PRIMARY KEY,
-            role_name VARCHAR(255) UNIQUE,
+            role_name VARCHAR(255) UNIQUE NOT NULL,
             created_by BIGINT,
             created_date_time TIMESTAMPTZ(6),
             updated_by BIGINT,
@@ -39,27 +39,45 @@
             FOREIGN KEY (company_id) REFERENCES app.company (company_id) ON DELETE CASCADE,
             ADD CONSTRAINT app_user_role_id_fkey 
             FOREIGN KEY (role_id) REFERENCES app.user_role (role_id);
+        </sql>
+        <rollback>
+            <sql>
+                ALTER TABLE app.app_user DROP CONSTRAINT app_user_company_id_fkey;
+                ALTER TABLE app.app_user DROP CONSTRAINT app_user_role_id_fkey;
+                ALTER TABLE app.app_user DROP COLUMN company_id, DROP COLUMN role_id;
+                DROP TABLE IF EXISTS app.user_role CASCADE;
+                DROP TABLE IF EXISTS app.company CASCADE;
+            </sql>
+        </rollback>
+    </changeSet>
 
-            -- Step 1: Add company_id column as nullable first
-            ALTER TABLE app.vendor 
-            ADD COLUMN company_id BIGINT;
+    <changeSet id="20250325-2" author="Anusha">
+        <sql>
+            ALTER TABLE app.vendor ADD COLUMN company_id BIGINT;
 
-            -- Ensure Default Company Exists
             INSERT INTO app.company (delete_flag, company_name, company_address, company_email_id, max_users, created_by, created_date_time, updated_by, updated_date_time)
             VALUES (0, 'Default company', 'Patna', 'defaultcompany123@gmail.com', 6, -9, now(), -9, now());
 
-            -- Step 2: Update existing records with Default company_id
             UPDATE app.vendor 
             SET company_id = (SELECT company_id FROM app.company WHERE company_name = 'Default company')
             WHERE company_id IS NULL;
 
-            -- Step 3: Alter column to NOT NULL after updating
             ALTER TABLE app.vendor 
             ALTER COLUMN company_id SET NOT NULL,
             ADD CONSTRAINT vendor_company_id_fkey 
             FOREIGN KEY (company_id) REFERENCES app.company (company_id) ON DELETE CASCADE;
+        </sql>
+        <rollback>
+            <sql>
+                ALTER TABLE app.vendor DROP CONSTRAINT vendor_company_id_fkey;
+                ALTER TABLE app.vendor DROP COLUMN company_id;
+                TRUNCATE app.company CASCADE;
+            </sql>
+        </rollback>
+    </changeSet>
 
-
+    <changeSet id="20250325-3" author="Anusha">
+        <sql>
             ALTER TABLE app.part 
             ADD COLUMN company_id BIGINT NOT NULL,
             ADD CONSTRAINT part_company_id_fkey 
@@ -68,21 +86,41 @@
             ALTER TABLE app.part_category 
             ADD COLUMN company_id BIGINT NOT NULL,
             ADD CONSTRAINT part_category_company_id_fkey 
+            FOREIGN KEY (company_id) REFERENCES app.company (company_id) ON DELETE CASCADE;
+        </sql>
+        <rollback>
+            <sql>
+                ALTER TABLE app.part DROP CONSTRAINT part_company_id_fkey;
+                ALTER TABLE app.part DROP COLUMN company_id;
+                ALTER TABLE app.part_category DROP CONSTRAINT part_category_company_id_fkey;
+                ALTER TABLE app.part_category DROP COLUMN company_id;
+            </sql>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="20250325-4" author="Anusha">
+        <sql>
+            ALTER TABLE app.cost_factor ADD COLUMN company_id BIGINT;
+            
+            UPDATE app.cost_factor 
+            SET company_id = (SELECT company_id FROM app.company WHERE company_name = 'Default company')
+            WHERE company_id IS NULL;
+
+            ALTER TABLE app.cost_factor 
+            ALTER COLUMN company_id SET NOT NULL,
+            ADD CONSTRAINT cost_factor_company_id_fkey 
             FOREIGN KEY (company_id) REFERENCES app.company(company_id) ON DELETE CASCADE;
+        </sql>
+        <rollback>
+            <sql>
+                ALTER TABLE app.cost_factor DROP CONSTRAINT cost_factor_company_id_fkey;
+                ALTER TABLE app.cost_factor DROP COLUMN company_id;
+            </sql>
+        </rollback>
+    </changeSet>
 
-           ALTER TABLE app.cost_factor 
-           ADD COLUMN company_id BIGINT; -- Step 1: Add column without NOT NULL
-
-           UPDATE app.cost_factor 
-           SET company_id = (SELECT company_id FROM app.company WHERE company_name = 'Default company')
-           WHERE company_id IS NULL;
-
-           ALTER TABLE app.cost_factor 
-           ALTER COLUMN company_id SET NOT NULL,
-           ADD CONSTRAINT cost_factor_company_id_fkey 
-           FOREIGN KEY (company_id) REFERENCES app.company(company_id) ON DELETE CASCADE;
-
-
+    <changeSet id="20250325-5" author="Anusha">
+        <sql>
             INSERT INTO app.user_role (delete_flag, role_name, created_by, created_date_time, updated_by, updated_date_time)
             VALUES 
             (0, 'Super Admin', -9, now(), -9, now()),
@@ -94,26 +132,10 @@
             VALUES (0, -9, now(), -9, now(), 'superadmin@example.com', 'Super Admin', '$2a$10$U2xjy6u1xUnW056/xprt6uDx5tfvsenufjH0JrvptvkuthrVXXKu.', (SELECT company_id FROM app.company WHERE company_name = 'Default company'), (SELECT role_id FROM app.user_role WHERE role_name = 'Super Admin'));
 
         </sql>
-                <rollback>
+        <rollback>
             <sql>
-             TRUNCATE app.app_user CASCADE;
-             TRUNCATE app.user_role CASCADE;
-
-             ALTER TABLE app.app_user DROP CONSTRAINT app_user_role_id_fkey;
-             ALTER TABLE app.app_user DROP COLUMN role_id;
-
-             DROP TABLE app.user_role CASCADE;
-
-            ALTER TABLE app.vendor DROP CONSTRAINT vendor_company_id_fkey;
-            ALTER TABLE app.vendor DROP COLUMN company_id;
-            ALTER TABLE app.part DROP COLUMN company_id;
-            ALTER TABLE app.part_category DROP COLUMN company_id;
-            ALTER TABLE app.cost_factor DROP COLUMN company_id;
-
-           TRUNCATE app.company CASCADE;
-           DROP TABLE app.company CASCADE;
-
-                
+                TRUNCATE app.app_user CASCADE;
+                TRUNCATE app.user_role CASCADE;
             </sql>
         </rollback>
     </changeSet>
