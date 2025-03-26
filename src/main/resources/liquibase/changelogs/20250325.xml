@@ -96,20 +96,23 @@
         </sql>
                 <rollback>
             <sql>
-                DROP TABLE app.company CASCADE;
-                DROP TABLE app.user_role CASCADE;
-                ALTER TABLE app.app_user DROP COLUMN company_id CASCADE,DROP COLUMN role_id CASCADE;
-                ALTER TABLE app.vendor DROP COLUMN company_id CASCADE;
-                TRUNCATE app.company CASCADE;
-                TRUNCATE app.vendor CASCADE;
-                ALTER TABLE app.vendor DROP COLUMN company_id CASCADE;
-                ALTER TABLE app.part DROP COLUMN company_id CASCADE;
-                ALTER TABLE app.part_category DROP COLUMN company_id CASCADE;
-                ALTER TABLE app.cost_factor DROP COLUMN company_id CASCADE;
-                TRUNCATE app.cost_factor CASCADE;
-                ALTER TABLE app.cost_factor DROP COLUMN company_id CASCADE;
-                TRUNCATE app.user_role CASCADE;
-                TRUNCATE app.app_user CASCADE;
+             TRUNCATE app.app_user CASCADE;
+             TRUNCATE app.user_role CASCADE;
+
+             ALTER TABLE app.app_user DROP CONSTRAINT app_user_role_id_fkey;
+             ALTER TABLE app.app_user DROP COLUMN role_id;
+
+             DROP TABLE app.user_role CASCADE;
+
+            ALTER TABLE app.vendor DROP CONSTRAINT vendor_company_id_fkey;
+            ALTER TABLE app.vendor DROP COLUMN company_id;
+            ALTER TABLE app.part DROP COLUMN company_id;
+            ALTER TABLE app.part_category DROP COLUMN company_id;
+            ALTER TABLE app.cost_factor DROP COLUMN company_id;
+
+           TRUNCATE app.company CASCADE;
+           DROP TABLE app.company CASCADE;
+
                 
             </sql>
         </rollback>
