@@ -26,13 +26,6 @@ public class UserServiceImpl implements UserService {
         this.userRepository = userRepository;
     }
 
-    private Long getCurrentUserCompanyId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        User user = (User) userDetails;
-        return user.getCompanyId();
-    }
-
     @Override
     public void createUser(UserDto user) {
         User userEntity = User.builder()

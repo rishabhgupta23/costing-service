@@ -8,14 +8,21 @@ import lombok.Data;
 @Data
 @Builder
 public class UserDto {
-    String name;
-    String emailId;
-
+    private Long userId;
+    private String name;
+    private String emailId;
+    private String username;
+    private String role;
+    private CompanyDto company;
 
     public static UserDto entityToDto(User user) {
         return new UserDtoBuilder()
-        .emailId(user.getEmailId())
-        .name(user.getName())
-        .build();
+                .userId(user.getUserId())
+                .emailId(user.getEmailId())
+                .username(user.getEmailId())
+                .name(user.getName())
+                .role(user.getUserRole().getRoleName())
+                .company(CompanyDto.entityToDto(user.getCompany()))
+                .build();
     }
 }
