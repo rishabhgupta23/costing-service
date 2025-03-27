@@ -165,8 +165,8 @@
                 DROP TABLE app.bom CASCADE;
             </sql>
         </rollback>
-    </changeSet>
 
+    </changeSet>
     <!-- Insert vendor data -->
     <changeSet id="20241228-4" author="Rishabh">
         <sql>
