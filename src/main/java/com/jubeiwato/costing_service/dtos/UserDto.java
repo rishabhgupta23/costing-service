@@ -9,7 +9,7 @@ import lombok.Data;
 @Builder
 public class UserDto {
     private Long userId;
-    private String name;
+    private String displayName;
     private String emailId;
     private String username;
     private String role;
@@ -20,7 +20,7 @@ public class UserDto {
                 .userId(user.getUserId())
                 .emailId(user.getEmailId())
                 .username(user.getEmailId())
-                .name(user.getName())
+                .displayName(user.getName())
                 .role(user.getUserRole().getRoleName())
                 .company(CompanyDto.entityToDto(user.getCompany()))
                 .build();

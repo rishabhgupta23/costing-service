@@ -7,7 +7,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
-import org.springframework.security.core.Authentication;
 import com.jubeiwato.costing_service.authentication.config.AppException;
 import com.jubeiwato.costing_service.constants.AppConstants;
 import com.jubeiwato.costing_service.constants.DeleteFlag;
@@ -30,7 +29,7 @@ public class UserServiceImpl implements UserService {
     public void createUser(UserDto user) {
         User userEntity = User.builder()
                 .emailId(user.getEmailId())
-                .name(user.getName())
+                .name(user.getDisplayName())
                 .build();
         userEntity.setCreatedBy(AppConstants.APP_USER_ID);
         userEntity.setCreatedDateTime(ZonedDateTime.now());
