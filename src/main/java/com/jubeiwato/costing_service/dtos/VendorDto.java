@@ -1,5 +1,6 @@
 package com.jubeiwato.costing_service.dtos;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.jubeiwato.costing_service.entities.Vendor;
 
 import lombok.AllArgsConstructor;
@@ -17,6 +18,8 @@ public class VendorDto {
     private String address;
     private String emailId;
     private String contactNumber;
+    @JsonIgnore
+    private Long companyId;
 
     public static VendorDto entityToDto(Vendor vendor) {
         return VendorDto.builder()

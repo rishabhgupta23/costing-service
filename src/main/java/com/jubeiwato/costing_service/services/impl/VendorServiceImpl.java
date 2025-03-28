@@ -42,8 +42,9 @@ public class VendorServiceImpl implements VendorService {
          }
 
     @Override
-    public void createVendor(String name, String emailId, String contactNumber, String address) {
+      public void createVendor(Long companyId, String name, String emailId, String contactNumber, String address) {
         Vendor vendor = Vendor.builder()
+        .companyId(companyId)
         .name(name)
         .emailId(emailId)
         .contactNumber(contactNumber)
@@ -54,13 +55,13 @@ public class VendorServiceImpl implements VendorService {
     }
 
     @Override
-    public ApiPageResponseDto<List<VendorDto>> getVendorList(String name, String address, String emailId, String contactNumber,int pageNo, int pageSize, String sortColumn, Sorting sortMode) {
-        Sort.Direction direction = (sortMode == Sorting.DESC) ? Sort.Direction.DESC : Sort.Direction.ASC;
+    public ApiPageResponseDto<List<VendorDto>> getVendorList(Long companyId, String name, String address, String emailId, String contactNumber, int pageNo, int pageSize, String sortColumn ,Sorting sortMode) {
+                Sort.Direction direction = (sortMode == Sorting.DESC) ? Sort.Direction.DESC : Sort.Direction.ASC;
 
-        Sort sort = Sort.by(direction, sortColumn);
-        Pageable pageable = PageRequest.of(pageNo, pageSize, sort); 
-        Specification<Vendor> spec = VendorSpecification.getFilteredVendors(name, address, emailId, contactNumber);
-        Page<Vendor> vendorPage = vendorRepository.findAll(spec, pageable);
+                Sort sort = Sort.by(direction, sortColumn);
+                Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
+                Specification<Vendor> spec = VendorSpecification.getFilteredVendors(companyId, name, address, emailId, contactNumber);
+                Page<Vendor> vendorPage = vendorRepository.findAll(spec, pageable);
 
         List<VendorDto> vendorDtos = vendorPage.getContent().stream()
                 .map(VendorDto::entityToDto)
@@ -84,12 +85,28 @@ public class VendorServiceImpl implements VendorService {
         Vendor vendor = this.vendorRepository.findById(id)
         .orElseThrow(() -> new AppException(ErrorMessageConstant.VENDOR_DOES_NOT_EXIST, HttpStatus.NOT_FOUND));
 
+                if (!vendor.getCompany().getCompanyId().equals(vendorRepository
+                                .findById(vendor.getCompany().getCompanyId())
+                                .orElseThrow(() -> new AppException(ErrorMessageConstant.VENDOR_DOES_NOT_EXIST,
+                                                HttpStatus.NOT_FOUND))
+                                .getCompany().getCompanyId())) {
+                        throw new AppException(ErrorMessageConstant.VENDOR_CANNOT_BE_ACCESSED, HttpStatus.FORBIDDEN);
+                }
+
         return VendorDto.entityToDto(vendor);
     }
 
     @Override
     public VendorDto updateVendorById(Long id, String name, String emailId, String contactNumber, String address) {
         Vendor vendor = this.vendorRepository.getReferenceById(id);
+
+                if (!vendor.getCompany().getCompanyId().equals(vendorRepository
+                                .findById(vendor.getCompany().getCompanyId())
+                                .orElseThrow(() -> new AppException(ErrorMessageConstant.VENDOR_DOES_NOT_EXIST,
+                                                HttpStatus.NOT_FOUND))
+                                .getCompany().getCompanyId())) {
+                        throw new AppException(ErrorMessageConstant.VENDOR_CANNOT_BE_ACCESSED, HttpStatus.FORBIDDEN);
+                }
         vendor.setName(name);
         vendor.setEmailId(emailId);
         vendor.setContactNumber(contactNumber);
@@ -97,16 +114,31 @@ public class VendorServiceImpl implements VendorService {
 
         return VendorDto.entityToDto(this.vendorRepository.save(vendor));
     }
-   
+
     @Transactional
     @Override
     public void deleteVendorById(Long id) {
-      
+                Vendor vendor = this.vendorRepository.getReferenceById(id);
+                if (!vendor.getCompany().getCompanyId().equals(vendorRepository
+                                .findById(vendor.getCompany().getCompanyId())
+                                .orElseThrow(() -> new AppException(ErrorMessageConstant.VENDOR_DOES_NOT_EXIST,
+                                                HttpStatus.NOT_FOUND))
+                                .getCompany().getCompanyId())) {
+                        throw new AppException(ErrorMessageConstant.VENDOR_CANNOT_BE_DELETED, HttpStatus.FORBIDDEN);
+                }
         vendorRepository.deleteById(id);
     }
-    
+
     @Override
     public ApiPageResponseDto<List<PartDto>> getVendorParts(Long vendorId, int pageNo, int pageSize) {
+                Vendor vendor = this.vendorRepository.getReferenceById(vendorId);
+                if (!vendor.getCompany().getCompanyId().equals(vendorRepository
+                                .findById(vendor.getCompany().getCompanyId())
+                                .orElseThrow(() -> new AppException(ErrorMessageConstant.VENDOR_DOES_NOT_EXIST,
+                                                HttpStatus.NOT_FOUND))
+                                .getCompany().getCompanyId())) {
+                        throw new AppException(ErrorMessageConstant.VENDOR_CANNOT_BE_ACCESSED, HttpStatus.FORBIDDEN);
+                }
         PageRequest pageable = PageRequest.of(pageNo, pageSize);
         Page<Part> partVendorList = partRepository.getVendorParts(vendorId, pageable);
 
@@ -125,21 +157,22 @@ public class VendorServiceImpl implements VendorService {
             .data(partDtos)
             .pageInfo(pageInfo)
             .build();
+
     }
 
-    @Override
-    public byte[] downloadVendorExcel() throws IOException {
-        List<Vendor> vendors = vendorRepository.findAll();
+        @Override
+        public byte[] downloadVendorExcel(Long companyId) throws IOException {
+               
+                List<Vendor> vendors = vendorRepository.findByCompanyCompanyId(companyId);
+               String[] headers = { "Name", "Email", "Contact Number", "Address" };
 
-        String[] headers = {"Name", "Email ID", "Contact No.", "Address"};
-
-        //data in String[] is in same order as respective headers
         List<String[]> data = vendors.stream()
+
                 .map(vendor -> new String[]{
                         vendor.getName(),
                         vendor.getEmailId(),
                         vendor.getContactNumber(),
-                        vendor.getAddress()            
+                        vendor.getAddress()
                 })
                 .toList();
 

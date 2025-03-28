@@ -9,9 +9,10 @@ import com.jubeiwato.costing_service.dtos.VendorDto;
 import java.io.IOException;
 
 public interface VendorService {
-    void createVendor(String name, String emailId, String contactNumber, String address);
+    void createVendor(Long companyId, String name, String emailId, String contactNumber, String address);
     
-    ApiPageResponseDto<List<VendorDto>> getVendorList(String name, String address, String emailId, String contactNumber,int pageNo, int pageSize,String sortColumn, Sorting sortMode);
+    ApiPageResponseDto<List<VendorDto>> getVendorList(Long companyId, String name, String address, String emailId,
+            String contactNumber, int pageNo, int pageSize, String sortColumn, Sorting sortMode);
 
     VendorDto getVendorById(Long id);
 
@@ -19,7 +20,7 @@ public interface VendorService {
 
     void deleteVendorById(Long id);
 
-    ApiPageResponseDto<List<PartDto>> getVendorParts(Long vendorId,int pageNo, int pageSize);
-    byte[] downloadVendorExcel() throws IOException;
+    ApiPageResponseDto<List<PartDto>> getVendorParts(Long vendorId, int pageNo, int pageSize);
+    byte[] downloadVendorExcel(Long companyId) throws IOException;
     
 }
