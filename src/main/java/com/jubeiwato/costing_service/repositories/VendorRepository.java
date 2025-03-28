@@ -9,10 +9,7 @@ import java.util.Optional;
 public interface VendorRepository extends JpaRepository<Vendor, Long>, JpaSpecificationExecutor<Vendor> {
     List<Vendor> findByCompanyCompanyId(Long companyId);
 
-    Optional<Vendor> findByVendorIdAndCompanyCompanyId(Long vendorId, Long companyId);
-
-    void deleteByVendorIdAndCompanyCompanyId(Long id, Long companyId);
-
-    // List<Vendor> findByCompanyId(Long companyId);
-
 }
+
+
+
