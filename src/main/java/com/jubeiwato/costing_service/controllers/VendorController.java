@@ -37,7 +37,6 @@ import java.io.IOException;
 @RequestMapping("/vendors")
 public class VendorController {
     
-    
     private final VendorService vendorService;
     
 
@@ -103,7 +102,7 @@ public class VendorController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPERADMIN') or hasRole('MAINTAINER')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('MAINTAINER')")
     public ResponseEntity<VendorDto> updateVendorById(@PathVariable Long id, @RequestBody VendorDto vendorDto,
             @AuthenticationPrincipal User authenticatedUser) {
         VendorDto updatedVendor = this.vendorService.updateVendorById(id, vendorDto.getName(), vendorDto.getEmailId(),
@@ -112,7 +111,7 @@ public class VendorController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPERADMIN') or hasRole('MAINTAINER')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('MAINTAINER')")
     public ResponseEntity<GeneralResponseDto> deleteVendor(@PathVariable Long id) {
         vendorService.deleteVendorById(id);
         GeneralResponseDto response = new GeneralResponseDto("Vendor deleted successfully", HttpStatus.OK.value());
