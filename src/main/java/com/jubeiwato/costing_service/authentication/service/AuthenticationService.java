@@ -49,8 +49,9 @@ public class AuthenticationService {
     public User signup(RegisterUserDto input) {
         Company company = companyRepository.findByCompanyId(input.getCompanyId())
         .orElseThrow(() -> new RuntimeException("Company not found"));
-        UserRole role = userRoleRepository.findByRoleName(input.getRoleName())
+        UserRole role = userRoleRepository.findById(input.getRoleId())
         .orElseThrow(() -> new RuntimeException("Role not found"));
+    
 
         if (userRepository.findByEmailId(input.getEmail()).isPresent()) {
             throw new AppException(ErrorMessageConstant.USER_ALREADY_EXISTS, HttpStatus.CONFLICT);
@@ -62,10 +63,6 @@ public class AuthenticationService {
                 .company(company)
                 .userRole(role)
                 .build();
-                user.setCreatedBy(AppConstants.APP_USER_ID);
-                user.setCreatedDateTime(ZonedDateTime.now());
-                user.setUpdatedDateTime(ZonedDateTime.now());
-                user.setUpdatedBy(AppConstants.APP_USER_ID);
         return userRepository.save(user);
     }
     

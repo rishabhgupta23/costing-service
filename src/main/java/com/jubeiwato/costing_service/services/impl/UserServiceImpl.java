@@ -46,36 +46,26 @@ public class UserServiceImpl implements UserService {
         this.passwordEncoder = passwordEncoder;
     }
  public void createUser(UserDto user) {
-    // Get the logged-in user
+
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     User currentUser = (User) authentication.getPrincipal();
 
-    // Fetch the company from the logged-in user
     Company company = currentUser.getCompany();
     if (company == null) {
         throw new AppException("Current user does not belong to any company", HttpStatus.BAD_REQUEST);
     }
 
-    // Fetch role using roleId received from frontend
     UserRole role = userRoleRepository.findById(user.getRoleId())
             .orElseThrow(() -> new AppException("Role not found", HttpStatus.NOT_FOUND));
 
-    // Create new user
     User userEntity = User.builder()
         .emailId(user.getEmailId())
         .displayName(user.getDisplayName())
         .password(passwordEncoder.encode(user.getPassword()))
-        .company(company)  // Assign company from logged-in user
+        .company(company)
         .userRole(role)
         .build();
 
-    // Set metadata
-    userEntity.setCreatedBy(AppConstants.APP_USER_ID);
-    userEntity.setCreatedDateTime(ZonedDateTime.now());
-    userEntity.setUpdatedDateTime(ZonedDateTime.now());
-    userEntity.setUpdatedBy(AppConstants.APP_USER_ID);
-
-    // Save to database
     userRepository.save(userEntity);
 }
     @Override
@@ -105,35 +95,30 @@ public class UserServiceImpl implements UserService {
 public ApiPageResponseDto<List<UserDto>> getUserByCompanyId(
         String displayName, String emailId, String roleName, int pageNo, int pageSize, String sortColumn, Sorting sortMode) {
 
-    // Get the authenticated user
+
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     User currentUser = (User) authentication.getPrincipal();
 
-    // Fetch users of the same company as the logged-in user
     Long companyId = currentUser.getCompany().getCompanyId();
 
     if ("roleName".equals(sortColumn)) {
         sortColumn = "role.roleName"; 
     }
-    
-    // Define sorting direction
+
     Sort.Direction direction = (sortMode == Sorting.DESC) ? Sort.Direction.DESC : Sort.Direction.ASC;
     Sort sort = Sort.by(direction, sortColumn);
 
-    // Define pagination
+
     Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
 
-    // Apply filters using Specification
     Specification<User> spec = UserSpecification.getFilteredUsers(companyId, displayName, emailId, roleName);
     Page<User> userPage = userRepository.findAll(spec, pageable);
 
-    // Convert User entities to UserDto
     List<UserDto> userDtos = userPage.getContent()
             .stream()
             .map(UserDto::entityToDto)
-            .toList(); // `.toList()` instead of `.collect(Collectors.toList())` (Java 16+)
+            .toList(); 
 
-    // Create PageInfoDto
     PageInfoDto pageInfo = PageInfoDto.builder()
         .totalPages(userPage.getTotalPages())
         .pageNumber(pageNo)
@@ -141,7 +126,6 @@ public ApiPageResponseDto<List<UserDto>> getUserByCompanyId(
         .totalRecords(userPage.getTotalElements())
         .build();
 
-    // Return paginated response
     return ApiPageResponseDto.<List<UserDto>>builder()
         .data(userDtos)
         .pageInfo(pageInfo)
@@ -159,13 +143,12 @@ public UserDto updateUserById(Long userId, UserDto userDto) {
     userEntity.setDisplayName(userDto.getDisplayName());
     userEntity.setEmailId(userDto.getEmailId());
 
-    // Fetch and set role
     UserRole userRole = userRoleRepository.findById(userDto.getRoleId())
         .orElseThrow(() -> new RuntimeException("Role not found"));
     userEntity.setUserRole(userRole);
 
-    User updatedUser = userRepository.save(userEntity); // Save and get updated entity
-    return UserDto.entityToDto(updatedUser); // Convert updated entity to DTO and return
+    User updatedUser = userRepository.save(userEntity);
+    return UserDto.entityToDto(updatedUser);
 }
 
 
@@ -189,9 +172,5 @@ public UserDto getUserById(Long userId) {
     User user = userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
     return UserDto.entityToDto(user);
-}
-
-
-    
-    
+}  
 }

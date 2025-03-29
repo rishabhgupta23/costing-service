@@ -14,6 +14,6 @@ public class RegisterUserDto {
     private String password;
     private String displayName;
     private Long companyId;
-    private String roleName;
+    private Long roleId;
     
 }
