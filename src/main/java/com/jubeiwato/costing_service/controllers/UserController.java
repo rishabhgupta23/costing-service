@@ -8,6 +8,7 @@ import org.springframework.security.core.Authentication;
 
 import com.jubeiwato.costing_service.constants.AppConstants;
 import com.jubeiwato.costing_service.constants.Sorting;
+import com.jubeiwato.costing_service.constants.UserRoleEnum;
 import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
 import com.jubeiwato.costing_service.dtos.GeneralResponseDto;
 import com.jubeiwato.costing_service.dtos.UserDto;
@@ -37,7 +38,8 @@ public class UserController {
     }
 
     @PostMapping("/users")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasRole(T(com.jubeiwato.costing_service.constants.UserRoleEnum).ADMIN.getRoleName()) or " +
+    "hasRole(T(com.jubeiwato.costing_service.constants.UserRoleEnum).SUPER_ADMIN.getRoleName())")
     public ResponseEntity<GeneralResponseDto> createUser(@RequestBody UserDto user) {
         userService.createUser(user);
         GeneralResponseDto response = new GeneralResponseDto("Successful", HttpStatus.CREATED.value());
@@ -45,7 +47,6 @@ public class UserController {
     }
 
 @GetMapping("/users/company")
-@PreAuthorize("isAuthenticated()")
 public ResponseEntity<ApiPageResponseDto<List<UserDto>>> getUserByCompany(
     @RequestParam(required = false) String fullName,
     @RequestParam(required = false) String emailId,
@@ -62,7 +63,6 @@ public ResponseEntity<ApiPageResponseDto<List<UserDto>>> getUserByCompany(
 }
 
 @GetMapping("/users/roles")
-@PreAuthorize("isAuthenticated()")
 public ResponseEntity<ApiPageResponseDto<List<UserRoleDto>>> getUserRoles(
         @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNo,
         @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int pageSize,
@@ -70,12 +70,16 @@ public ResponseEntity<ApiPageResponseDto<List<UserRoleDto>>> getUserRoles(
         @RequestParam(defaultValue = "ASC") Sorting sortMode) {
 
     ApiPageResponseDto<List<UserRoleDto>> response = userService.getUserRoles(pageNo, pageSize);
+    response.setData(response.getData().stream()
+    .filter(role -> UserRoleEnum.MAINTAINER.getRoleName().equalsIgnoreCase(role.getRoleName()) ||
+    UserRoleEnum.GUEST.getRoleName().equalsIgnoreCase(role.getRoleName()))
+    .toList());
     return ResponseEntity.ok(response);
 }
 
 
+
     @GetMapping("/whoami")
-    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserDto> getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User currentUser = (User) authentication.getPrincipal();
@@ -85,35 +89,42 @@ public ResponseEntity<ApiPageResponseDto<List<UserRoleDto>>> getUserRoles(
 
     
     @PutMapping("/users/{userId}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasRole(T(com.jubeiwato.costing_service.constants.UserRoleEnum).ADMIN.getRoleName()) or " +
+    "hasRole(T(com.jubeiwato.costing_service.constants.UserRoleEnum).SUPER_ADMIN.getRoleName())")
     public ResponseEntity<UserDto> updateUserById(@PathVariable Long userId, @RequestBody UserDto userDto) {
         UserDto updatedUser = this.userService.updateUserById(userId, userDto);
         return new ResponseEntity<>(updatedUser, HttpStatus.OK);
     }
 
     @DeleteMapping("/users/{userId}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')") 
+    @PreAuthorize("hasRole(T(com.jubeiwato.costing_service.constants.UserRoleEnum).ADMIN.getRoleName()) or " +
+    "hasRole(T(com.jubeiwato.costing_service.constants.UserRoleEnum).SUPER_ADMIN.getRoleName())")
     public ResponseEntity<GeneralResponseDto> deleteUser(@PathVariable Long userId) {
-        // Get the authenticated user
+
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User currentUser = (User) authentication.getPrincipal();
-    
-        // Fetch the user to be deleted
+
         UserDto targetUser = userService.getUserById(userId);
         if (targetUser == null) {
             throw new RuntimeException("User not found");
         }
-        if ("SUPER_ADMIN".equalsIgnoreCase(targetUser.getRoleName())) {
-            throw new RuntimeException("Super Admins cannot be deleted.");
-        }
-    
-        // Admins can only be deleted by Super Admins
-        if ("ADMIN".equalsIgnoreCase(targetUser.getRoleName()) &&
-            !"SUPER_ADMIN".equalsIgnoreCase(currentUser.getUserRole().getRoleName())) {
-            throw new RuntimeException("Only Super Admins can delete Admins.");
-        }
-    
-        // Proceed with deletion
+        UserRoleEnum targetUserRole;
+    try {
+        targetUserRole = UserRoleEnum.valueOf(targetUser.getRoleName().toUpperCase());
+    } catch (IllegalArgumentException e) {
+        throw new RuntimeException("Invalid role found for user.");
+    }
+
+    // Prevent deletion of Super Admins
+    if (targetUserRole == UserRoleEnum.SUPER_ADMIN) {
+        throw new RuntimeException("Super Admins cannot be deleted.");
+    }
+
+    UserRoleEnum currentUserRole = UserRoleEnum.valueOf(currentUser.getUserRole().getRoleName().toUpperCase());
+    if (targetUserRole == UserRoleEnum.ADMIN && currentUserRole != UserRoleEnum.SUPER_ADMIN) {
+        throw new RuntimeException("Only Super Admins can delete Admins.");
+    }
+
         userService.deleteUserById(userId);
         GeneralResponseDto response = new GeneralResponseDto("User deleted successfully", HttpStatus.OK.value());
         return ResponseEntity.ok(response);
@@ -121,7 +132,8 @@ public ResponseEntity<ApiPageResponseDto<List<UserRoleDto>>> getUserRoles(
     
     
     @GetMapping("/users/{userId}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasRole(T(com.jubeiwato.costing_service.constants.UserRoleEnum).ADMIN.getRoleName()) or " +
+    "hasRole(T(com.jubeiwato.costing_service.constants.UserRoleEnum).SUPER_ADMIN.getRoleName())")
     public ResponseEntity<UserDto> getUserById(@PathVariable Long userId) {
         UserDto user = userService.getUserById(userId);
         return ResponseEntity.ok(user);
