@@ -15,12 +15,14 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
+import com.jubeiwato.costing_service.entities.Company;
 import com.jubeiwato.costing_service.entities.Part;
 import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
 import com.jubeiwato.costing_service.dtos.PageInfoDto;
 import com.jubeiwato.costing_service.dtos.PartDto;
 import com.jubeiwato.costing_service.dtos.VendorDto;
 import com.jubeiwato.costing_service.entities.Vendor;
+import com.jubeiwato.costing_service.repositories.CompanyRepository;
 import com.jubeiwato.costing_service.repositories.PartRepository;
 import com.jubeiwato.costing_service.repositories.VendorRepository;
 import com.jubeiwato.costing_service.services.VendorService;
@@ -32,19 +34,37 @@ public class VendorServiceImpl implements VendorService {
     private final VendorRepository vendorRepository;
     private final PartRepository partRepository;
 
+        private final CompanyRepository companyRepository;
+
     private final FileGeneratorService excelService;
 
+        private Vendor getAndValidateVendor(Long id, Long companyId) {
+                Vendor vendor = this.vendorRepository.findById(id)
+                                .orElseThrow(() -> new AppException(ErrorMessageConstant.VENDOR_DOES_NOT_EXIST,
+                                                HttpStatus.NOT_FOUND));
 
-    public VendorServiceImpl(VendorRepository vendorRepository,PartRepository partRepository, FileGeneratorService excelService) {
-        this.vendorRepository = vendorRepository;
-        this.partRepository= partRepository;
-        this.excelService = excelService;
-         }
+                if (!vendor.getCompany().getCompanyId().equals(companyId)) {
+                        throw new AppException(ErrorMessageConstant.VENDOR_CANNOT_BE_ACCESSED, HttpStatus.FORBIDDEN);
+                }
 
-    @Override
-      public void createVendor(Long companyId, String name, String emailId, String contactNumber, String address) {
+                return vendor;
+        }
+
+        public VendorServiceImpl(VendorRepository vendorRepository, PartRepository partRepository,
+                        CompanyRepository companyRepository, FileGeneratorService excelService) {
+                this.vendorRepository = vendorRepository;
+                this.partRepository = partRepository;
+                this.companyRepository = companyRepository;
+                this.excelService = excelService;
+        }
+
+        @Override
+        public void createVendor(Long companyId, String name, String emailId, String contactNumber, String address) {
+                Company company = companyRepository.findById(companyId)
+                                .orElseThrow(() -> new RuntimeException("Company not found"));
         Vendor vendor = Vendor.builder()
-        .companyId(companyId)
+
+        .company(company)
         .name(name)
         .emailId(emailId)
         .contactNumber(contactNumber)
@@ -81,32 +101,15 @@ public class VendorServiceImpl implements VendorService {
     }
 
     @Override
-    public VendorDto getVendorById(Long id) {
-        Vendor vendor = this.vendorRepository.findById(id)
-        .orElseThrow(() -> new AppException(ErrorMessageConstant.VENDOR_DOES_NOT_EXIST, HttpStatus.NOT_FOUND));
+    public VendorDto getVendorById(Long id, Long companyId) {
 
-                if (!vendor.getCompany().getCompanyId().equals(vendorRepository
-                                .findById(vendor.getCompany().getCompanyId())
-                                .orElseThrow(() -> new AppException(ErrorMessageConstant.VENDOR_DOES_NOT_EXIST,
-                                                HttpStatus.NOT_FOUND))
-                                .getCompany().getCompanyId())) {
-                        throw new AppException(ErrorMessageConstant.VENDOR_CANNOT_BE_ACCESSED, HttpStatus.FORBIDDEN);
-                }
-
+                Vendor vendor = getAndValidateVendor(id, companyId);
         return VendorDto.entityToDto(vendor);
     }
 
     @Override
-    public VendorDto updateVendorById(Long id, String name, String emailId, String contactNumber, String address) {
-        Vendor vendor = this.vendorRepository.getReferenceById(id);
-
-                if (!vendor.getCompany().getCompanyId().equals(vendorRepository
-                                .findById(vendor.getCompany().getCompanyId())
-                                .orElseThrow(() -> new AppException(ErrorMessageConstant.VENDOR_DOES_NOT_EXIST,
-                                                HttpStatus.NOT_FOUND))
-                                .getCompany().getCompanyId())) {
-                        throw new AppException(ErrorMessageConstant.VENDOR_CANNOT_BE_ACCESSED, HttpStatus.FORBIDDEN);
-                }
+    public VendorDto updateVendorById(Long id, String name, String emailId, String contactNumber, String address,Long companyId) {
+                Vendor vendor = getAndValidateVendor(id, companyId);
         vendor.setName(name);
         vendor.setEmailId(emailId);
         vendor.setContactNumber(contactNumber);
@@ -117,28 +120,14 @@ public class VendorServiceImpl implements VendorService {
 
     @Transactional
     @Override
-    public void deleteVendorById(Long id) {
-                Vendor vendor = this.vendorRepository.getReferenceById(id);
-                if (!vendor.getCompany().getCompanyId().equals(vendorRepository
-                                .findById(vendor.getCompany().getCompanyId())
-                                .orElseThrow(() -> new AppException(ErrorMessageConstant.VENDOR_DOES_NOT_EXIST,
-                                                HttpStatus.NOT_FOUND))
-                                .getCompany().getCompanyId())) {
-                        throw new AppException(ErrorMessageConstant.VENDOR_CANNOT_BE_DELETED, HttpStatus.FORBIDDEN);
-                }
+    public void deleteVendorById(Long id, Long companyId) {
+                Vendor vendor = getAndValidateVendor(id, companyId);
         vendorRepository.deleteById(id);
     }
 
     @Override
-    public ApiPageResponseDto<List<PartDto>> getVendorParts(Long vendorId, int pageNo, int pageSize) {
-                Vendor vendor = this.vendorRepository.getReferenceById(vendorId);
-                if (!vendor.getCompany().getCompanyId().equals(vendorRepository
-                                .findById(vendor.getCompany().getCompanyId())
-                                .orElseThrow(() -> new AppException(ErrorMessageConstant.VENDOR_DOES_NOT_EXIST,
-                                                HttpStatus.NOT_FOUND))
-                                .getCompany().getCompanyId())) {
-                        throw new AppException(ErrorMessageConstant.VENDOR_CANNOT_BE_ACCESSED, HttpStatus.FORBIDDEN);
-                }
+    public ApiPageResponseDto<List<PartDto>> getVendorParts(Long vendorId, int pageNo, int pageSize,Long companyId) {
+                Vendor vendor = getAndValidateVendor(vendorId, companyId);
         PageRequest pageable = PageRequest.of(pageNo, pageSize);
         Page<Part> partVendorList = partRepository.getVendorParts(vendorId, pageable);
 
@@ -162,7 +151,7 @@ public class VendorServiceImpl implements VendorService {
 
         @Override
         public byte[] downloadVendorExcel(Long companyId) throws IOException {
-               
+
                 List<Vendor> vendors = vendorRepository.findByCompanyCompanyId(companyId);
                String[] headers = { "Name", "Email", "Contact Number", "Address" };
 
@@ -178,6 +167,5 @@ public class VendorServiceImpl implements VendorService {
 
         return excelService.generateSpreadsheet(data, headers);
     }
-    
 
 }

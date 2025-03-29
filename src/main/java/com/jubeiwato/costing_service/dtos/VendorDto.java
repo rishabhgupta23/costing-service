@@ -18,16 +18,14 @@ public class VendorDto {
     private String address;
     private String emailId;
     private String contactNumber;
-    @JsonIgnore
-    private Long companyId;
 
     public static VendorDto entityToDto(Vendor vendor) {
         return VendorDto.builder()
-        .id(vendor.getVendorId())
-        .name(vendor.getName())
-        .emailId(vendor.getEmailId())
-        .contactNumber(vendor.getContactNumber())
-        .address(vendor.getAddress())
-        .build();
+                .id(vendor.getVendorId())
+                .name(vendor.getName())
+                .emailId(vendor.getEmailId())
+                .contactNumber(vendor.getContactNumber())
+                .address(vendor.getAddress())
+                .build();
     }
 }

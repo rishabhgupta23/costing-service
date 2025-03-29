@@ -40,16 +40,4 @@ public class Vendor extends BaseEntity {
     @JoinColumn(name = "company_id", nullable = false)
     private Company company;
 
-    public static class VendorBuilder {
-        private Company company;
-
-        public VendorBuilder companyId(Long companyId) {
-            this.company = Company.builder().companyId(companyId).build();
-            return this;
-        }
-
-        public Vendor build() {
-            return new Vendor(vendorId, name, emailId, address, contactNumber, company);
-        }
-    }
 }

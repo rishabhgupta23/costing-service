@@ -36,16 +36,14 @@ import java.io.IOException;
 @RestController
 @RequestMapping("/vendors")
 public class VendorController {
-    
     private final VendorService vendorService;
-    
 
     public VendorController(VendorService vendorService) {
         this.vendorService = vendorService;
     }
 
     @GetMapping()
-    @PreAuthorize("isAuthenticated()")
+
     public ResponseEntity<ApiPageResponseDto<List<VendorDto>>> getVendorList(
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String address,
@@ -64,7 +62,6 @@ public class VendorController {
     }
 
     @GetMapping("/download")
-    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<FileResponseDto> downloadVendorListData(@AuthenticationPrincipal User authenticatedUser)
             throws IOException {
         Long companyId = authenticatedUser.getCompany().getCompanyId();
@@ -85,15 +82,19 @@ public class VendorController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<VendorDto> getVendorById(@PathVariable Long id,@AuthenticationPrincipal User authenticatedUser ){
-        VendorDto vendor = this.vendorService.getVendorById(id);
-        return new ResponseEntity<>(vendor, HttpStatus.OK);
-    }
+        Long companyId = authenticatedUser.getCompany().getCompanyId();
+        VendorDto vendor = this.vendorService.getVendorById(id, companyId);
+         return new ResponseEntity<>(vendor, HttpStatus.OK);
+        }
 
     @PostMapping()
-    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('MAINTAINER')")
-    public ResponseEntity<GeneralResponseDto> createVendor(@RequestBody VendorDto vendorDto,@AuthenticationPrincipal User authenticatedUser) {
+    @PreAuthorize("hasRole(T(com.jubeiwato.costing_service.constants.UserRoleEnum).ADMIN.getRoleName()) or " +
+                        "hasRole(T(com.jubeiwato.costing_service.constants.UserRoleEnum).SUPER_ADMIN.getRoleName()) or "
+                        +
+                        "hasRole(T(com.jubeiwato.costing_service.constants.UserRoleEnum).MAINTAINER.getRoleName())")
+    public ResponseEntity<GeneralResponseDto> createVendor(@RequestBody VendorDto vendorDto,
+                        @AuthenticationPrincipal User authenticatedUser) {
         Long companyId = authenticatedUser.getCompany().getCompanyId();
         vendorService.createVendor(companyId, vendorDto.getName(), vendorDto.getEmailId(),
                vendorDto.getContactNumber(), vendorDto.getAddress());
@@ -102,28 +103,42 @@ public class VendorController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('MAINTAINER')")
+    @PreAuthorize("hasRole(T(com.jubeiwato.costing_service.constants.UserRoleEnum).ADMIN.getRoleName()) or " +
+                        "hasRole(T(com.jubeiwato.costing_service.constants.UserRoleEnum).SUPER_ADMIN.getRoleName()) or "
+                        +
+                        "hasRole(T(com.jubeiwato.costing_service.constants.UserRoleEnum).MAINTAINER.getRoleName())")
     public ResponseEntity<VendorDto> updateVendorById(@PathVariable Long id, @RequestBody VendorDto vendorDto,
             @AuthenticationPrincipal User authenticatedUser) {
-        VendorDto updatedVendor = this.vendorService.updateVendorById(id, vendorDto.getName(), vendorDto.getEmailId(),
-         vendorDto.getContactNumber(), vendorDto.getAddress());
-        return new ResponseEntity<>(updatedVendor, HttpStatus.OK);
-    }
+                Long companyId = authenticatedUser.getCompany().getCompanyId();
+
+         VendorDto updatedVendor = this.vendorService.updateVendorById(id, vendorDto.getName(),vendorDto.getEmailId(),
+                                vendorDto.getContactNumber(), vendorDto.getAddress(), companyId);
+                return new ResponseEntity<>(updatedVendor, HttpStatus.OK);
+        }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('MAINTAINER')")
-    public ResponseEntity<GeneralResponseDto> deleteVendor(@PathVariable Long id) {
-        vendorService.deleteVendorById(id);
+    @PreAuthorize("hasRole(T(com.jubeiwato.costing_service.constants.UserRoleEnum).ADMIN.getRoleName()) or " +
+                        "hasRole(T(com.jubeiwato.costing_service.constants.UserRoleEnum).SUPER_ADMIN.getRoleName()) or "
+                        +
+                        "hasRole(T(com.jubeiwato.costing_service.constants.UserRoleEnum).MAINTAINER.getRoleName())")
+        public ResponseEntity<GeneralResponseDto> deleteVendor(@PathVariable Long id,
+                        @AuthenticationPrincipal User authenticatedUser) {
+                Long companyId = authenticatedUser.getCompany().getCompanyId();
+        vendorService.deleteVendorById(id, companyId);
         GeneralResponseDto response = new GeneralResponseDto("Vendor deleted successfully", HttpStatus.OK.value());
         return ResponseEntity.ok(response);
-    }
+        }
 
     @GetMapping("/{id}/parts") 
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiPageResponseDto<List<PartDto>>> getVendorParts(    @PathVariable("id") Long vendorId,@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNo, @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int pageSize ) {
-        ApiPageResponseDto<List<PartDto>> response = vendorService.getVendorParts(vendorId, pageNo, pageSize);
-        return ResponseEntity.ok(response);
-    }
+        public ResponseEntity<ApiPageResponseDto<List<PartDto>>> getVendorParts(@PathVariable("id") Long vendorId,
+                        @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNo,
+                        @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int pageSize,
+                        @AuthenticationPrincipal User authenticatedUser) {
+                Long companyId = authenticatedUser.getCompany().getCompanyId();
+                ApiPageResponseDto<List<PartDto>> response = vendorService.getVendorParts(vendorId, pageNo, pageSize,
+                                companyId);
+                return ResponseEntity.ok(response);
+        }
 
 }
 
