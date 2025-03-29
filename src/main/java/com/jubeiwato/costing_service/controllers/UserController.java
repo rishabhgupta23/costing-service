@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.GetMapping;
 
-
 @RestController
 public class UserController {
 
@@ -31,12 +30,11 @@ public class UserController {
     }
 
     @GetMapping("/whoami")
-    public ResponseEntity<User> getCurrentUser() {
+    public ResponseEntity<UserDto> getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User currentUser = (User) authentication.getPrincipal();
-        return ResponseEntity.ok(currentUser);
+        UserDto userDto = UserDto.entityToDto(currentUser);
+        return ResponseEntity.ok(userDto);
     }
 
-
-    
 }
