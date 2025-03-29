@@ -1,15 +1,26 @@
 package com.jubeiwato.costing_service.services;
 
+import java.util.List;
+
+import com.jubeiwato.costing_service.constants.Sorting;
+import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
 import com.jubeiwato.costing_service.dtos.UserDto;
+import com.jubeiwato.costing_service.dtos.UserRoleDto;
 
 public interface UserService {
     void createUser(UserDto user);
 
-    UserDto getUserById(Long id);
+ApiPageResponseDto<List<UserDto>> getUserByCompanyId(
+    String fullName, String emailId, String roleName, 
+    int pageNo, int pageSize, String sortColumn, Sorting sortMode);
 
-    UserDto getUserByEmailId(String emailId);
+    UserDto getUserByEmailId(String email);
 
-    void updateUserById(Long id, String name, String emailId);
+    public ApiPageResponseDto<List<UserRoleDto>> getUserRoles(int pageNo, int pageSize);
 
-    void deleteUserById(Long id);
+    UserDto updateUserById(Long userId, UserDto userDto);
+
+
+    void deleteUserById(Long userId);
+    public UserDto getUserById(Long userId);
 }

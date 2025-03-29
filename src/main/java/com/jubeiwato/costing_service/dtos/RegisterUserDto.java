@@ -12,6 +12,8 @@ public class RegisterUserDto {
     private String email;
     @NotNull
     private String password;
-    private String fullName;
+    private String displayName;
+    private Long companyId;
+    private String roleName;
     
 }
