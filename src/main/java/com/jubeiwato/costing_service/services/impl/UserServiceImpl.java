@@ -103,7 +103,7 @@ public class UserServiceImpl implements UserService {
 
 @Override
 public ApiPageResponseDto<List<UserDto>> getUserByCompanyId(
-        String fullName, String emailId, String roleName, int pageNo, int pageSize, String sortColumn, Sorting sortMode) {
+        String displayName, String emailId, String roleName, int pageNo, int pageSize, String sortColumn, Sorting sortMode) {
 
     // Get the authenticated user
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -124,7 +124,7 @@ public ApiPageResponseDto<List<UserDto>> getUserByCompanyId(
     Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
 
     // Apply filters using Specification
-    Specification<User> spec = UserSpecification.getFilteredUsers(companyId, fullName, emailId, roleName);
+    Specification<User> spec = UserSpecification.getFilteredUsers(companyId, displayName, emailId, roleName);
     Page<User> userPage = userRepository.findAll(spec, pageable);
 
     // Convert User entities to UserDto

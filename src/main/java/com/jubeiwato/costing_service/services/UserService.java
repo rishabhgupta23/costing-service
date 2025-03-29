@@ -11,7 +11,7 @@ public interface UserService {
     void createUser(UserDto user);
 
 ApiPageResponseDto<List<UserDto>> getUserByCompanyId(
-    String fullName, String emailId, String roleName, 
+    String displayName, String emailId, String roleName, 
     int pageNo, int pageSize, String sortColumn, Sorting sortMode);
 
     UserDto getUserByEmailId(String email);
