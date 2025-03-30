@@ -70,10 +70,6 @@ public ResponseEntity<ApiPageResponseDto<List<UserRoleDto>>> getUserRoles(
         @RequestParam(defaultValue = "ASC") Sorting sortMode) {
 
     ApiPageResponseDto<List<UserRoleDto>> response = userService.getUserRoles(pageNo, pageSize);
-    response.setData(response.getData().stream()
-    .filter(role -> UserRoleEnum.MAINTAINER.getRoleName().equalsIgnoreCase(role.getRoleName()) ||
-    UserRoleEnum.GUEST.getRoleName().equalsIgnoreCase(role.getRoleName()))
-    .toList());
     return ResponseEntity.ok(response);
 }
 
@@ -98,37 +94,13 @@ public ResponseEntity<ApiPageResponseDto<List<UserRoleDto>>> getUserRoles(
 
     @DeleteMapping("/users/{userId}")
     @PreAuthorize("hasRole(T(com.jubeiwato.costing_service.constants.UserRoleEnum).ADMIN.getRoleName()) or " +
-    "hasRole(T(com.jubeiwato.costing_service.constants.UserRoleEnum).SUPER_ADMIN.getRoleName())")
+            "hasRole(T(com.jubeiwato.costing_service.constants.UserRoleEnum).SUPER_ADMIN.getRoleName())")
     public ResponseEntity<GeneralResponseDto> deleteUser(@PathVariable Long userId) {
-
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User currentUser = (User) authentication.getPrincipal();
-
-        UserDto targetUser = userService.getUserById(userId);
-        if (targetUser == null) {
-            throw new RuntimeException("User not found");
-        }
-        UserRoleEnum targetUserRole;
-    try {
-        targetUserRole = UserRoleEnum.valueOf(targetUser.getRoleName().toUpperCase());
-    } catch (IllegalArgumentException e) {
-        throw new RuntimeException("Invalid role found for user.");
-    }
-
-    // Prevent deletion of Super Admins
-    if (targetUserRole == UserRoleEnum.SUPER_ADMIN) {
-        throw new RuntimeException("Super Admins cannot be deleted.");
-    }
-
-    UserRoleEnum currentUserRole = UserRoleEnum.valueOf(currentUser.getUserRole().getRoleName().toUpperCase());
-    if (targetUserRole == UserRoleEnum.ADMIN && currentUserRole != UserRoleEnum.SUPER_ADMIN) {
-        throw new RuntimeException("Only Super Admins can delete Admins.");
-    }
-
         userService.deleteUserById(userId);
         GeneralResponseDto response = new GeneralResponseDto("User deleted successfully", HttpStatus.OK.value());
         return ResponseEntity.ok(response);
     }
+    
     
     
     @GetMapping("/users/{userId}")

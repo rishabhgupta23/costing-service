@@ -15,7 +15,6 @@ public class UserDto {
     @NotNull
     @Email
     private String emailId;
-        @NotNull
     private String password;
     private CompanyDto company;
     private Long roleId;

@@ -20,6 +20,16 @@ public class ErrorMessageConstant {
     public static final String UNEXPECTED_ERROR_OCCURED = "unexpected error occured";
     public static final String JWT_TOKEN_MISSING = "JWT token is missing";
     public static final String USER_ALREADY_EXISTS = "User with this email already exists";
+    public static final String ROLE_NOT_FOUND = "Role not found";
+    public static final String SUPER_ADMIN_DELETE_ERROR = "Super Admins cannot be deleted.";
+    public static final String ADMIN_DELETE_ERROR = "Only Super Admins can delete Admins.";
+    public static final String COMPANY_NOT_FOUND = "Current user does not belong to any company";
+    public static final String INVALID_USER_ROLE = "Invalid role found for user.";
+    public static final String DISPLAY_NAME_REQUIRED = "Display name is required.";
+    public static final String EMAIL_REQUIRED = "Email ID is required.";
+    public static final String ROLE_REQUIRED = "User role is required.";
+
+
 
 
 
