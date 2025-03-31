@@ -15,12 +15,14 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
+import com.jubeiwato.costing_service.entities.Company;
 import com.jubeiwato.costing_service.entities.Part;
 import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
 import com.jubeiwato.costing_service.dtos.PageInfoDto;
 import com.jubeiwato.costing_service.dtos.PartDto;
 import com.jubeiwato.costing_service.dtos.VendorDto;
 import com.jubeiwato.costing_service.entities.Vendor;
+import com.jubeiwato.costing_service.repositories.CompanyRepository;
 import com.jubeiwato.costing_service.repositories.PartRepository;
 import com.jubeiwato.costing_service.repositories.VendorRepository;
 import com.jubeiwato.costing_service.services.VendorService;
@@ -32,18 +34,36 @@ public class VendorServiceImpl implements VendorService {
     private final VendorRepository vendorRepository;
     private final PartRepository partRepository;
 
+        private final CompanyRepository companyRepository;
+
     private final FileGeneratorService excelService;
 
+        public VendorServiceImpl(VendorRepository vendorRepository, PartRepository partRepository,
+                        CompanyRepository companyRepository, FileGeneratorService excelService) {
+                this.vendorRepository = vendorRepository;
+                this.partRepository = partRepository;
+                this.companyRepository = companyRepository;
+                this.excelService = excelService;
+        }
 
-    public VendorServiceImpl(VendorRepository vendorRepository,PartRepository partRepository, FileGeneratorService excelService) {
-        this.vendorRepository = vendorRepository;
-        this.partRepository= partRepository;
-        this.excelService = excelService;
-         }
+        private Vendor getAndValidateVendor(Long id, Long companyId) {
+                Vendor vendor = this.vendorRepository.findById(id)
+                                .orElseThrow(() -> new AppException(ErrorMessageConstant.VENDOR_DOES_NOT_EXIST,HttpStatus.NOT_FOUND));
 
-    @Override
-    public void createVendor(String name, String emailId, String contactNumber, String address) {
+                if (!vendor.getCompany().getCompanyId().equals(companyId)) {
+                        throw new AppException(ErrorMessageConstant.VENDOR_DOES_NOT_EXIST,HttpStatus.NOT_FOUND);
+                }
+
+                return vendor;
+        }
+
+        @Override
+        public void createVendor(Long companyId, String name, String emailId, String contactNumber, String address) {
+                Company company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new AppException("Company not found", HttpStatus.BAD_REQUEST));
         Vendor vendor = Vendor.builder()
+
+        .company(company)
         .name(name)
         .emailId(emailId)
         .contactNumber(contactNumber)
@@ -54,13 +74,13 @@ public class VendorServiceImpl implements VendorService {
     }
 
     @Override
-    public ApiPageResponseDto<List<VendorDto>> getVendorList(String name, String address, String emailId, String contactNumber,int pageNo, int pageSize, String sortColumn, Sorting sortMode) {
-        Sort.Direction direction = (sortMode == Sorting.DESC) ? Sort.Direction.DESC : Sort.Direction.ASC;
+    public ApiPageResponseDto<List<VendorDto>> getVendorList(Long companyId, String name, String address, String emailId, String contactNumber, int pageNo, int pageSize, String sortColumn ,Sorting sortMode) {
+                Sort.Direction direction = (sortMode == Sorting.DESC) ? Sort.Direction.DESC : Sort.Direction.ASC;
 
-        Sort sort = Sort.by(direction, sortColumn);
-        Pageable pageable = PageRequest.of(pageNo, pageSize, sort); 
-        Specification<Vendor> spec = VendorSpecification.getFilteredVendors(name, address, emailId, contactNumber);
-        Page<Vendor> vendorPage = vendorRepository.findAll(spec, pageable);
+                Sort sort = Sort.by(direction, sortColumn);
+                Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
+                Specification<Vendor> spec = VendorSpecification.getFilteredVendors(companyId, name, address, emailId, contactNumber);
+                Page<Vendor> vendorPage = vendorRepository.findAll(spec, pageable);
 
         List<VendorDto> vendorDtos = vendorPage.getContent().stream()
                 .map(VendorDto::entityToDto)
@@ -80,16 +100,15 @@ public class VendorServiceImpl implements VendorService {
     }
 
     @Override
-    public VendorDto getVendorById(Long id) {
-        Vendor vendor = this.vendorRepository.findById(id)
-        .orElseThrow(() -> new AppException(ErrorMessageConstant.VENDOR_DOES_NOT_EXIST, HttpStatus.NOT_FOUND));
+    public VendorDto getVendorById(Long id, Long companyId) {
 
+                Vendor vendor = getAndValidateVendor(id, companyId);
         return VendorDto.entityToDto(vendor);
     }
 
     @Override
-    public VendorDto updateVendorById(Long id, String name, String emailId, String contactNumber, String address) {
-        Vendor vendor = this.vendorRepository.getReferenceById(id);
+    public VendorDto updateVendorById(Long id, String name, String emailId, String contactNumber, String address,Long companyId) {
+                Vendor vendor = getAndValidateVendor(id, companyId);
         vendor.setName(name);
         vendor.setEmailId(emailId);
         vendor.setContactNumber(contactNumber);
@@ -97,16 +116,17 @@ public class VendorServiceImpl implements VendorService {
 
         return VendorDto.entityToDto(this.vendorRepository.save(vendor));
     }
-   
+
     @Transactional
     @Override
-    public void deleteVendorById(Long id) {
-      
+    public void deleteVendorById(Long id, Long companyId) {
+                Vendor vendor = getAndValidateVendor(id, companyId);
         vendorRepository.deleteById(id);
     }
-    
+
     @Override
-    public ApiPageResponseDto<List<PartDto>> getVendorParts(Long vendorId, int pageNo, int pageSize) {
+    public ApiPageResponseDto<List<PartDto>> getVendorParts(Long vendorId, int pageNo, int pageSize,Long companyId) {
+                Vendor vendor = getAndValidateVendor(vendorId, companyId);
         PageRequest pageable = PageRequest.of(pageNo, pageSize);
         Page<Part> partVendorList = partRepository.getVendorParts(vendorId, pageable);
 
@@ -125,26 +145,26 @@ public class VendorServiceImpl implements VendorService {
             .data(partDtos)
             .pageInfo(pageInfo)
             .build();
+
     }
 
-    @Override
-    public byte[] downloadVendorExcel() throws IOException {
-        List<Vendor> vendors = vendorRepository.findAll();
+        @Override
+        public byte[] downloadVendorExcel(Long companyId) throws IOException {
 
-        String[] headers = {"Name", "Email ID", "Contact No.", "Address"};
+                List<Vendor> vendors = vendorRepository.findByCompanyCompanyId(companyId);
+               String[] headers = { "Name", "Email", "Contact Number", "Address" };
 
-        //data in String[] is in same order as respective headers
         List<String[]> data = vendors.stream()
+
                 .map(vendor -> new String[]{
                         vendor.getName(),
                         vendor.getEmailId(),
                         vendor.getContactNumber(),
-                        vendor.getAddress()            
+                        vendor.getAddress()
                 })
                 .toList();
 
         return excelService.generateSpreadsheet(data, headers);
     }
-    
 
 }
