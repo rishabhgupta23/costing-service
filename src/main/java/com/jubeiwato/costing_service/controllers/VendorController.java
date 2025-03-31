@@ -13,6 +13,7 @@ import com.jubeiwato.costing_service.services.VendorService;
 
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import static com.jubeiwato.costing_service.constants.UserRoleConstants.*;
 
 import java.text.SimpleDateFormat;
 import java.util.Base64;
@@ -89,10 +90,7 @@ public class VendorController {
         }
 
     @PostMapping()
-    @PreAuthorize("hasRole(T(com.jubeiwato.costing_service.constants.UserRoleEnum).ADMIN.getRoleName()) or " +
-                        "hasRole(T(com.jubeiwato.costing_service.constants.UserRoleEnum).SUPER_ADMIN.getRoleName()) or "
-                        +
-                        "hasRole(T(com.jubeiwato.costing_service.constants.UserRoleEnum).MAINTAINER.getRoleName())")
+    @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "') or hasRole('" + MAINTAINER + "')")
     public ResponseEntity<GeneralResponseDto> createVendor(@RequestBody VendorDto vendorDto,
                         @AuthenticationPrincipal User authenticatedUser) {
         Long companyId = authenticatedUser.getCompany().getCompanyId();
@@ -103,10 +101,7 @@ public class VendorController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole(T(com.jubeiwato.costing_service.constants.UserRoleEnum).ADMIN.getRoleName()) or " +
-                        "hasRole(T(com.jubeiwato.costing_service.constants.UserRoleEnum).SUPER_ADMIN.getRoleName()) or "
-                        +
-                        "hasRole(T(com.jubeiwato.costing_service.constants.UserRoleEnum).MAINTAINER.getRoleName())")
+    @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "') or hasRole('" + MAINTAINER + "')")
     public ResponseEntity<VendorDto> updateVendorById(@PathVariable Long id, @RequestBody VendorDto vendorDto,
             @AuthenticationPrincipal User authenticatedUser) {
                 Long companyId = authenticatedUser.getCompany().getCompanyId();
@@ -117,10 +112,8 @@ public class VendorController {
         }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole(T(com.jubeiwato.costing_service.constants.UserRoleEnum).ADMIN.getRoleName()) or " +
-                        "hasRole(T(com.jubeiwato.costing_service.constants.UserRoleEnum).SUPER_ADMIN.getRoleName()) or "
-                        +
-                        "hasRole(T(com.jubeiwato.costing_service.constants.UserRoleEnum).MAINTAINER.getRoleName())")
+    @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "') or hasRole('" + MAINTAINER + "')")
+
         public ResponseEntity<GeneralResponseDto> deleteVendor(@PathVariable Long id,
                         @AuthenticationPrincipal User authenticatedUser) {
                 Long companyId = authenticatedUser.getCompany().getCompanyId();

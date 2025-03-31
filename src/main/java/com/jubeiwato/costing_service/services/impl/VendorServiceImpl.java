@@ -38,18 +38,6 @@ public class VendorServiceImpl implements VendorService {
 
     private final FileGeneratorService excelService;
 
-        private Vendor getAndValidateVendor(Long id, Long companyId) {
-                Vendor vendor = this.vendorRepository.findById(id)
-                                .orElseThrow(() -> new AppException(ErrorMessageConstant.VENDOR_DOES_NOT_EXIST,
-                                                HttpStatus.NOT_FOUND));
-
-                if (!vendor.getCompany().getCompanyId().equals(companyId)) {
-                        throw new AppException(ErrorMessageConstant.VENDOR_CANNOT_BE_ACCESSED, HttpStatus.FORBIDDEN);
-                }
-
-                return vendor;
-        }
-
         public VendorServiceImpl(VendorRepository vendorRepository, PartRepository partRepository,
                         CompanyRepository companyRepository, FileGeneratorService excelService) {
                 this.vendorRepository = vendorRepository;
@@ -58,10 +46,21 @@ public class VendorServiceImpl implements VendorService {
                 this.excelService = excelService;
         }
 
+        private Vendor getAndValidateVendor(Long id, Long companyId) {
+                Vendor vendor = this.vendorRepository.findById(id)
+                                .orElseThrow(() -> new AppException(ErrorMessageConstant.VENDOR_DOES_NOT_EXIST,HttpStatus.NOT_FOUND));
+
+                if (!vendor.getCompany().getCompanyId().equals(companyId)) {
+                        throw new AppException(ErrorMessageConstant.VENDOR_DOES_NOT_EXIST,HttpStatus.NOT_FOUND);
+                }
+
+                return vendor;
+        }
+
         @Override
         public void createVendor(Long companyId, String name, String emailId, String contactNumber, String address) {
                 Company company = companyRepository.findById(companyId)
-                                .orElseThrow(() -> new RuntimeException("Company not found"));
+                .orElseThrow(() -> new AppException("Company not found", HttpStatus.BAD_REQUEST));
         Vendor vendor = Vendor.builder()
 
         .company(company)

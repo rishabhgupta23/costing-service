@@ -16,8 +16,7 @@ public class ErrorMessageConstant {
     public static final String CHILD_PART_NOT_FOUND_TEMPLATE= "Child Part not found with ID:  %s";
     public static final String INVALID_PRICE_MODE= "Invalid price mode provided.";
     public static final String VENDOR_DOES_NOT_EXIST= "Vendor does not exist";
-    public static final String VENDOR_CANNOT_BE_ACCESSED = "Vendor can't be accessed";
-    public static final String VENDOR_CANNOT_BE_DELETED = "Vendor can't be deleted";
+
     public static final String JWT_TOKEN_EXPIRED = "JWT token has expired";
     public static final String UNEXPECTED_ERROR_OCCURED = "unexpected error occured";
     public static final String JWT_TOKEN_MISSING = "JWT token is missing";
