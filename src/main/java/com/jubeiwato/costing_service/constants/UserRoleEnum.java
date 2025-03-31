@@ -4,8 +4,7 @@ public enum UserRoleEnum {
     ADMIN("ADMIN"),
     SUPER_ADMIN("SUPER_ADMIN"),
     MAINTAINER("MAINTAINER"),
-    GUEST("GUEST")
-    ;
+    GUEST("GUEST");
 
     private final String roleName;
 
