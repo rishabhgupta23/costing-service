@@ -14,7 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
+import static com.jubeiwato.costing_service.constants.UserRoleConstants.*;
 import com.jubeiwato.costing_service.services.PartService;
 import java.io.IOException;
 
@@ -85,9 +85,7 @@ public class PartController {
     }
     
     @PostMapping("/{partId}")
-    @PreAuthorize("hasRole(T(com.jubeiwato.costing_service.constants.UserRoleEnum).ADMIN.getRoleName()) or " +
-    "hasRole(T(com.jubeiwato.costing_service.constants.UserRoleEnum).SUPER_ADMIN.getRoleName()) or " +
-    "hasRole(T(com.jubeiwato.costing_service.constants.UserRoleEnum).MAINTAINER.getRoleName())")
+    @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "') or hasRole('" + MAINTAINER + "')")
     public ResponseEntity<PartDto> updatePartById(@PathVariable Long partId, @RequestBody PartRequestDto request, @AuthenticationPrincipal User authenticatedUser) {
         Long companyId = authenticatedUser.getCompany().getCompanyId();
         PartDto updatedPart = this.partService.updatePartById(partId, request, companyId);
@@ -95,9 +93,7 @@ public class PartController {
     }
 
     @PostMapping 
-    @PreAuthorize("hasRole(T(com.jubeiwato.costing_service.constants.UserRoleEnum).ADMIN.getRoleName()) or " +
-    "hasRole(T(com.jubeiwato.costing_service.constants.UserRoleEnum).SUPER_ADMIN.getRoleName()) or " +
-    "hasRole(T(com.jubeiwato.costing_service.constants.UserRoleEnum).MAINTAINER.getRoleName())")
+    @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "') or hasRole('" + MAINTAINER + "')")
     public ResponseEntity<GeneralResponseDto> createPart(@RequestBody PartRequestDto request, @AuthenticationPrincipal User authenticatedUser) {
         Long companyId = authenticatedUser.getCompany().getCompanyId();
         partService.createPart(request, companyId);
@@ -106,9 +102,7 @@ public class PartController {
     }
 
     @DeleteMapping("/{partId}")
-    @PreAuthorize("hasRole(T(com.jubeiwato.costing_service.constants.UserRoleEnum).ADMIN.getRoleName()) or " +
-    "hasRole(T(com.jubeiwato.costing_service.constants.UserRoleEnum).SUPER_ADMIN.getRoleName()) or " +
-    "hasRole(T(com.jubeiwato.costing_service.constants.UserRoleEnum).MAINTAINER.getRoleName())")
+    @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "') or hasRole('" + MAINTAINER + "')")
     public ResponseEntity<GeneralResponseDto> deletePartById(@PathVariable Long partId,@AuthenticationPrincipal User authenticatedUser ) {
         Long companyId = authenticatedUser.getCompany().getCompanyId();
         partService.deletePartById(partId, companyId);
