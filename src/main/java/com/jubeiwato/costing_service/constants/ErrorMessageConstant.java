@@ -21,6 +21,8 @@ public class ErrorMessageConstant {
     public static final String UNEXPECTED_ERROR_OCCURED = "unexpected error occured";
     public static final String JWT_TOKEN_MISSING = "JWT token is missing";
     public static final String USER_ALREADY_EXISTS = "User with this email already exists";
+    public static final String PART_NOT_FOUND= "Part not found";
+    public static final String INVALID_COMPANY ="Company does not exist" ;
 
 
 

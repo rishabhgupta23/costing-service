@@ -9,25 +9,25 @@ import java.io.IOException;
 
 public interface PartService {
 
-    public ApiPageResponseDto<PartDataDto> getParts(Part filter, int pageNo, int pageSize, String sortBy, Sorting sortDir);
+    public ApiPageResponseDto<PartDataDto> getParts(Part filter,long companyId, int pageNo, int pageSize, String sortBy, Sorting sortDir);
 
     public List<String> getPartTypes();
 
     public ApiPageResponseDto<List<PartUnitDto>> getPartUnits(int pageNo, int pageSize);
 
-    public ApiPageResponseDto<List<CostFactorDto>> getCostFactors(int pageNo, int pageSize);
+    public ApiPageResponseDto<List<CostFactorDto>> getCostFactors(int pageNo, int pageSize, Long companyId);
 
-    public void createPart(PartRequestDto request);
+    public void createPart(PartRequestDto request,Long companyId);
 
 
-    public PartDto getPartById(Long partId);
+    public PartDto getPartById(Long partId, Long companyId);
 
-    public PartDto updatePartById(Long partId, PartRequestDto request);
+    public PartDto updatePartById(Long partId, PartRequestDto request, Long companyId);
 
-    void deletePartById(Long partId);
+    void deletePartById(Long partId, Long companyId);
 
-    public CostHistoryResponseDto getPartCostsByPartAndVendor(Long partId, Long vendorId);
-    byte[] downloadPartsToExcel() throws IOException;
+    public CostHistoryResponseDto getPartCostsByPartAndVendor(Long partId, Long vendorId, Long companyId );
+    byte[] downloadPartsToExcel(Long companyId) throws IOException;
 
-    FileResponseDto downloadBomPartListToExcel(Long parentPartId) throws IOException;
+    FileResponseDto downloadBomPartListToExcel(Long parentPartId,Long companyId) throws IOException;
 }

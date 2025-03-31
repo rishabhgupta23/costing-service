@@ -139,4 +139,32 @@
             </sql>
         </rollback>
     </changeSet>
+
+    <changeSet id="20250325-6" author="Anusha">
+    <dropUniqueConstraint 
+        schemaName="app"
+        tableName="part"
+        constraintName="part_part_number_key"/>
+
+    <addUniqueConstraint 
+        schemaName="app"
+        tableName="part" 
+        columnNames="company_id, part_number" 
+        constraintName="part_company_part_number_unique"/>
+
+    <rollback>
+
+        <dropUniqueConstraint
+            schemaName="app" 
+            tableName="part" 
+            constraintName="part_company_part_number_unique"/>
+
+        <addUniqueConstraint
+            schemaName="app"
+            tableName="part"
+            columnNames="part_number"
+            constraintName="part_part_number_key"/>
+    </rollback>
+</changeSet>
+
 </databaseChangeLog>

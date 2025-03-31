@@ -88,13 +88,19 @@ public class CostCalcServiceImpl implements CostCalcService {
     }
 
     @Override
-    public CostCalcResultDto calculatePrice(Long partId, String priceMode) {
+    public CostCalcResultDto calculatePrice(Long partId, String priceMode, Long companyId) {
         List<CostItemDto> res;
         Double quantity = 1.0;
         Double totalCost=0.0;
         Part part = partRepository.findById(partId)
                 .orElseThrow(() -> new AppException(ErrorMessageConstant.getFormattedMessage(ErrorMessageConstant.CHILD_PART_NOT_FOUND_TEMPLATE, partId), 
                 HttpStatus.NOT_FOUND));
+          
+        if (!part.getCompany().getCompanyId().equals(companyId)) {
+            throw new AppException(
+                ErrorMessageConstant.getFormattedMessage(ErrorMessageConstant.PART_NOT_FOUND_TEMPLATE, partId),
+                HttpStatus.NOT_FOUND);
+        }
 
         if(part.getType() == PartType.UNIT) {
             res = new ArrayList<>();
@@ -118,12 +124,12 @@ public class CostCalcServiceImpl implements CostCalcService {
             case MIN:
                 return vendorCostMap.entrySet().stream()
                         .min(Map.Entry.comparingByValue())
-                        .orElse(Map.entry(new Vendor(0L, "Unknown Vendor", "", "", ""), 0.0));
+                        .orElse(Map.entry(new Vendor(0L, "Unknown Vendor", "", "", "", null), 0.0));
 
             case MAX:
                 return vendorCostMap.entrySet().stream()
                         .max(Map.Entry.comparingByValue())
-                        .orElse(Map.entry(new Vendor(0L, "Unknown Vendor", "", "", ""), 0.0));
+                        .orElse(Map.entry(new Vendor(0L, "Unknown Vendor", "", "", "", null), 0.0));
 
             case AVG:
                 double avg = vendorCostMap.values().stream()
@@ -139,7 +145,7 @@ public class CostCalcServiceImpl implements CostCalcService {
                                 return Double.compare(entry1.getValue(), entry2.getValue());
                             }
                             return Double.compare(diff1, diff2);
-                        }).orElse(Map.entry(new Vendor(0L, "Unknown Vendor", "", "", ""), 0.0));
+                        }).orElse(Map.entry(new Vendor(0L, "Unknown Vendor", "", "", "", null), 0.0));
 
             default:
                 throw new AppException(ErrorMessageConstant.INVALID_PRICE_MODE, HttpStatus.BAD_REQUEST);

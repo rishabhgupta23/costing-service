@@ -22,6 +22,7 @@ import com.jubeiwato.costing_service.constants.FileExtension;
 import com.jubeiwato.costing_service.constants.PartType;
 import com.jubeiwato.costing_service.entities.PartUnit;
 import com.jubeiwato.costing_service.entities.Bom;
+import com.jubeiwato.costing_service.entities.Company;
 import com.jubeiwato.costing_service.entities.CostFactor;
 import com.jubeiwato.costing_service.entities.Part;
 import com.jubeiwato.costing_service.entities.PartCost;
@@ -29,6 +30,7 @@ import com.jubeiwato.costing_service.entities.PartCostCostFactor;
 import com.jubeiwato.costing_service.entities.Vendor;
 import com.jubeiwato.costing_service.repositories.BomRepository;
 import com.jubeiwato.costing_service.repositories.CategoryRepository;
+import com.jubeiwato.costing_service.repositories.CompanyRepository;
 import com.jubeiwato.costing_service.repositories.CostFactorRepository;
 import com.jubeiwato.costing_service.repositories.PartCostRepository;
 import com.jubeiwato.costing_service.repositories.PartRepository;
@@ -52,9 +54,9 @@ public class PartServiceImpl implements PartService {
     private BomRepository bomRepository;
     private PartUnitRepository partUnitRepository;
     private FileGeneratorService excelService;
-
+    private CompanyRepository companyRepository;
     public PartServiceImpl(PartRepository partRepository, CategoryRepository categoryRepository, VendorRepository vendorRepository
-            , CostFactorRepository costFactorRepository, PartCostRepository partCostRepository, BomRepository bomRepository,PartUnitRepository partUnitRepository, FileGeneratorService excelService) {
+            , CostFactorRepository costFactorRepository, PartCostRepository partCostRepository, BomRepository bomRepository,PartUnitRepository partUnitRepository, FileGeneratorService excelService, CompanyRepository companyRepository) {
         this.partRepository = partRepository;
         this.categoryRepository = categoryRepository;
         this.vendorRepository = vendorRepository;
@@ -63,7 +65,20 @@ public class PartServiceImpl implements PartService {
         this.bomRepository = bomRepository;
         this.partUnitRepository=partUnitRepository;
         this.excelService=excelService;
+        this.companyRepository=companyRepository;
     }
+
+    private Part getValidatedPart(Long partId, Long companyId) {
+        Part part = partRepository.findById(partId)
+                .orElseThrow(() -> new AppException(
+                        ErrorMessageConstant.getFormattedMessage(ErrorMessageConstant.PART_NOT_FOUND_TEMPLATE, partId),
+                        HttpStatus.NOT_FOUND));
+    
+        if (!part.getCompany().getCompanyId().equals(companyId)) {
+            throw new AppException(ErrorMessageConstant.PART_NOT_FOUND, HttpStatus.NOT_FOUND);
+        }
+        return part;
+    }    
 
     @Override
     public List<String> getPartTypes() {
@@ -94,9 +109,9 @@ public class PartServiceImpl implements PartService {
     }
 
     @Override
-    public void createPart(@Valid PartRequestDto request) {
+    public void createPart(@Valid PartRequestDto request, Long companyId ) {
         validateCreatePartRequest(request);
-        Part part = createPartEntity(request);
+        Part part = createPartEntity(request,companyId);
         partRepository.save(part);
 
         // save part cost details
@@ -127,12 +142,17 @@ public class PartServiceImpl implements PartService {
                 .orElseThrow(() -> new AppException(ErrorMessageConstant.INVALID_UNIT, HttpStatus.BAD_REQUEST));
     }
 
-    private Part createPartEntity(PartRequestDto request) {
-        Part part = Part.builder()
+    private Part createPartEntity(PartRequestDto request,Long companyId) {
+
+         Company company =companyRepository.findById(companyId)
+         .orElseThrow(() -> new AppException(ErrorMessageConstant.INVALID_COMPANY, HttpStatus.BAD_REQUEST));
+ 
+         Part part = Part.builder()
                 .partName(request.getPartName())
                 .partNumber(request.getPartNumber())
                 .type(PartType.valueOf(request.getType()))
                 .unit(request.getUnit())
+                .company(company)
                 .build();
         if(request.getCategoryId() != null) {
             part.setCategoryName(categoryRepository.findById(request.getCategoryId()).get().getName());
@@ -161,9 +181,9 @@ public class PartServiceImpl implements PartService {
     }
 
     @Override
-    public ApiPageResponseDto<List<CostFactorDto>> getCostFactors(int pageNo, int pageSize) {
+    public ApiPageResponseDto<List<CostFactorDto>> getCostFactors(int pageNo, int pageSize, Long companyId) {
         Pageable pageable = PageRequest.of(pageNo, pageSize);
-        Page<CostFactor> costFactorPage = costFactorRepository.findAll(pageable);
+        Page<CostFactor> costFactorPage = costFactorRepository.findByCompany_CompanyId(companyId, pageable);
 
         List<CostFactorDto> costFactorDtos = costFactorPage.getContent()
                 .stream()
@@ -187,14 +207,16 @@ public class PartServiceImpl implements PartService {
     }
 
     @Override
-    public ApiPageResponseDto<PartDataDto> getParts(Part filter, int pageNo, int pageSize, String sortBy, Sorting sortMode) {
+    public ApiPageResponseDto<PartDataDto> getParts(Part filter, long companyId, int pageNo, int pageSize, String sortBy, Sorting sortMode) {
         Sort sort = (sortMode == Sorting.DESC)
                 ? Sort.by(sortBy).descending()
                 : Sort.by(sortBy).ascending();
         Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
 
         // Apply Specification
-        Specification<Part> spec = new PartSpecification(filter);
+        Specification<Part> spec = Specification.where(new PartSpecification(filter))
+            .and((root, query, cb) -> cb.equal(root.get("company").get("companyId"), companyId));
+            
         Page<Part> partPage = partRepository.findAll(spec, pageable);
 
         // Extract Max Vendor Count
@@ -242,9 +264,8 @@ public class PartServiceImpl implements PartService {
 
 
     @Override
-    public PartDto getPartById(Long partId) {
-        Part part = this.partRepository.findById(partId)
-                .orElseThrow(() -> new AppException(ErrorMessageConstant.PART_DOESNOT_EXIST, HttpStatus.NOT_FOUND));
+    public PartDto getPartById(Long partId, Long companyId) {
+        Part part = getValidatedPart(partId, companyId);
 
         //Fetch Part Cost
         List<PartCost> partCostList = partCostRepository.findByPartId(partId);
@@ -311,11 +332,8 @@ public class PartServiceImpl implements PartService {
 
     @Override
     @Transactional
-    public PartDto updatePartById(Long partId, @Valid PartRequestDto request) {
-        Part existingPart = partRepository.findById(partId)
-                .orElseThrow(() -> new AppException(
-                        ErrorMessageConstant.getFormattedMessage(ErrorMessageConstant.PART_NOT_FOUND_TEMPLATE, partId), 
-                        HttpStatus.NOT_FOUND));
+    public PartDto updatePartById(Long partId, @Valid PartRequestDto request,Long companyId) {
+        Part existingPart = getValidatedPart(partId, companyId);
 
         // Validate and update fields
         validateCreatePartRequest(request);
@@ -363,11 +381,9 @@ public class PartServiceImpl implements PartService {
 
     @Override
     @Transactional
-    public void deletePartById(Long partId) {
-        Part part = partRepository.findById(partId)
-                .orElseThrow(() -> new AppException(
-                        ErrorMessageConstant.getFormattedMessage(ErrorMessageConstant.PART_NOT_FOUND_TEMPLATE, partId), 
-                        HttpStatus.NOT_FOUND));
+    public void deletePartById(Long partId, Long companyId) {
+        Part part = getValidatedPart(partId, companyId);
+        
         boolean isChildPart = bomRepository.existsByChildPart(part);
         if (isChildPart) {
             throw new AppException(ErrorMessageConstant.RESTRICT_CHILD_PART_DELETE, HttpStatus.BAD_REQUEST);
@@ -376,35 +392,36 @@ public class PartServiceImpl implements PartService {
     }
 
     @Override
-    public CostHistoryResponseDto getPartCostsByPartAndVendor(Long partId, Long vendorId) {
-        List<PartCost> partCosts = partCostRepository.fetchByPartIdAndVendorId(partId, vendorId);
+public CostHistoryResponseDto getPartCostsByPartAndVendor(Long partId, Long vendorId, Long companyId) {
+    getValidatedPart(partId, companyId);
+    List<PartCost> partCosts = partCostRepository.fetchByPartIdAndVendorId(partId, vendorId);
 
-        List<CostHistoryDto> costHistoryList = partCosts.stream().map(partCost -> {
-            List<CostFactorDto> costFactorList = partCost.getCostFactorList().stream()
-                    .map(partCostFactor -> CostFactorDto.entityToDto(
-                            partCostFactor.getCostFactor(),
-                            partCostFactor.getValue()
-                    ))
-                    .toList();
+    List<CostHistoryDto> costHistoryList = partCosts.isEmpty() ? Collections.emptyList() : partCosts.stream().map(partCost -> {
+         List<CostFactorDto> costFactorList = partCost.getCostFactorList().stream()
+                            .map(partCostFactor -> CostFactorDto.entityToDto(
+                                    partCostFactor.getCostFactor(),
+                                    partCostFactor.getValue()
+                            ))
+                            .toList();
 
-            return CostHistoryDto.builder()
-                    .costFactorList(costFactorList)
-                    .updatedDateTime(partCost.getUpdatedDateTime())
-                    .build();
-        }).toList();
+                    return CostHistoryDto.builder()
+                            .costFactorList(costFactorList)
+                            .updatedDateTime(partCost.getUpdatedDateTime())
+                            .build();
+                }).toList();
 
-        return CostHistoryResponseDto.builder()
-                .partId(partId)
-                .vendorId(vendorId)
-                .costHistoryList(costHistoryList)
-                .build();
-    }
+    return CostHistoryResponseDto.builder()
+            .partId(partId)
+            .vendorId(vendorId)
+            .costHistoryList(costHistoryList)
+            .build();
+}
 
 
     @Override
-    public byte[] downloadPartsToExcel() throws IOException {
+    public byte[] downloadPartsToExcel(Long companyId) throws IOException {
 
-        List<Part> parts = partRepository.findAll(Sort.by(Sort.Direction.ASC, "partNumber"));
+        List<Part> parts = partRepository.findByCompany_CompanyId(companyId, Sort.by(Sort.Direction.ASC, "partNumber"));
 
     List<String[]> partList = parts.stream()
             .map(part -> {
@@ -431,20 +448,27 @@ public class PartServiceImpl implements PartService {
 
 }
     @Override
-    public FileResponseDto downloadBomPartListToExcel(Long parentPartId) throws IOException {
+    public FileResponseDto downloadBomPartListToExcel(Long parentPartId,Long companyId) throws IOException {
+
+     Part partInfo = partRepository.findById(parentPartId)
+    .orElseThrow(() -> new AppException(ErrorMessageConstant.PART_DOESNOT_EXIST, HttpStatus.NOT_FOUND));
+
+     if (!partInfo.getCompany().getCompanyId().equals(companyId)) {
+     throw new AppException(ErrorMessageConstant.PART_NOT_FOUND, HttpStatus.NOT_FOUND);
+     }
 
     List<Bom> bomList = bomRepository.findByParentPart_PartId(parentPartId);
 
-    String parentPartNumber = bomList.get(0).getParentPart().getPartNumber();
+    String parentPartNumber = partInfo.getPartNumber();
 
-    List<String[]> bomData = bomList.stream()
-            .map(bom -> new String[]{
-                    bom.getChildPart().getPartNumber(),
-                    bom.getChildPart().getPartName(),
-                    String.valueOf(bom.getQuantity())
-            })
-            .toList();
-    String[] headers = { "Child Part Number", "Child Part Name", "Quantity" };
+    List<String[]> bomData = bomList.isEmpty() ? new ArrayList<>() : bomList.stream()
+    .map(bom -> new String[]{
+            bom.getChildPart().getPartNumber(),
+            bom.getChildPart().getPartName(),
+            String.valueOf(bom.getQuantity())
+    })
+    .toList();
+    String[] headers = { "Part Number", "Part Name", "Quantity" };
 
     byte[] fileResponse = excelService.generateSpreadsheet(bomData, headers);
     
