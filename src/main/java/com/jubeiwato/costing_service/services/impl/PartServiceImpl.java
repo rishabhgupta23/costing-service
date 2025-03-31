@@ -75,7 +75,7 @@ public class PartServiceImpl implements PartService {
                         HttpStatus.NOT_FOUND));
     
         if (!part.getCompany().getCompanyId().equals(companyId)) {
-            throw new AppException(ErrorMessageConstant.PART_CANNOT_BE_ACCESSED, HttpStatus.FORBIDDEN);
+            throw new AppException(ErrorMessageConstant.PART_NOT_FOUND, HttpStatus.NOT_FOUND);
         }
         return part;
     }    
@@ -392,38 +392,30 @@ public class PartServiceImpl implements PartService {
     }
 
     @Override
-    public CostHistoryResponseDto getPartCostsByPartAndVendor(Long partId, Long vendorId,Long companyId ) {
-        List<PartCost> partCosts = partCostRepository.fetchByPartIdAndVendorId(partId, vendorId);
+public CostHistoryResponseDto getPartCostsByPartAndVendor(Long partId, Long vendorId, Long companyId) {
+    getValidatedPart(partId, companyId);
+    List<PartCost> partCosts = partCostRepository.fetchByPartIdAndVendorId(partId, vendorId);
 
-        if (partCosts.isEmpty()) {
-                throw new AppException(ErrorMessageConstant.PART_CANNOT_BE_ACCESSED, HttpStatus.NOT_FOUND);
-        }
-        
-        Part part = partCosts.get(0).getPart();
+    List<CostHistoryDto> costHistoryList = partCosts.isEmpty() ? Collections.emptyList() : partCosts.stream().map(partCost -> {
+         List<CostFactorDto> costFactorList = partCost.getCostFactorList().stream()
+                            .map(partCostFactor -> CostFactorDto.entityToDto(
+                                    partCostFactor.getCostFactor(),
+                                    partCostFactor.getValue()
+                            ))
+                            .toList();
 
-        if (!part.getCompany().getCompanyId().equals(companyId)) {
-            throw new  AppException(ErrorMessageConstant.PART_CANNOT_BE_ACCESSED, HttpStatus.FORBIDDEN);
-        }
-        List<CostHistoryDto> costHistoryList = partCosts.stream().map(partCost -> {
-            List<CostFactorDto> costFactorList = partCost.getCostFactorList().stream()
-                    .map(partCostFactor -> CostFactorDto.entityToDto(
-                            partCostFactor.getCostFactor(),
-                            partCostFactor.getValue()
-                    ))
-                    .toList();
+                    return CostHistoryDto.builder()
+                            .costFactorList(costFactorList)
+                            .updatedDateTime(partCost.getUpdatedDateTime())
+                            .build();
+                }).toList();
 
-            return CostHistoryDto.builder()
-                    .costFactorList(costFactorList)
-                    .updatedDateTime(partCost.getUpdatedDateTime())
-                    .build();
-        }).toList();
-
-        return CostHistoryResponseDto.builder()
-                .partId(partId)
-                .vendorId(vendorId)
-                .costHistoryList(costHistoryList)
-                .build();
-    }
+    return CostHistoryResponseDto.builder()
+            .partId(partId)
+            .vendorId(vendorId)
+            .costHistoryList(costHistoryList)
+            .build();
+}
 
 
     @Override
@@ -462,7 +454,7 @@ public class PartServiceImpl implements PartService {
     .orElseThrow(() -> new AppException(ErrorMessageConstant.PART_DOESNOT_EXIST, HttpStatus.NOT_FOUND));
 
      if (!partInfo.getCompany().getCompanyId().equals(companyId)) {
-     throw new AppException(ErrorMessageConstant.PART_CANNOT_BE_ACCESSED, HttpStatus.FORBIDDEN);
+     throw new AppException(ErrorMessageConstant.PART_NOT_FOUND, HttpStatus.NOT_FOUND);
      }
 
     List<Bom> bomList = bomRepository.findByParentPart_PartId(parentPartId);

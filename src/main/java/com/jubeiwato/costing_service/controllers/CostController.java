@@ -3,7 +3,6 @@ package com.jubeiwato.costing_service.controllers;
 import com.jubeiwato.costing_service.dtos.CostCalcResultDto;
 import com.jubeiwato.costing_service.entities.User;
 import com.jubeiwato.costing_service.services.CostCalcService;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,7 +11,6 @@ import org.springframework.web.bind.annotation.*;
 @CrossOrigin
 @RestController
 @RequestMapping("/cost")
-@PreAuthorize("isAuthenticated()") 
 public class CostController {
     private final CostCalcService costService;
 
