@@ -9,17 +9,20 @@ import com.jubeiwato.costing_service.dtos.VendorDto;
 import java.io.IOException;
 
 public interface VendorService {
-    void createVendor(String name, String emailId, String contactNumber, String address);
-    
-    ApiPageResponseDto<List<VendorDto>> getVendorList(String name, String address, String emailId, String contactNumber,int pageNo, int pageSize,String sortColumn, Sorting sortMode);
+        void createVendor(Long companyId, String name, String emailId, String contactNumber, String address);
 
-    VendorDto getVendorById(Long id);
+        ApiPageResponseDto<List<VendorDto>> getVendorList(Long companyId, String name, String address, String emailId,
+                        String contactNumber, int pageNo, int pageSize, String sortColumn, Sorting sortMode);
 
-    VendorDto updateVendorById(Long id, String name, String emailId, String contactNumber, String address);
+        VendorDto getVendorById(Long id, Long companyId);
 
-    void deleteVendorById(Long id);
+        VendorDto updateVendorById(Long id, String name, String emailId, String contactNumber, String address,
+                        Long companyId);
 
-    ApiPageResponseDto<List<PartDto>> getVendorParts(Long vendorId,int pageNo, int pageSize);
-    byte[] downloadVendorExcel() throws IOException;
-    
+        void deleteVendorById(Long id, Long companyId);
+
+        ApiPageResponseDto<List<PartDto>> getVendorParts(Long vendorId, int pageNo, int pageSize, Long companyId);
+
+        byte[] downloadVendorExcel(Long companyId) throws IOException;
+
 }

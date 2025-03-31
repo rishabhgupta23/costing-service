@@ -1,5 +1,6 @@
 package com.jubeiwato.costing_service.dtos;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.jubeiwato.costing_service.entities.Vendor;
 
 import lombok.AllArgsConstructor;
@@ -20,11 +21,11 @@ public class VendorDto {
 
     public static VendorDto entityToDto(Vendor vendor) {
         return VendorDto.builder()
-        .id(vendor.getVendorId())
-        .name(vendor.getName())
-        .emailId(vendor.getEmailId())
-        .contactNumber(vendor.getContactNumber())
-        .address(vendor.getAddress())
-        .build();
+                .id(vendor.getVendorId())
+                .name(vendor.getName())
+                .emailId(vendor.getEmailId())
+                .contactNumber(vendor.getContactNumber())
+                .address(vendor.getAddress())
+                .build();
     }
 }

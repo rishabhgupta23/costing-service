@@ -20,16 +20,17 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "user_role", schema = "app")
 public class UserRole extends BaseEntity implements GrantedAuthority {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "role_id")
-    private Long roleId;
+      @Id
+      @GeneratedValue(strategy = GenerationType.IDENTITY)
+      @Column(name = "role_id")
+      private Long roleId;
 
-    @Column(name = "role_name")
-    private String roleName;
+      @Column(name = "role_name")
+      private String roleName;
 
-    @Override
-    public String getAuthority() {
-        return "ROLE_" + roleName.toUpperCase().replace(" ", "_");
-    }
+      @Override
+      public String getAuthority() {
+            return "ROLE_" + roleName.toUpperCase().replace(" ", "_");
+            
+      }
 }

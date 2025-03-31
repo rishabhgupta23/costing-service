@@ -26,6 +26,7 @@ public class Company extends BaseEntity {
 
     @Column(name = "company_name", nullable = false, length = 100)
     private String companyName;
+
     @Column(name = "company_address", length = 255)
     private String companyAddress;
 

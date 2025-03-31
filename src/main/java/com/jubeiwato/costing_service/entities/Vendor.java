@@ -37,7 +37,7 @@ public class Vendor extends BaseEntity {
     private String contactNumber;
 
     @ManyToOne
-    @JoinColumn(name = "company_id", referencedColumnName = "company_id", nullable = false)
+    @JoinColumn(name = "company_id", referencedColumnName = "company_id" ,nullable = false)
     private Company company;
 
 }

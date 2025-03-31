@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class VendorSpecification {
-    public static Specification<Vendor> getFilteredVendors(String name, String address, String emailId, String contactNumber) {
+    public static Specification<Vendor> getFilteredVendors(Long companyId, String name, String address, String emailId, String contactNumber) {
 
         if (!ValidationUtil.isValidInput(name) || 
         !ValidationUtil.isValidInput(address) || 
@@ -22,7 +22,7 @@ public class VendorSpecification {
     }
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
-
+            predicates.add(criteriaBuilder.equal(root.get("company").get("companyId"), companyId));
             if (name != null && !name.trim().isEmpty()) {
                 predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("name")), "%" + name.toLowerCase() + "%"));
             }
