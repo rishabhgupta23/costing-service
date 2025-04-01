@@ -8,19 +8,19 @@ import com.jubeiwato.costing_service.dtos.UserDto;
 import com.jubeiwato.costing_service.dtos.UserRoleDto;
 
 public interface UserService {
-    void createUser(UserDto user);
+    void createUser(UserDto user, Long companyId);
 
-ApiPageResponseDto<List<UserDto>> getUserByCompanyId(
+ApiPageResponseDto<List<UserDto>> getUserByCompanyId(Long userId,
     String displayName, String emailId, String roleName, 
-    int pageNo, int pageSize, String sortColumn, Sorting sortMode);
+    int pageNo, int pageSize, String sortColumn, Sorting sortMode, Long companyId);
 
     UserDto getUserByEmailId(String email);
 
     public ApiPageResponseDto<List<UserRoleDto>> getUserRoles(int pageNo, int pageSize);
 
-    UserDto updateUserById(Long userId, UserDto userDto);
+    UserDto updateUserById(Long userId, UserDto userDto,Long companyId);
 
 
-    void deleteUserById(Long userId);
-    public UserDto getUserById(Long userId);
+    void deleteUserById(Long userId, Long companyId);
+    public UserDto getUserById(Long userId, Long companyId);
 }

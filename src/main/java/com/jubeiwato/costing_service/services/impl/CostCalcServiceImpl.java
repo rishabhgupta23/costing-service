@@ -118,12 +118,12 @@ public class CostCalcServiceImpl implements CostCalcService {
             case MIN:
                 return vendorCostMap.entrySet().stream()
                         .min(Map.Entry.comparingByValue())
-                        .orElse(Map.entry(new Vendor(0L, "Unknown Vendor", "", "", ""), 0.0));
+                        .orElse(Map.entry(new Vendor(0L, "Unknown Vendor", "", "", "", null), 0.0));
 
             case MAX:
                 return vendorCostMap.entrySet().stream()
                         .max(Map.Entry.comparingByValue())
-                        .orElse(Map.entry(new Vendor(0L, "Unknown Vendor", "", "", ""), 0.0));
+                        .orElse(Map.entry(new Vendor(0L, "Unknown Vendor", "", "", "",null), 0.0));
 
             case AVG:
                 double avg = vendorCostMap.values().stream()
@@ -139,7 +139,7 @@ public class CostCalcServiceImpl implements CostCalcService {
                                 return Double.compare(entry1.getValue(), entry2.getValue());
                             }
                             return Double.compare(diff1, diff2);
-                        }).orElse(Map.entry(new Vendor(0L, "Unknown Vendor", "", "", ""), 0.0));
+                        }).orElse(Map.entry(new Vendor(0L, "Unknown Vendor", "", "", "",null), 0.0));
 
             default:
                 throw new AppException(ErrorMessageConstant.INVALID_PRICE_MODE, HttpStatus.BAD_REQUEST);

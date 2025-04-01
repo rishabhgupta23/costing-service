@@ -29,6 +29,9 @@ public class ErrorMessageConstant {
     public static final String DISPLAY_NAME_REQUIRED = "Display name is required.";
     public static final String EMAIL_REQUIRED = "Email ID is required.";
     public static final String ROLE_REQUIRED = "User role is required.";
+    public static final String COMPANY_ID_REQUIRED = "Company ID is required.";
+    public static final String UNAUTHORIZED_ACCESS = "You don't have access to this user.";
+
 
 
 
