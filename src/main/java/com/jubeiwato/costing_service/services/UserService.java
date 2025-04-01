@@ -21,6 +21,6 @@ ApiPageResponseDto<List<UserDto>> getUserByCompanyId(Long userId,
     UserDto updateUserById(Long userId, UserDto userDto,Long companyId);
 
 
-    void deleteUserById(Long userId, Long companyId);
+    void deleteUserById(Long currentUserId, Long userIdToDelete, Long companyId);
     public UserDto getUserById(Long userId, Long companyId);
 }

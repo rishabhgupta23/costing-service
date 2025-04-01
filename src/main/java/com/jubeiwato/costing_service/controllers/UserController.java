@@ -90,17 +90,21 @@ public class UserController {
         UserDto updatedUser = this.userService.updateUserById(userId, userDto, companyId);
         return new ResponseEntity<>(updatedUser, HttpStatus.OK);
     }
-
     @DeleteMapping("/users/{userId}")
     @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "')")
     public ResponseEntity<GeneralResponseDto> deleteUser(@PathVariable Long userId,
                                                          @AuthenticationPrincipal User authenticatedUser) {
+        // The authenticated user performing the deletion
+        Long currentUserId = authenticatedUser.getUserId();
         Long companyId = authenticatedUser.getCompany().getCompanyId();
-        userService.deleteUserById(userId, companyId);
+        
+        // Call the service method to delete the user
+        userService.deleteUserById(currentUserId, userId, companyId);
+        
         GeneralResponseDto response = new GeneralResponseDto("User deleted successfully", HttpStatus.OK.value());
         return ResponseEntity.ok(response);
     }
-
+    
     @GetMapping("/users/{userId}")
     @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "')")
     public ResponseEntity<UserDto> getUserById(@PathVariable Long userId, @AuthenticationPrincipal User authenticatedUser) {

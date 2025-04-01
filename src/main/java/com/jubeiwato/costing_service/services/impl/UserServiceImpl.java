@@ -15,7 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.jubeiwato.costing_service.authentication.config.AppException;
 import com.jubeiwato.costing_service.constants.ErrorMessageConstant;
 import com.jubeiwato.costing_service.constants.Sorting;
-import com.jubeiwato.costing_service.constants.UserRoleEnum;
+import static com.jubeiwato.costing_service.constants.UserRoleConstants.*;
 import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
 import com.jubeiwato.costing_service.dtos.PageInfoDto;
 import com.jubeiwato.costing_service.dtos.UserDto;
@@ -91,8 +91,8 @@ public ApiPageResponseDto<List<UserRoleDto>> getUserRoles(int pageNo, int pageSi
     List<UserRoleDto> userRoleDtos = userRolePage.getContent()
             .stream()
             .map(UserRoleDto::entityToDto)
-            .filter(role -> UserRoleEnum.MAINTAINER.getRoleName().equalsIgnoreCase(role.getRoleName()) ||
-                        UserRoleEnum.GUEST.getRoleName().equalsIgnoreCase(role.getRoleName()))
+            .filter(role -> MAINTAINER.equalsIgnoreCase(role.getRoleName()) ||
+                        GUEST.equalsIgnoreCase(role.getRoleName()))
             .toList();
 
     PageInfoDto pageInfo = PageInfoDto.builder()
@@ -170,20 +170,20 @@ public ApiPageResponseDto<List<UserRoleDto>> getUserRoles(int pageNo, int pageSi
 
     @Override
     @Transactional
-    public void deleteUserById(Long userId, Long companyId) {
-        User targetUser = getAndValidateUser(userId, companyId);
-
-        UserRoleEnum targetUserRole;
-        try {
-            targetUserRole = UserRoleEnum.valueOf(targetUser.getUserRole().getRoleName().toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw new AppException(ErrorMessageConstant.INVALID_USER_ROLE, HttpStatus.BAD_REQUEST);
-        }
-        if (targetUserRole == UserRoleEnum.SUPER_ADMIN) {
-            throw new AppException(ErrorMessageConstant.SUPER_ADMIN_DELETE_ERROR, HttpStatus.FORBIDDEN);
+    public void deleteUserById(Long currentUserId, Long userIdToDelete, Long companyId) {
+    User targetUser = getAndValidateUser(userIdToDelete, companyId);
+        String targetUserRole = targetUser.getUserRole().getRoleName().toUpperCase();
+        if (SUPERADMIN.equals(targetUserRole)) {
+         throw new AppException(ErrorMessageConstant.SUPER_ADMIN_DELETE_ERROR, HttpStatus.FORBIDDEN);
         }
 
-        userRepository.deleteById(userId);
+    User currentUser = getAndValidateUser(currentUserId, companyId);
+
+    String currentUserRole = currentUser.getUserRole().getRoleName().toUpperCase();
+    if (ADMIN.equals(targetUserRole) && !SUPERADMIN.equals(currentUserRole)) {
+        throw new AppException(ErrorMessageConstant.ADMIN_DELETE_ERROR, HttpStatus.FORBIDDEN);
+    }
+    userRepository.deleteById(userIdToDelete);
     }
 
     @Override
