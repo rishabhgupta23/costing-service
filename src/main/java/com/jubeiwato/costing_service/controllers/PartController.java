@@ -8,10 +8,13 @@ import java.util.List;
 import com.jubeiwato.costing_service.constants.*;
 import com.jubeiwato.costing_service.dtos.*;
 import com.jubeiwato.costing_service.entities.Part;
+import com.jubeiwato.costing_service.entities.User;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
+import static com.jubeiwato.costing_service.constants.UserRoleConstants.*;
 import com.jubeiwato.costing_service.services.PartService;
 import java.io.IOException;
 
@@ -38,8 +41,10 @@ public class PartController {
             @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNo,
             @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int pageSize,
             @RequestParam(defaultValue = "partNumber") String sortColumn,
-            @RequestParam(defaultValue = "ASC") Sorting sortMode
+            @RequestParam(defaultValue = "ASC") Sorting sortMode,
+            @AuthenticationPrincipal User authenticatedUser 
     ) {
+        Long companyId = authenticatedUser.getCompany().getCompanyId();
         Part filter = Part.builder()
                 .partName(partName)
                 .partNumber(partNumber)
@@ -48,7 +53,7 @@ public class PartController {
                 .unit(unit)
                 .build();
 
-        ApiPageResponseDto<PartDataDto> response = partService.getParts(filter, pageNo, pageSize, sortColumn, sortMode);
+        ApiPageResponseDto<PartDataDto> response = partService.getParts(filter,companyId, pageNo, pageSize, sortColumn, sortMode);
         return ResponseEntity.ok(response);
     }
 
@@ -66,40 +71,49 @@ public class PartController {
     }
 
     @GetMapping("/cost-factors")
-    public ResponseEntity<ApiPageResponseDto<List<CostFactorDto>>> getCostFactors(@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNo,@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int pageSize) {
-       ApiPageResponseDto<List<CostFactorDto>> response = partService.getCostFactors(pageNo, pageSize);
+    public ResponseEntity<ApiPageResponseDto<List<CostFactorDto>>> getCostFactors(@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNo,@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int pageSize, @AuthenticationPrincipal User authenticatedUser) {
+       Long companyId = authenticatedUser.getCompany().getCompanyId();
+       ApiPageResponseDto<List<CostFactorDto>> response = partService.getCostFactors(pageNo, pageSize,companyId);
        return new ResponseEntity<>(response, HttpStatus.OK);
 }
 
     @GetMapping("/{partId}")
-    public ResponseEntity<PartDto> getPartById(@PathVariable Long partId) {
-        PartDto part = this.partService.getPartById(partId);
+    public ResponseEntity<PartDto> getPartById(@PathVariable Long partId, @AuthenticationPrincipal User authenticatedUser) {
+        Long companyId = authenticatedUser.getCompany().getCompanyId();
+        PartDto part = this.partService.getPartById(partId, companyId);
         return new ResponseEntity<>(part, HttpStatus.OK);
     }
     
     @PostMapping("/{partId}")
-    public ResponseEntity<PartDto> updatePartById(@PathVariable Long partId, @RequestBody PartRequestDto request) {
-        PartDto updatedPart = this.partService.updatePartById(partId, request);
+    @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "') or hasRole('" + MAINTAINER + "')")
+    public ResponseEntity<PartDto> updatePartById(@PathVariable Long partId, @RequestBody PartRequestDto request, @AuthenticationPrincipal User authenticatedUser) {
+        Long companyId = authenticatedUser.getCompany().getCompanyId();
+        PartDto updatedPart = this.partService.updatePartById(partId, request, companyId);
         return new ResponseEntity<>(updatedPart, HttpStatus.OK);
     }
 
-    @PostMapping
-    public ResponseEntity<GeneralResponseDto> createPart(@RequestBody PartRequestDto request) {
-        partService.createPart(request);
+    @PostMapping 
+    @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "') or hasRole('" + MAINTAINER + "')")
+    public ResponseEntity<GeneralResponseDto> createPart(@RequestBody PartRequestDto request, @AuthenticationPrincipal User authenticatedUser) {
+        Long companyId = authenticatedUser.getCompany().getCompanyId();
+        partService.createPart(request, companyId);
         GeneralResponseDto response = new GeneralResponseDto("Successful", HttpStatus.CREATED.value());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @DeleteMapping("/{partId}")
-    public ResponseEntity<GeneralResponseDto> deletePartById(@PathVariable Long partId) {
-        partService.deletePartById(partId);
+    @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "') or hasRole('" + MAINTAINER + "')")
+    public ResponseEntity<GeneralResponseDto> deletePartById(@PathVariable Long partId,@AuthenticationPrincipal User authenticatedUser ) {
+        Long companyId = authenticatedUser.getCompany().getCompanyId();
+        partService.deletePartById(partId, companyId);
         GeneralResponseDto response = new GeneralResponseDto("Part deleted successfully", HttpStatus.OK.value());
         return ResponseEntity.ok(response);
     }
     @GetMapping("/download")
-    public ResponseEntity<FileResponseDto> exportPartsToExcel() throws IOException{
-
-            byte[] fileResponse = partService.downloadPartsToExcel();
+    public ResponseEntity<FileResponseDto> exportPartsToExcel(@AuthenticationPrincipal User authenticatedUser) throws IOException{
+            
+            Long companyId = authenticatedUser.getCompany().getCompanyId(); 
+            byte[] fileResponse = partService.downloadPartsToExcel(companyId);
             String base64Excel = Base64.getEncoder().encodeToString(fileResponse);
 
             String timestamp = new SimpleDateFormat(DateFormat.yyyyMMdd_HHmmss.getFormat()).format(new Date());
@@ -115,16 +129,18 @@ public class PartController {
     }
 
     @GetMapping("/bom/{parentPartId}/download")
-    public ResponseEntity<FileResponseDto> exportBomPartListToExcel(@PathVariable Long parentPartId) throws IOException {
-    FileResponseDto responseDto = partService.downloadBomPartListToExcel(parentPartId);
+    public ResponseEntity<FileResponseDto> exportBomPartListToExcel(@PathVariable Long parentPartId,@AuthenticationPrincipal User authenticatedUser) throws IOException {   
+    Long companyId = authenticatedUser.getCompany().getCompanyId(); 
+    FileResponseDto responseDto = partService.downloadBomPartListToExcel(parentPartId,companyId);
     return ResponseEntity.ok().body(responseDto);
     }
 
     @GetMapping("/cost-history")
     public ResponseEntity<CostHistoryResponseDto> getPartCostsByPartAndVendor(
             @RequestParam Long partId,
-            @RequestParam Long vendorId) {
-        CostHistoryResponseDto response = partService.getPartCostsByPartAndVendor(partId, vendorId);
+            @RequestParam Long vendorId, @AuthenticationPrincipal User authenticatedUser) {
+            Long companyId = authenticatedUser.getCompany().getCompanyId();
+        CostHistoryResponseDto response = partService.getPartCostsByPartAndVendor(partId, vendorId,companyId );
         return ResponseEntity.ok(response);
     }
-}
+}       

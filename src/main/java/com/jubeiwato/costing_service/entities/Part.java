@@ -16,7 +16,14 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "part", schema = "app")
+@Table(
+    name = "part",
+    schema = "app",
+    uniqueConstraints = @UniqueConstraint(
+    name = "part_company_part_number_unique",
+    columnNames = {"company_id", "part_number"}
+    )
+)
 public class Part extends BaseEntity{
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,7 +33,7 @@ public class Part extends BaseEntity{
         @Column(name = "part_name")
         private String partName;
 
-        @Column(name = "part_number", unique = true)
+        @Column(name = "part_number")
         private String partNumber;
 
         @Column(name = "category_name")
@@ -38,6 +45,10 @@ public class Part extends BaseEntity{
 
         @Column(name = "unit")
         private String unit;
+
+        @ManyToOne
+        @JoinColumn(name = "company_id", referencedColumnName = "company_id", nullable = false)
+        private Company company;
 
         @OneToMany(mappedBy = "part", fetch = FetchType.LAZY)
         private List<PartCost> partCosts;
