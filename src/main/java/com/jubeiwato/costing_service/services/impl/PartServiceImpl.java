@@ -193,14 +193,9 @@ public class PartServiceImpl implements PartService {
                 : Sort.by(sortBy).ascending();
         Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
 
-       String partName = filter.getPartName();
-       String partNumber = filter.getPartNumber();
-       String categoryName = filter.getCategoryName();
-       String type = filter.getType();
-       String unit = filter.getUnit();
 
         // Apply Specification
-        Specification<Part> spec = new PartSpecification(partName, partNumber, categoryName, type, unit);
+        Specification<Part> spec = new PartSpecification(filter.getPartName(), filter.getPartNumber(), filter.getCategoryName(), filter.getType(), filter.getUnit());
         Page<Part> partPage = partRepository.findAll(spec, pageable);
 
         // Extract Max Vendor Count
@@ -219,7 +214,7 @@ public class PartServiceImpl implements PartService {
                             .partName(part.getPartName())
                             .partNumber(part.getPartNumber())
                             .categoryName(part.getCategoryName())
-                            .type(part.getType().toString())
+                            .type(part.getType().name())
                             .unit(part.getUnit())
                             .vendorNames(new ArrayList<>(vendorNames))
                             .build();

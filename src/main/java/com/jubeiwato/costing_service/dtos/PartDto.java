@@ -29,7 +29,7 @@ public class PartDto {
         .partName(entity.getPartName())
         .partNumber(entity.getPartNumber())
         .categoryName(entity.getCategoryName())
-        .type(entity.getType().toString())
+        .type(entity.getType().name())
         .unit(entity.getUnit())
         .build();
     }
