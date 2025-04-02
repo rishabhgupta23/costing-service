@@ -59,7 +59,7 @@ public class VendorServiceImpl implements VendorService {
 
         Sort sort = Sort.by(direction, sortColumn);
         Pageable pageable = PageRequest.of(pageNo, pageSize, sort); 
-        Specification<Vendor> spec = VendorSpecification.getFilteredVendors(name, address, emailId, contactNumber);
+        Specification<Vendor> spec = new VendorSpecification(name, address, emailId, contactNumber);
         Page<Vendor> vendorPage = vendorRepository.findAll(spec, pageable);
 
         List<VendorDto> vendorDtos = vendorPage.getContent().stream()

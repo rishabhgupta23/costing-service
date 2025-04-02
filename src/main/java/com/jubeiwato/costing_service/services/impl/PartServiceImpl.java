@@ -187,14 +187,15 @@ public class PartServiceImpl implements PartService {
     }
 
     @Override
-    public ApiPageResponseDto<PartDataDto> getParts(Part filter, int pageNo, int pageSize, String sortBy, Sorting sortMode) {
+    public ApiPageResponseDto<PartDataDto> getParts(PartDto filter, int pageNo, int pageSize, String sortBy, Sorting sortMode) {
         Sort sort = (sortMode == Sorting.DESC)
                 ? Sort.by(sortBy).descending()
                 : Sort.by(sortBy).ascending();
         Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
 
+
         // Apply Specification
-        Specification<Part> spec = new PartSpecification(filter);
+        Specification<Part> spec = new PartSpecification(filter.getPartName(), filter.getPartNumber(), filter.getCategoryName(), filter.getType(), filter.getUnit());
         Page<Part> partPage = partRepository.findAll(spec, pageable);
 
         // Extract Max Vendor Count
@@ -213,7 +214,7 @@ public class PartServiceImpl implements PartService {
                             .partName(part.getPartName())
                             .partNumber(part.getPartNumber())
                             .categoryName(part.getCategoryName())
-                            .type(part.getType())
+                            .type(part.getType().name())
                             .unit(part.getUnit())
                             .vendorNames(new ArrayList<>(vendorNames))
                             .build();
@@ -263,7 +264,7 @@ public class PartServiceImpl implements PartService {
                 .partNumber(part.getPartNumber())
                 .unit(part.getUnit())
                 .categoryName(part.getCategoryName())
-                .type(part.getType())
+                .type(part.getType().toString())
                 .bom(bomDtoList)
                 .vendorCostList(createVendorCostList(partCostList))
                 .build();

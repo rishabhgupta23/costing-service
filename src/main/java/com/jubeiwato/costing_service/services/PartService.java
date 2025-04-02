@@ -4,12 +4,11 @@ import java.util.List;
 
 import com.jubeiwato.costing_service.constants.Sorting;
 import com.jubeiwato.costing_service.dtos.*;
-import com.jubeiwato.costing_service.entities.Part;
 import java.io.IOException;
 
 public interface PartService {
 
-    public ApiPageResponseDto<PartDataDto> getParts(Part filter, int pageNo, int pageSize, String sortBy, Sorting sortDir);
+    public ApiPageResponseDto<PartDataDto> getParts(PartDto filter, int pageNo, int pageSize, String sortBy, Sorting sortDir);
 
     public List<String> getPartTypes();
 
