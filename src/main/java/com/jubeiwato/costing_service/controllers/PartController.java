@@ -7,7 +7,6 @@ import java.util.List;
 
 import com.jubeiwato.costing_service.constants.*;
 import com.jubeiwato.costing_service.dtos.*;
-import com.jubeiwato.costing_service.entities.Part;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -33,14 +32,14 @@ public class PartController {
             @RequestParam(required = false) String partName,
             @RequestParam(required = false) String partNumber,
             @RequestParam(required = false) String categoryName,
-            @RequestParam(required = false) PartType type,
+            @RequestParam(required = false) String type,
             @RequestParam(required = false) String unit,
             @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNo,
             @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int pageSize,
             @RequestParam(defaultValue = "partNumber") String sortColumn,
             @RequestParam(defaultValue = "ASC") Sorting sortMode
-    ) {
-        Part filter = Part.builder()
+    ) {        
+            PartDto filter = PartDto.builder()
                 .partName(partName)
                 .partNumber(partNumber)
                 .categoryName(categoryName)
