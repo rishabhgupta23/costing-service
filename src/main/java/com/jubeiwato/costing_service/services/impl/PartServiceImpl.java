@@ -144,6 +144,13 @@ public class PartServiceImpl implements PartService {
 
     private Part createPartEntity(PartRequestDto request,Long companyId) {
 
+        if (partRepository.existsByCompany_CompanyIdAndPartNumber(companyId, request.getPartNumber())) {
+                throw new AppException(
+                    ErrorMessageConstant.getFormattedMessage(ErrorMessageConstant.PART_NUMBER_ALREADY_EXISTS_TEMPLATE, request.getPartNumber()),
+                    HttpStatus.CONFLICT
+                );
+            }
+
          Company company =companyRepository.findById(companyId)
          .orElseThrow(() -> new AppException(ErrorMessageConstant.INVALID_COMPANY, HttpStatus.BAD_REQUEST));
  
@@ -154,16 +161,18 @@ public class PartServiceImpl implements PartService {
                 .unit(request.getUnit())
                 .company(company)
                 .build();
-        if(request.getCategoryId() != null) {
-            part.setCategoryName(categoryRepository.findById(request.getCategoryId()).get().getName());
-        }
+                if(request.getCategoryId() != null) {
+                        part.setCategoryName(categoryRepository.findById(request.getCategoryId())
+                        .orElseThrow(() -> new AppException(ErrorMessageConstant.CATEGORY_DOES_NOT_EXIST, HttpStatus.BAD_REQUEST)).getName()
+                        );
+                    }
         return part;
     }
 
     private PartCost createPartCostEntity(Part part, VendorCostDto vendorCost) {
         PartCost partCost = PartCost.builder()
                 .part(part)
-                .vendor(vendorRepository.findById(vendorCost.getId()).get())
+                .vendor(vendorRepository.findById(vendorCost.getId()).orElseThrow(() -> new AppException(ErrorMessageConstant.VENDOR_DOES_NOT_EXIST, HttpStatus.BAD_REQUEST)))
                 .costFactorList(vendorCost.getCostFactorValues().stream().map(cf -> createPartCostCostFactor(cf.getId(), cf.getValue())).toList())
                 .build();
 
@@ -175,7 +184,7 @@ public class PartServiceImpl implements PartService {
 
     private PartCostCostFactor createPartCostCostFactor(Long costFactorId, Double value) {
         return PartCostCostFactor.builder()
-                .costFactor(costFactorRepository.findById(costFactorId).get())
+                .costFactor(costFactorRepository.findById(costFactorId).orElseThrow(() -> new AppException(ErrorMessageConstant.COST_FACTOR_DOES_NOT_EXIST, HttpStatus.BAD_REQUEST)))
                 .value(value)
                 .build();
     }

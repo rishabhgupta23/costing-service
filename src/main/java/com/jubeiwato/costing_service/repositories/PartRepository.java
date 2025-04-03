@@ -16,4 +16,5 @@ public interface PartRepository extends JpaRepository<Part, Long>, JpaSpecificat
 
    List<Part> findByCompany_CompanyId(Long companyId, Sort sort);
 
+   boolean existsByCompany_CompanyIdAndPartNumber(Long companyId, String partNumber);
 }
