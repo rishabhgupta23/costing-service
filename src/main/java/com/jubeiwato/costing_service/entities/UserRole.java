@@ -30,7 +30,7 @@ public class UserRole extends BaseEntity implements GrantedAuthority {
 
       @Override
       public String getAuthority() {
-            return "ROLE_" + roleName.toUpperCase().replace(" ", "_");
+            return "ROLE_" + roleName.toUpperCase();
             
       }
 }

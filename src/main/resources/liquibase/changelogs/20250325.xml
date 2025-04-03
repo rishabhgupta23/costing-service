@@ -123,13 +123,13 @@
         <sql>
             INSERT INTO app.user_role (delete_flag, role_name, created_by, created_date_time, updated_by, updated_date_time)
             VALUES 
-            (0, 'Super Admin', -9, now(), -9, now()),
+            (0, 'Super_Admin', -9, now(), -9, now()),
             (0, 'Admin', -9, now(), -9, now()),
             (0, 'Maintainer', -9, now(), -9, now()),
             (0, 'Guest', -9 , now(), -9, now());
 
             INSERT INTO app.app_user (delete_flag, created_by, created_date_time, updated_by, updated_date_time, email_id, name, password, company_id, role_id)
-            VALUES (0, -9, now(), -9, now(), 'superadmin@example.com', 'Super Admin', '$2a$10$U2xjy6u1xUnW056/xprt6uDx5tfvsenufjH0JrvptvkuthrVXXKu.', (SELECT company_id FROM app.company WHERE company_name = 'Default company'), (SELECT role_id FROM app.user_role WHERE role_name = 'Super Admin'));
+            VALUES (0, -9, now(), -9, now(), 'superadmin@example.com', 'Super Admin', '$2a$10$U2xjy6u1xUnW056/xprt6uDx5tfvsenufjH0JrvptvkuthrVXXKu.', (SELECT company_id FROM app.company WHERE company_name = 'Default company'), (SELECT role_id FROM app.user_role WHERE role_name = 'Super_Admin'));
 
         </sql>
         <rollback>

@@ -30,9 +30,12 @@ public class ErrorMessageConstant {
     public static final String EMAIL_REQUIRED = "Email ID is required.";
     public static final String ROLE_REQUIRED = "User role is required.";
     public static final String COMPANY_ID_REQUIRED = "Company ID is required.";
-    public static final String UNAUTHORIZED_ACCESS = "You don't have access to this user.";
+    public static final String UNAUTHORIZED_ACCESS = "User not found.";
     public static final String PART_NOT_FOUND= "Part not found";
-    public static final String INVALID_COMPANY ="Company does not exist" ;
+    public static final String INVALID_COMPANY ="Company is invalid" ;
+    public static final String SUPER_ADMIN_CREATION_ERROR="Super Admins cannot be creted or updated";
+    public static final String ADMIN_CREATION_RESTRICTED="Admins cannot be created or updated";
+
 
 
 

@@ -17,6 +17,7 @@ import com.jubeiwato.costing_service.constants.ErrorMessageConstant;
 import com.jubeiwato.costing_service.constants.Sorting;
 import static com.jubeiwato.costing_service.constants.UserRoleConstants.*;
 import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
+import com.jubeiwato.costing_service.dtos.CreateUserDto;
 import com.jubeiwato.costing_service.dtos.PageInfoDto;
 import com.jubeiwato.costing_service.dtos.UserDto;
 import com.jubeiwato.costing_service.dtos.UserRoleDto;
@@ -41,25 +42,19 @@ public class UserServiceImpl implements UserService {
         this.passwordEncoder = passwordEncoder;
     }
     private User getAndValidateUser(Long userId, Long companyId) {
-        
-        User user = this.userRepository.findById(userId)
-                .orElseThrow(() -> new AppException(ErrorMessageConstant.getFormattedMessage(
-                        ErrorMessageConstant.USER_NOT_FOUND_TEMPLATE, userId), HttpStatus.NOT_FOUND));
-        
-        if (!user.getCompany().getCompanyId().equals(companyId)) {
-            throw new AppException(ErrorMessageConstant.getFormattedMessage(
-                    ErrorMessageConstant.UNAUTHORIZED_ACCESS),
-                    HttpStatus.FORBIDDEN);
-        }
-    
-        return user;
+        User user= userRepository.findByUserIdAndCompany_CompanyId(userId, companyId)
+            .orElseThrow(() -> new AppException(ErrorMessageConstant.getFormattedMessage(
+                ErrorMessageConstant.USER_NOT_FOUND_TEMPLATE, userId), HttpStatus.NOT_FOUND));
+
+                if (user.getCompany() != null || user.getCompany().getCompanyId() != null) { 
+                    if (!companyId.equals(user.getCompany().getCompanyId())) {
+                        throw new AppException(ErrorMessageConstant.INVALID_COMPANY, HttpStatus.BAD_REQUEST);
+                    }
+                }
+                return user;
     }
-    
-    public void createUser(UserDto user, Long companyId) {
-        if (companyId == null) {
-            throw new AppException(ErrorMessageConstant.COMPANY_ID_REQUIRED, HttpStatus.BAD_REQUEST);
-        }
-    
+
+    private void validateUserInput(CreateUserDto user) {
         if (user.getDisplayName() == null || user.getDisplayName().trim().isEmpty()) {
             throw new AppException(ErrorMessageConstant.DISPLAY_NAME_REQUIRED, HttpStatus.BAD_REQUEST);
         }
@@ -69,10 +64,27 @@ public class UserServiceImpl implements UserService {
         if (user.getRoleId() == null) {
             throw new AppException(ErrorMessageConstant.ROLE_REQUIRED, HttpStatus.BAD_REQUEST);
         }
+    }
+    
+    public void createUser(CreateUserDto user, Long companyId, Long currentUserId) {
 
+        validateUserInput(user);
 UserRole role = userRoleRepository.findById(user.getRoleId())
             .orElseThrow(() -> new AppException(ErrorMessageConstant.ROLE_NOT_FOUND, HttpStatus.NOT_FOUND));
 
+            User currentUser = userRepository.findByUserIdAndCompany_CompanyId(currentUserId, companyId)
+            .orElseThrow(() -> new AppException(ErrorMessageConstant.UNAUTHORIZED_ACCESS, HttpStatus.NOT_FOUND));
+    
+        String currentUserRole = currentUser.getUserRole().getRoleName().toUpperCase();
+        String newUserRole = role.getRoleName().toUpperCase();
+
+        if (SUPER_ADMIN.equals(newUserRole)) {
+            throw new AppException(ErrorMessageConstant.SUPER_ADMIN_CREATION_ERROR, HttpStatus.FORBIDDEN);
+        }
+    
+        if (ADMIN.equals(newUserRole) && !SUPER_ADMIN.equals(currentUserRole)) {
+            throw new AppException(ErrorMessageConstant.ADMIN_CREATION_RESTRICTED, HttpStatus.FORBIDDEN);
+        }
     User userEntity = User.builder()
         .emailId(user.getEmailId())
         .displayName(user.getDisplayName())
@@ -109,11 +121,8 @@ public ApiPageResponseDto<List<UserRoleDto>> getUserRoles(int pageNo, int pageSi
 }
     
     @Override
-    public ApiPageResponseDto<List<UserDto>> getUserByCompanyId(Long userId,
+    public ApiPageResponseDto<List<UserDto>> getUserListByCompany(Long userId,
             String displayName, String emailId, String roleName, int pageNo, int pageSize, String sortColumn, Sorting sortMode, Long companyId) {
-    
-        getAndValidateUser(userId, companyId);
-
         if (companyId == null) {
             throw new AppException(ErrorMessageConstant.COMPANY_ID_REQUIRED, HttpStatus.BAD_REQUEST);
         }
@@ -143,17 +152,23 @@ public ApiPageResponseDto<List<UserRoleDto>> getUserRoles(int pageNo, int pageSi
     
 
     @Override
-    public UserDto updateUserById(Long userId, UserDto userDto, Long companyId) {
+    public UserDto updateUserById(Long userId, CreateUserDto userDto, Long companyId,  Long currentUserId) {
         User userEntity = getAndValidateUser(userId, companyId);
-        if (userDto.getDisplayName() == null || userDto.getDisplayName().trim().isEmpty()) {
-            throw new AppException(ErrorMessageConstant.DISPLAY_NAME_REQUIRED, HttpStatus.BAD_REQUEST);
-        }
-        if (userDto.getEmailId() == null || userDto.getEmailId().trim().isEmpty()) {
-            throw new AppException(ErrorMessageConstant.EMAIL_REQUIRED, HttpStatus.BAD_REQUEST);
-        }
-        if (userDto.getRoleId() == null) {
-            throw new AppException(ErrorMessageConstant.ROLE_REQUIRED, HttpStatus.BAD_REQUEST);
-        }
+        validateUserInput(userDto);
+
+        User currentUser = userRepository.findByUserIdAndCompany_CompanyId(currentUserId, companyId)
+        .orElseThrow(() -> new AppException(ErrorMessageConstant.UNAUTHORIZED_ACCESS, HttpStatus.NOT_FOUND));
+
+    String currentUserRole = currentUser.getUserRole().getRoleName().toUpperCase();
+    String targetUserRole = userEntity.getUserRole().getRoleName().toUpperCase();
+
+    if (SUPER_ADMIN.equals(targetUserRole)) {
+        throw new AppException(ErrorMessageConstant.SUPER_ADMIN_CREATION_ERROR, HttpStatus.FORBIDDEN);
+    }
+
+    if (ADMIN.equals(targetUserRole) && (!SUPER_ADMIN.equals(currentUserRole)|| !ADMIN.equals(currentUserRole))) {
+        throw new AppException(ErrorMessageConstant.ADMIN_CREATION_RESTRICTED, HttpStatus.FORBIDDEN);
+    }
 
         userEntity.setDisplayName(userDto.getDisplayName());
         userEntity.setEmailId(userDto.getEmailId());
@@ -173,14 +188,14 @@ public ApiPageResponseDto<List<UserRoleDto>> getUserRoles(int pageNo, int pageSi
     public void deleteUserById(Long currentUserId, Long userIdToDelete, Long companyId) {
     User targetUser = getAndValidateUser(userIdToDelete, companyId);
         String targetUserRole = targetUser.getUserRole().getRoleName().toUpperCase();
-        if (SUPERADMIN.equals(targetUserRole)) {
+        if (SUPER_ADMIN.equals(targetUserRole)) {
          throw new AppException(ErrorMessageConstant.SUPER_ADMIN_DELETE_ERROR, HttpStatus.FORBIDDEN);
         }
 
     User currentUser = getAndValidateUser(currentUserId, companyId);
 
     String currentUserRole = currentUser.getUserRole().getRoleName().toUpperCase();
-    if (ADMIN.equals(targetUserRole) && !SUPERADMIN.equals(currentUserRole)) {
+    if (ADMIN.equals(targetUserRole) && !SUPER_ADMIN.equals(currentUserRole)) {
         throw new AppException(ErrorMessageConstant.ADMIN_DELETE_ERROR, HttpStatus.FORBIDDEN);
     }
     userRepository.deleteById(userIdToDelete);

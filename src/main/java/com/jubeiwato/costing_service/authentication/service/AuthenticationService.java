@@ -52,6 +52,15 @@ public class AuthenticationService {
         UserRole role = userRoleRepository.findById(input.getRoleId())
         .orElseThrow(() -> new RuntimeException("Role not found"));
     
+        if (input.getDisplayName() == null || input.getDisplayName().trim().isEmpty()) {
+            throw new AppException(ErrorMessageConstant.DISPLAY_NAME_REQUIRED, HttpStatus.BAD_REQUEST);
+        }
+        if (input.getEmail() == null || input.getEmail().trim().isEmpty()) {
+            throw new AppException(ErrorMessageConstant.EMAIL_REQUIRED, HttpStatus.BAD_REQUEST);
+        }
+        if (input.getRoleId() == null) {
+            throw new AppException(ErrorMessageConstant.ROLE_REQUIRED, HttpStatus.BAD_REQUEST);
+        }
 
         if (userRepository.findByEmailId(input.getEmail()).isPresent()) {
             throw new AppException(ErrorMessageConstant.USER_ALREADY_EXISTS, HttpStatus.CONFLICT);

@@ -47,14 +47,9 @@ public class VendorServiceImpl implements VendorService {
         }
 
         private Vendor getAndValidateVendor(Long id, Long companyId) {
-                Vendor vendor = this.vendorRepository.findById(id)
+                return vendorRepository.findByVendorIdAndCompany_CompanyId(id, companyId)
                                 .orElseThrow(() -> new AppException(ErrorMessageConstant.VENDOR_DOES_NOT_EXIST,HttpStatus.NOT_FOUND));
 
-                if (!vendor.getCompany().getCompanyId().equals(companyId)) {
-                        throw new AppException(ErrorMessageConstant.VENDOR_DOES_NOT_EXIST,HttpStatus.NOT_FOUND);
-                }
-
-                return vendor;
         }
 
         @Override
