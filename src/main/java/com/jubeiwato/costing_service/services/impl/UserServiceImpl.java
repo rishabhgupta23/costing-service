@@ -42,16 +42,9 @@ public class UserServiceImpl implements UserService {
         this.passwordEncoder = passwordEncoder;
     }
     private User getAndValidateUser(Long userId, Long companyId) {
-        User user= userRepository.findByUserIdAndCompany_CompanyId(userId, companyId)
+        return  this.userRepository.findByUserIdAndCompany_CompanyId(userId, companyId)
             .orElseThrow(() -> new AppException(ErrorMessageConstant.getFormattedMessage(
                 ErrorMessageConstant.USER_NOT_FOUND_TEMPLATE, userId), HttpStatus.NOT_FOUND));
-
-                if (user.getCompany() != null || user.getCompany().getCompanyId() != null) { 
-                    if (!companyId.equals(user.getCompany().getCompanyId())) {
-                        throw new AppException(ErrorMessageConstant.INVALID_COMPANY, HttpStatus.BAD_REQUEST);
-                    }
-                }
-                return user;
     }
 
     private void validateUserInput(CreateUserDto user) {
@@ -65,26 +58,29 @@ public class UserServiceImpl implements UserService {
             throw new AppException(ErrorMessageConstant.ROLE_REQUIRED, HttpStatus.BAD_REQUEST);
         }
     }
+
+    private void validateRoleAssignment(String currentUserRole, String targetUserRole) {
+        currentUserRole = currentUserRole.toUpperCase();
+        targetUserRole = targetUserRole.toUpperCase();
     
-    public void createUser(CreateUserDto user, Long companyId, Long currentUserId) {
+        if (SUPER_ADMIN.equals(targetUserRole)) {
+            throw new AppException(ErrorMessageConstant.SUPER_ADMIN_CREATION_ERROR, HttpStatus.FORBIDDEN);
+        }
+    
+        if (ADMIN.equals(targetUserRole) && !SUPER_ADMIN.equals(currentUserRole)) {
+            throw new AppException(ErrorMessageConstant.ADMIN_CREATION_RESTRICTED, HttpStatus.FORBIDDEN);
+        }
+    }
+    
+    public void createUser(CreateUserDto user, Long companyId, String currentUserRole) {
 
         validateUserInput(user);
 UserRole role = userRoleRepository.findById(user.getRoleId())
             .orElseThrow(() -> new AppException(ErrorMessageConstant.ROLE_NOT_FOUND, HttpStatus.NOT_FOUND));
 
-            User currentUser = userRepository.findByUserIdAndCompany_CompanyId(currentUserId, companyId)
-            .orElseThrow(() -> new AppException(ErrorMessageConstant.UNAUTHORIZED_ACCESS, HttpStatus.NOT_FOUND));
-    
-        String currentUserRole = currentUser.getUserRole().getRoleName().toUpperCase();
         String newUserRole = role.getRoleName().toUpperCase();
+        validateRoleAssignment(currentUserRole, newUserRole);
 
-        if (SUPER_ADMIN.equals(newUserRole)) {
-            throw new AppException(ErrorMessageConstant.SUPER_ADMIN_CREATION_ERROR, HttpStatus.FORBIDDEN);
-        }
-    
-        if (ADMIN.equals(newUserRole) && !SUPER_ADMIN.equals(currentUserRole)) {
-            throw new AppException(ErrorMessageConstant.ADMIN_CREATION_RESTRICTED, HttpStatus.FORBIDDEN);
-        }
     User userEntity = User.builder()
         .emailId(user.getEmailId())
         .displayName(user.getDisplayName())
@@ -161,15 +157,7 @@ public ApiPageResponseDto<List<UserRoleDto>> getUserRoles(int pageNo, int pageSi
 
     String currentUserRole = currentUser.getUserRole().getRoleName().toUpperCase();
     String targetUserRole = userEntity.getUserRole().getRoleName().toUpperCase();
-
-    if (SUPER_ADMIN.equals(targetUserRole)) {
-        throw new AppException(ErrorMessageConstant.SUPER_ADMIN_CREATION_ERROR, HttpStatus.FORBIDDEN);
-    }
-
-    if (ADMIN.equals(targetUserRole) && (!SUPER_ADMIN.equals(currentUserRole)|| !ADMIN.equals(currentUserRole))) {
-        throw new AppException(ErrorMessageConstant.ADMIN_CREATION_RESTRICTED, HttpStatus.FORBIDDEN);
-    }
-
+    validateRoleAssignment(currentUserRole, targetUserRole);
         userEntity.setDisplayName(userDto.getDisplayName());
         userEntity.setEmailId(userDto.getEmailId());
 

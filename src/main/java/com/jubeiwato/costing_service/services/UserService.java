@@ -9,7 +9,7 @@ import com.jubeiwato.costing_service.dtos.UserDto;
 import com.jubeiwato.costing_service.dtos.UserRoleDto;
 
 public interface UserService {
-    void createUser(CreateUserDto user, Long companyId, Long currentUserId);
+    void createUser(CreateUserDto user, Long companyId, String currentUserRole);
 
 ApiPageResponseDto<List<UserDto>> getUserListByCompany(Long userId,
     String displayName, String emailId, String roleName, 

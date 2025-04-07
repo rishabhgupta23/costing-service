@@ -40,9 +40,9 @@ public class UserController {
     @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "')")
     public ResponseEntity<GeneralResponseDto> createUser(@RequestBody CreateUserDto user, 
                                                          @AuthenticationPrincipal User authenticatedUser) {
-        Long currentUserId = authenticatedUser.getUserId();
+        String currentUserRole = authenticatedUser.getUserRole().getRoleName();
         Long companyId = authenticatedUser.getCompany().getCompanyId();
-        userService.createUser(user, companyId, currentUserId);
+        userService.createUser(user, companyId, currentUserRole);
         GeneralResponseDto response = new GeneralResponseDto("Successful", HttpStatus.CREATED.value());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }

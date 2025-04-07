@@ -48,9 +48,9 @@ public class AuthenticationService {
 
     public User signup(RegisterUserDto input) {
         Company company = companyRepository.findByCompanyId(input.getCompanyId())
-        .orElseThrow(() -> new RuntimeException("Company not found"));
+        .orElseThrow(() -> new AppException(ErrorMessageConstant.INVALID_COMPANY, HttpStatus.BAD_REQUEST));
         UserRole role = userRoleRepository.findById(input.getRoleId())
-        .orElseThrow(() -> new RuntimeException("Role not found"));
+        .orElseThrow(() -> new AppException(ErrorMessageConstant.ROLE_NOT_FOUND, HttpStatus.BAD_REQUEST));
     
         if (input.getDisplayName() == null || input.getDisplayName().trim().isEmpty()) {
             throw new AppException(ErrorMessageConstant.DISPLAY_NAME_REQUIRED, HttpStatus.BAD_REQUEST);

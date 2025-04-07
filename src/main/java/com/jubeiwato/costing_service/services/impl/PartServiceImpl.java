@@ -71,7 +71,7 @@ public class PartServiceImpl implements PartService {
     private Part getValidatedPart(Long partId, Long companyId) {
         return partRepository.findByPartIdAndCompany_CompanyId(partId,companyId)
                 .orElseThrow(() -> new AppException(
-                        ErrorMessageConstant.getFormattedMessage(ErrorMessageConstant.PART_NOT_FOUND_TEMPLATE, partId),
+                        ErrorMessageConstant.getFormattedMessage(ErrorMessageConstant.PART_NOT_FOUND_TEMPLATE),
                         HttpStatus.NOT_FOUND));
 
     }    

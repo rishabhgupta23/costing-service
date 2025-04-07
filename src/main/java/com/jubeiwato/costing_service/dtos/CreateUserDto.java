@@ -6,7 +6,7 @@ import lombok.Data;
 
 @Data
 public class CreateUserDto {
-    
+    private Long userId;
     @NotNull
     @Email
     private String emailId;
