@@ -7,6 +7,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,8 +32,8 @@ public class User extends BaseEntity implements UserDetails {
     @Column(name = "user_id")
     private Long userId;
 
-    @Column(nullable = false)
-    private String name;
+    @Column(nullable = false, name = "name")
+    private String displayName;
 
     @Column(name = "email_id", unique = true, nullable = false)
     private String emailId;

@@ -7,10 +7,12 @@ import com.jubeiwato.costing_service.dtos.LoginUserDto;
 import com.jubeiwato.costing_service.dtos.RegisterUserDto;
 import com.jubeiwato.costing_service.entities.User;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import static com.jubeiwato.costing_service.constants.UserRoleConstants.*;
 
 @RequestMapping("/auth")
 @RestController
@@ -25,6 +27,7 @@ public class AuthenticationController {
     }
 
     @PostMapping("/signup")
+        @PreAuthorize("hasRole('" + SUPER_ADMIN + "')")
     public ResponseEntity<User> register(@RequestBody RegisterUserDto registerUserDto) {
         User registeredUser = authenticationService.signup(registerUserDto);
         registeredUser.setPassword(null);
