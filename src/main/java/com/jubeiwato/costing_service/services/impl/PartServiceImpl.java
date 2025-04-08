@@ -117,19 +117,15 @@ public class PartServiceImpl implements PartService {
         validateCreatePartRequest(request, companyId, vendorMap, costFactorMap);
         Part part = createPartEntity(request, companyId);
         partRepository.save(part);
-
+ 
         if(request.getVendorCostList() != null && !request.getVendorCostList().isEmpty()) {
                 List<PartCost> partCostList = request.getVendorCostList().stream().map(vendorCost -> createPartCostEntity(part, vendorCost,vendorMap, costFactorMap)).toList();
                 partCostRepository.saveAll(partCostList);
             }
     
-            if(request.getType().equalsIgnoreCase(PartType.MASTER.name()) && request.getBom() != null && !request.getBom().isEmpty()) {
-                List<Bom> bomList = request.getBom().stream().map(bomDto -> {
-                    Part childPart = partRepository.findById(bomDto.getChildPartId()).orElseThrow(() -> new  AppException(ErrorMessageConstant.INVALID_CHILD_PART, HttpStatus.BAD_REQUEST));
-                    return new Bom(part, childPart, bomDto.getQuantity());
-                }).toList();
-                bomRepository.saveAll(bomList);
-            }
+            if (request.getType().equalsIgnoreCase(PartType.MASTER.name()) && request.getBom() != null && !request.getBom().isEmpty()) {
+            validateAndSaveBom(request, companyId, part);
+        }
         }
 
         private void validateCreatePartRequest(PartRequestDto request, Long companyId, Map<Long, Vendor> vendorMap, Map<Long, CostFactor> costFactorMap) {
@@ -144,7 +140,7 @@ public class PartServiceImpl implements PartService {
             }
         
             if (request.getCategoryId() != null) {
-                categoryRepository.findBycategoryIdAndCompany_CompanyId(request.getCategoryId(), companyId)
+                categoryRepository.findByCategoryIdAndCompany_CompanyId(request.getCategoryId(), companyId)
                     .orElseThrow(() -> new AppException(ErrorMessageConstant.INVALID_CATEGORY, HttpStatus.NOT_FOUND));
             }
         
@@ -162,10 +158,9 @@ public class PartServiceImpl implements PartService {
 
          private void validateAndStoreVendors(List<VendorCostDto> vendorCostList, Long companyId,Map<Long, Vendor> vendorMap) {
 
-         List<Long> vendorIds = vendorCostList.stream()
-         .map(VendorCostDto::getId)
-         .distinct()
-         .toList();
+            Set<Long> vendorIds = vendorCostList.stream()
+            .map(VendorCostDto::getId)
+            .collect(Collectors.toSet());
 
          List<Vendor> vendors = vendorRepository.findByVendorIdInAndCompany_CompanyId(vendorIds, companyId);
 
@@ -178,11 +173,10 @@ public class PartServiceImpl implements PartService {
 
         private void validateAndStoreCostFactors(List<VendorCostDto> vendorCostList, Long companyId, Map<Long, CostFactor> costFactorMap) {
 
-        List<Long> costFactorIds = vendorCostList.stream()
-        .flatMap(vendorCost -> vendorCost.getCostFactorValues().stream())
-        .map(CostFactorDto::getId)
-        .distinct()
-        .toList();
+            Set<Long> costFactorIds = vendorCostList.stream()
+            .flatMap(vendorCost -> vendorCost.getCostFactorValues().stream())
+            .map(CostFactorDto::getId)
+            .collect(Collectors.toSet());
 
      List<CostFactor> costFactors = costFactorRepository.findByFactorIdInAndCompany_CompanyId(costFactorIds, companyId);
 
@@ -192,7 +186,42 @@ public class PartServiceImpl implements PartService {
 
     costFactors.forEach(cf -> costFactorMap.put(cf.getFactorId(), cf));
     }
+     
+    private void validateAndSaveBom(PartRequestDto request, Long companyId, Part part) {
+        Set<Long> childPartIds = request.getBom().stream()
+        .map(BomDto::getChildPartId)
+        .collect(Collectors.toSet());
+    
+        List<Part> validChildParts = partRepository.findByPartIdInAndCompany_CompanyId(childPartIds, companyId);
+    
+        // Extract the IDs of found parts
+        Set<Long> foundIds = validChildParts.stream()
+        .map(Part::getPartId)
+        .collect(Collectors.toSet());
 
+        // Find the missing IDs
+        List<Long> missingIds = childPartIds.stream()
+        .filter(id -> !foundIds.contains(id))
+        .toList();
+
+        // If any child part is missing, throw a detailed exception
+        if (!missingIds.isEmpty()) {
+        String message = "Child Part(s) not found for ID(s): " + missingIds;
+        throw new AppException(message, HttpStatus.BAD_REQUEST);
+        }
+    
+        Map<Long, Part> childPartMap = validChildParts.stream()
+            .collect(Collectors.toMap(Part::getPartId, Function.identity()));
+    
+        List<Bom> bomList = request.getBom().stream()
+            .map(bomDto -> new Bom(part,
+                    childPartMap.get(bomDto.getChildPartId()),
+                    bomDto.getQuantity()))
+            .toList();
+    
+        bomRepository.saveAll(bomList);
+    }
+    
     private Part createPartEntity(PartRequestDto request, Long companyId) {
      Company company =companyRepository.findById(companyId)
             .orElseThrow(() -> new AppException(ErrorMessageConstant.INVALID_COMPANY, HttpStatus.BAD_REQUEST));

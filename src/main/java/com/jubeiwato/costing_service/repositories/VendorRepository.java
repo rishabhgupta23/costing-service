@@ -4,10 +4,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import com.jubeiwato.costing_service.entities.Vendor;
 import java.util.List;
+import java.util.Set;
 
 public interface VendorRepository extends JpaRepository<Vendor, Long>, JpaSpecificationExecutor<Vendor> {
     List<Vendor> findByCompanyCompanyId(Long companyId);
-    List<Vendor> findByVendorIdInAndCompany_CompanyId(List<Long> vendorIds, Long companyId);
+    List<Vendor> findByVendorIdInAndCompany_CompanyId(Set<Long> vendorIds, Long companyId);
 
 }
 

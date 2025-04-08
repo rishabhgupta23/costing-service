@@ -1,5 +1,6 @@
 package com.jubeiwato.costing_service.repositories;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -9,5 +10,5 @@ import com.jubeiwato.costing_service.entities.CostFactor;
 
 public interface CostFactorRepository extends JpaRepository<CostFactor, Long> {
     Page<CostFactor> findByCompany_CompanyId(Long companyId, Pageable pageable);
-    List<CostFactor> findByFactorIdInAndCompany_CompanyId(List<Long> factorIds, Long companyId);
+    List<CostFactor> findByFactorIdInAndCompany_CompanyId(Set<Long> factorIds, Long companyId);
 }
