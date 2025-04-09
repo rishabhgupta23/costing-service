@@ -4,8 +4,11 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -38,6 +41,7 @@ import com.jubeiwato.costing_service.repositories.PartRepository;
 import com.jubeiwato.costing_service.repositories.VendorRepository;
 import com.jubeiwato.costing_service.services.FileGeneratorService;
 import com.jubeiwato.costing_service.services.impl.VendorServiceImpl;
+import org.springframework.data.domain.Sort;
 
 @ExtendWith(MockitoExtension.class)
 class VendorServiceTest {
@@ -59,34 +63,64 @@ class VendorServiceTest {
         private PartRepository partRepository;
 
         @Test
-        void testcreateVendor() {
+        void testCreateVendor_CompanyNotFound() {
+                Long companyId = 99L;
+
+                when(companyRepository.findById(companyId)).thenReturn(Optional.empty());
+
+                AppException exception = assertThrows(AppException.class, () -> vendorService.createVendor(companyId,
+                                "Test", "test@mail.com", "9999999999", "Nowhere"));
+
+                assertEquals("Company not found", exception.getMessage());
+        }
+
+        @Test
+        void testGetVendorList_WithSortingDESC() {
                 Long companyId = 1L;
                 String name = "VendorX";
-                String email = "vendorx@mail.com";
-                String contact = "9876543210";
                 String address = "Kolkata";
+                String emailId = "vendorx@mail.com";
+                String contactNumber = "9876543210";
+                int pageNo = 0;
+                int pageSize = 10;
+                String sortColumn = "name";
+                Sorting sortMode = Sorting.DESC;
 
-                Company mockCompany = Company.builder()
-                                .companyName("TestCompany")
-                                .companyAddress("Kolkata")
-                                .companyEmailId("company@mail.com")
-                                .maxUsers(10)
+                Vendor vendor = Vendor.builder()
+                                .name(name)
+                                .address(address)
+                                .emailId(emailId)
+                                .contactNumber(contactNumber)
+                                .company(Company.builder().companyId(companyId).build())
                                 .build();
-                mockCompany.setCompanyId(companyId);
 
-                when(companyRepository.findById(companyId)).thenReturn(Optional.of(mockCompany));
+                Page<Vendor> vendorPage = new PageImpl<>(List.of(vendor));
 
-                vendorService.createVendor(companyId, name, email, contact, address);
+                when(vendorRepository.findAll(any(Specification.class), any(Pageable.class)))
+                                .thenReturn(vendorPage);
 
-                ArgumentCaptor<Vendor> vendorCaptor = ArgumentCaptor.forClass(Vendor.class);
-                verify(vendorRepository, times(1)).save(vendorCaptor.capture());
+                ApiPageResponseDto<List<VendorDto>> response = vendorService.getVendorList(
+                                companyId, name, address, emailId, contactNumber,
+                                pageNo, pageSize, sortColumn, sortMode);
 
-                Vendor savedVendor = vendorCaptor.getValue();
-                assertEquals(name, savedVendor.getName());
-                assertEquals(email, savedVendor.getEmailId());
-                assertEquals(contact, savedVendor.getContactNumber());
-                assertEquals(address, savedVendor.getAddress());
-                assertEquals(mockCompany, savedVendor.getCompany());
+                assertNotNull(response);
+                assertEquals(1, response.getData().size());
+
+                VendorDto vendorDto = response.getData().get(0);
+                assertEquals(name, vendorDto.getName());
+                assertEquals(address, vendorDto.getAddress());
+                assertEquals(emailId, vendorDto.getEmailId());
+                assertEquals(contactNumber, vendorDto.getContactNumber());
+
+                assertEquals(1, response.getPageInfo().getTotalRecords());
+                assertEquals(pageNo, response.getPageInfo().getPageNumber());
+                assertEquals(pageSize, response.getPageInfo().getPageSize());
+
+                // Additional check if Sort.Direction was correctly interpreted (indirectly)
+                ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+                verify(vendorRepository).findAll(any(Specification.class), pageableCaptor.capture());
+                Sort sort = pageableCaptor.getValue().getSort();
+                assertTrue(sort.getOrderFor(sortColumn).isDescending());
         }
 
         @Test
@@ -102,14 +136,16 @@ class VendorServiceTest {
 
                 when(vendorRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(vendorPage);
 
-                var response = vendorService.getVendorList(1L, "VendorX", "Kolkata", "vendorx@mail.com", "9876543210",
+                ApiPageResponseDto<List<VendorDto>> response = vendorService.getVendorList(1L, "VendorX", "Kolkata",
+                                "vendorx@mail.com", "9876543210",
                                 0, 10, "name", Sorting.ASC);
 
                 assertNotNull(response);
                 assertNotNull(response.getData());
                 assertEquals(1, response.getData().size());
 
-                var vendorDto = response.getData().get(0);
+                VendorDto vendorDto = response.getData().get(0);
+
                 assertEquals("VendorX", vendorDto.getName());
                 assertEquals("Kolkata", vendorDto.getAddress());
                 assertEquals("vendorx@mail.com", vendorDto.getEmailId());
@@ -122,6 +158,18 @@ class VendorServiceTest {
 
                 verify(vendorRepository, times(1)).findAll(any(Specification.class), any(Pageable.class));
 
+        }
+
+        @Test
+        void testGetVendorById_VendorNotFound() {
+                Long vendorId = 42L, companyId = 1L;
+
+                when(vendorRepository.findById(vendorId)).thenReturn(Optional.empty());
+
+                AppException exception = assertThrows(AppException.class,
+                                () -> vendorService.getVendorById(vendorId, companyId));
+
+                assertEquals("Vendor does not exist", exception.getMessage());
         }
 
         @Test
@@ -141,6 +189,24 @@ class VendorServiceTest {
 
                 assertEquals("VendorX", dto.getName());
                 assertEquals("vendorx@mail.com", dto.getEmailId());
+        }
+
+        @Test
+        void testGetVendorById_CompanyMismatch() {
+                Long vendorId = 1L, companyId = 100L;
+
+                Vendor vendor = Vendor.builder()
+                                .vendorId(vendorId)
+                                .name("VendorY")
+                                .company(Company.builder().companyId(999L).build())
+                                .build();
+
+                when(vendorRepository.findById(vendorId)).thenReturn(Optional.of(vendor));
+
+                AppException exception = assertThrows(AppException.class,
+                                () -> vendorService.getVendorById(vendorId, companyId));
+
+                assertEquals("Vendor does not exist", exception.getMessage());
         }
 
         @Test
@@ -260,6 +326,21 @@ class VendorServiceTest {
 
                 assertEquals(1, response.getPageInfo().getTotalPages()); // Since 2 items only
                 verify(partRepository).getVendorParts(eq(vendorId), any(Pageable.class));
+        }
+
+        @Test
+        void testGetVendorParts_VendorNotFound() {
+                Long vendorId = 1L;
+                Long companyId = 10L;
+                int pageNo = 0, pageSize = 2;
+
+                when(vendorRepository.findById(vendorId)).thenReturn(Optional.empty());
+
+                assertThrows(AppException.class,
+                                () -> vendorService.getVendorParts(vendorId, pageNo, pageSize, companyId));
+
+                verify(vendorRepository).findById(vendorId);
+                verify(partRepository, never()).getVendorParts(anyLong(), any(Pageable.class));
         }
 
         @Test
