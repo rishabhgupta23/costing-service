@@ -60,16 +60,19 @@ public class UserServiceImpl implements UserService {
     }
 
     private void validateRoleAssignment(String currentUserRole, String targetUserRole) {
-        currentUserRole = currentUserRole.toUpperCase();
-        targetUserRole = targetUserRole.toUpperCase();
+        String currentAuthority = normalizeRole(currentUserRole);
+        String targetAuthority = normalizeRole(targetUserRole);
     
-        if (SUPER_ADMIN.equals(targetUserRole)) {
+        if (SUPER_ADMIN.equals(targetAuthority)) {
             throw new AppException(ErrorMessageConstant.SUPER_ADMIN_CREATION_ERROR, HttpStatus.FORBIDDEN);
         }
     
-        if (ADMIN.equals(targetUserRole) && !SUPER_ADMIN.equals(currentUserRole)) {
+        if (ADMIN.equals(targetAuthority) && !SUPER_ADMIN.equals(currentAuthority)) {
             throw new AppException(ErrorMessageConstant.ADMIN_CREATION_RESTRICTED, HttpStatus.FORBIDDEN);
         }
+    }
+    private String normalizeRole(String role) {
+        return role.trim().toUpperCase().replace(" ", "_");
     }
     
     public void createUser(CreateUserDto user, Long companyId, String currentUserRole) {
