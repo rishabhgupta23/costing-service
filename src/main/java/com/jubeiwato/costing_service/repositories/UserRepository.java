@@ -13,6 +13,7 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
     List<User> findByCompanyCompanyId(Long companyId);
  Optional<User> findByUserIdAndCompany_CompanyId(Long userId,Long companyId);
 
+    int countByCompany_CompanyId(Long companyId);
 
 }
 

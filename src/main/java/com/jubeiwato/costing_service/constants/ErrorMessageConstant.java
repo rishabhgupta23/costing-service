@@ -16,6 +16,7 @@ public class ErrorMessageConstant {
     public static final String CHILD_PART_NOT_FOUND_TEMPLATE= "Child Part not found with ID:  %s";
     public static final String INVALID_PRICE_MODE= "Invalid price mode provided.";
     public static final String VENDOR_DOES_NOT_EXIST= "Vendor does not exist";
+    public static final String COMPANY_DOES_NOT_EXIST = "Company does not exist";
 
     public static final String JWT_TOKEN_EXPIRED = "JWT token has expired";
     public static final String UNEXPECTED_ERROR_OCCURED = "unexpected error occured";
@@ -32,12 +33,10 @@ public class ErrorMessageConstant {
     public static final String COMPANY_ID_REQUIRED = "Company ID is required.";
     public static final String UNAUTHORIZED_ACCESS = "User not found.";
     public static final String PART_NOT_FOUND= "Part not found";
-    public static final String INVALID_COMPANY ="Company is invalid" ;
-    public static final String SUPER_ADMIN_CREATION_ERROR="Super Admins cannot be creted or updated";
-    public static final String ADMIN_CREATION_RESTRICTED="Admins cannot be created or updated";
 
-
-
+    public static final String SUPER_ADMIN_CREATION_ERROR = "Super Admins cannot be creted or updated";
+    public static final String ADMIN_CREATION_RESTRICTED = "Admins cannot be created or updated";
+    public static final String INVALID_COMPANY = "Company does not exist";
 
     private ErrorMessageConstant() {
 
@@ -45,6 +44,7 @@ public class ErrorMessageConstant {
     
     /**
      * Generic method to format error messages dynamically.
+     * 
      * @param template The message template with placeholders.
      * @param args Values to replace placeholders.
      * @return Formatted error message.
