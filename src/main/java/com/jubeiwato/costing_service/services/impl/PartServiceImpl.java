@@ -69,15 +69,10 @@ public class PartServiceImpl implements PartService {
     }
 
     private Part getValidatedPart(Long partId, Long companyId) {
-        Part part = partRepository.findById(partId)
+        return partRepository.findByPartIdAndCompany_CompanyId(partId,companyId)
                 .orElseThrow(() -> new AppException(
-                        ErrorMessageConstant.getFormattedMessage(ErrorMessageConstant.PART_NOT_FOUND_TEMPLATE, partId),
-                        HttpStatus.NOT_FOUND));
-    
-        if (!part.getCompany().getCompanyId().equals(companyId)) {
-            throw new AppException(ErrorMessageConstant.PART_NOT_FOUND, HttpStatus.NOT_FOUND);
-        }
-        return part;
+                        ErrorMessageConstant.PART_NOT_FOUND,HttpStatus.NOT_FOUND));
+
     }    
 
     @Override

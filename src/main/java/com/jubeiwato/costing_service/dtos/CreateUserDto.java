@@ -5,15 +5,12 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
-public class RegisterUserDto {
-
+public class CreateUserDto {
     @NotNull
     @Email
-    private String email;
+    private String emailId;
     @NotNull
     private String password;
     private String displayName;
-    private Long companyId;
     private Long roleId;
-    
 }
