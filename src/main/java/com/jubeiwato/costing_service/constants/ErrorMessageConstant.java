@@ -32,7 +32,12 @@ public class ErrorMessageConstant {
     public static final String COMPANY_ID_REQUIRED = "Company ID is required.";
     public static final String UNAUTHORIZED_ACCESS = "User not found.";
     public static final String PART_NOT_FOUND= "Part not found";
-    public static final String INVALID_COMPANY ="Company is invalid" ;
+    public static final String INVALID_COMPANY ="Company does not exist";
+    public static final String ACCESS_DENIED ="Access denied";
+    public static final String PASSWORD_INCORRECT ="Password Incorrect";
+    public static final String CATEGORY_DOES_NOT_EXIST ="Category does not exist";
+    public static final String PART_NUMBER_ALREADY_EXISTS_TEMPLATE = "Part with partNumber '%s' already exists";
+    public static final String COST_FACTOR_DOES_NOT_EXIST ="Costfactor does not exist";
     public static final String SUPER_ADMIN_CREATION_ERROR="Super Admins cannot be creted or updated";
     public static final String ADMIN_CREATION_RESTRICTED="Admins cannot be created or updated";
 

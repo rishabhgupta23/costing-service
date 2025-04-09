@@ -76,12 +76,18 @@ public class AuthenticationService {
     }
     
     public User authenticate(LoginUserDto input) {
+        userRepository.findByEmailId(input.getEmail())
+            .orElseThrow(() -> new AppException(ErrorMessageConstant.USER_DOES_NOT_EXIST, HttpStatus.NOT_FOUND));
+        try {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         input.getEmail(),
                         input.getPassword()
                 )
         );
+    } catch (Exception ex) {
+        throw new AppException(ErrorMessageConstant.PASSWORD_INCORRECT, HttpStatus.UNAUTHORIZED);
+    }
 
         return userRepository.findByEmailId(input.getEmail())
                 .orElseThrow();
