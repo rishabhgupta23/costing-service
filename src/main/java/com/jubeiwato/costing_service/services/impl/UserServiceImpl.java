@@ -28,6 +28,7 @@ import com.jubeiwato.costing_service.repositories.UserRepository;
 import com.jubeiwato.costing_service.repositories.UserRoleRepository;
 import com.jubeiwato.costing_service.services.UserService;
 import com.jubeiwato.costing_service.services.UserSpecification;
+import com.jubeiwato.costing_service.utils.AuthUtil;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -60,8 +61,8 @@ public class UserServiceImpl implements UserService {
     }
 
     private void validateRoleAssignment(String currentUserRole, String targetUserRole) {
-        String currentAuthority = normalizeRole(currentUserRole);
-        String targetAuthority = normalizeRole(targetUserRole);
+        String currentAuthority = AuthUtil.normalizeRole(currentUserRole);
+        String targetAuthority = AuthUtil.normalizeRole(targetUserRole);
     
         if (SUPER_ADMIN.equals(targetAuthority)) {
             throw new AppException(ErrorMessageConstant.SUPER_ADMIN_CREATION_ERROR, HttpStatus.FORBIDDEN);
@@ -70,9 +71,6 @@ public class UserServiceImpl implements UserService {
         if (ADMIN.equals(targetAuthority) && !SUPER_ADMIN.equals(currentAuthority)) {
             throw new AppException(ErrorMessageConstant.ADMIN_CREATION_RESTRICTED, HttpStatus.FORBIDDEN);
         }
-    }
-    private String normalizeRole(String role) {
-        return role.trim().toUpperCase().replace(" ", "_");
     }
     
     public void createUser(CreateUserDto user, Long companyId, String currentUserRole) {
