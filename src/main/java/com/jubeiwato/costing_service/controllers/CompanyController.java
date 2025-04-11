@@ -6,6 +6,7 @@ import static com.jubeiwato.costing_service.constants.UserRoleConstants.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import com.jubeiwato.costing_service.entities.User;
 
 import com.jubeiwato.costing_service.dtos.CompanyDto;
 import com.jubeiwato.costing_service.dtos.UserDto;
@@ -43,14 +45,16 @@ public class CompanyController {
     }
 
     @GetMapping("/{companyId}")
-    public ResponseEntity<CompanyDto> getCompanyById(@PathVariable Long companyId) {
-        return ResponseEntity.ok(companyService.getCompanyById(companyId));
+    public ResponseEntity<CompanyDto> getCompanyById(@PathVariable Long companyId,
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(companyService.getCompanyById(companyId, currentUser));
     }
 
     @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "')")
     @PutMapping("/{companyId}")
-    public ResponseEntity<String> updateCompanybyId(@PathVariable Long companyId, @RequestBody CompanyDto companyDto) {
-        companyService.updateCompanybyId(companyId, companyDto);
+    public ResponseEntity<String> updateCompanybyId(@PathVariable Long companyId, @RequestBody CompanyDto companyDto,
+            @AuthenticationPrincipal User currentUser) {
+        companyService.updateCompanybyId(companyId, companyDto, currentUser);
         return new ResponseEntity<>("Company updated successfully!", HttpStatus.OK);
     }
 

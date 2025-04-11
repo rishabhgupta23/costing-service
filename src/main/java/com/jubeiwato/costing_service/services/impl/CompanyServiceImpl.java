@@ -17,6 +17,7 @@ import com.jubeiwato.costing_service.repositories.UserRepository;
 import com.jubeiwato.costing_service.repositories.UserRoleRepository;
 import com.jubeiwato.costing_service.services.CompanyService;
 import com.jubeiwato.costing_service.services.UserService;
+import com.jubeiwato.costing_service.entities.User;
 
 import lombok.RequiredArgsConstructor;
 
@@ -52,7 +53,13 @@ public class CompanyServiceImpl implements CompanyService {
     }
 
     @Override
-    public CompanyDto getCompanyById(Long companyId) {
+    public CompanyDto getCompanyById(Long companyId, User currentUser) {
+        if (currentUser.getUserRole().getRoleName().equalsIgnoreCase("ADMIN")) {
+            Long adminCompanyId = currentUser.getCompany().getCompanyId();
+            if (!adminCompanyId.equals(companyId)) {
+                throw new AppException("You are not authorized to view details of this company", HttpStatus.FORBIDDEN);
+            }
+        }
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new AppException(ErrorMessageConstant.COMPANY_DOES_NOT_EXIST, HttpStatus.NOT_FOUND));
 
@@ -60,13 +67,25 @@ public class CompanyServiceImpl implements CompanyService {
     }
 
     @Override
-    public CompanyDto updateCompanybyId(Long companyId, CompanyDto companyDto) {
+    public CompanyDto updateCompanybyId(Long companyId, CompanyDto companyDto, User currentUser) {
+
+        if (currentUser.getUserRole().getRoleName().equalsIgnoreCase("ADMIN")) {
+            Long adminCompanyId = currentUser.getCompany().getCompanyId();
+            if (!adminCompanyId.equals(companyId)) {
+                throw new AppException("You are not authorized to update this company", HttpStatus.FORBIDDEN);
+            }
+        }
+
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new AppException(ErrorMessageConstant.COMPANY_DOES_NOT_EXIST, HttpStatus.NOT_FOUND));
 
         company.setCompanyName(companyDto.getCompanyName());
         company.setCompanyEmailId(companyDto.getCompanyEmailId());
         company.setCompanyAddress(companyDto.getCompanyAddress());
+
+        if (currentUser.getUserRole().getRoleName().equalsIgnoreCase("SUPERADMIN")) {
+            company.setMaxUsers(companyDto.getMaxUsers());
+        }
 
         Company updatedCompany = companyRepository.save(company);
 
