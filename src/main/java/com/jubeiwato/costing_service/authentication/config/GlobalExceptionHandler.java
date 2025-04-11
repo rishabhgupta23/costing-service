@@ -4,6 +4,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.security.access.AccessDeniedException;
 
 import com.jubeiwato.costing_service.constants.ErrorMessageConstant;
 import com.jubeiwato.costing_service.dtos.ErrorResponseDto;
@@ -15,6 +16,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponseDto> handleAppException(AppException ex) {
         return ResponseEntity.status(ex.getStatus())
                 .body(ErrorResponseDto.of(ex.getMessage(), ex.getStatus()));
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponseDto> handleAccessDeniedException(AccessDeniedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ErrorResponseDto.of(ErrorMessageConstant.ACCESS_DENIED, HttpStatus.FORBIDDEN));
     }
 
     @ExceptionHandler(Exception.class)
