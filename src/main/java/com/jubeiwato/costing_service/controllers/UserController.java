@@ -11,7 +11,6 @@ import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
 import com.jubeiwato.costing_service.dtos.CreateUserDto;
 import com.jubeiwato.costing_service.dtos.GeneralResponseDto;
 import org.springframework.security.core.Authentication;
-import com.jubeiwato.costing_service.dtos.OnboardingRequest;
 
 import com.jubeiwato.costing_service.dtos.CompanyDto;
 import com.jubeiwato.costing_service.dtos.UserDto;
@@ -43,15 +42,14 @@ public class UserController {
 
     @PostMapping("/users")
     @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "')")
-    public ResponseEntity<GeneralResponseDto> createUser(@RequestBody CreateUserDto user, 
-                                                         @AuthenticationPrincipal User authenticatedUser) {
+    public ResponseEntity<GeneralResponseDto> createUser(@RequestBody CreateUserDto user,
+            @AuthenticationPrincipal User authenticatedUser) {
         String currentUserRole = authenticatedUser.getUserRole().getRoleName();
         Long companyId = authenticatedUser.getCompany().getCompanyId();
         userService.createUser(user, companyId, currentUserRole);
         GeneralResponseDto response = new GeneralResponseDto("Successful", HttpStatus.CREATED.value());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
-
 
     @GetMapping("/users")
     public ResponseEntity<ApiPageResponseDto<List<UserDto>>> getUserListByCompanyId(
@@ -69,7 +67,6 @@ public class UserController {
 
         return ResponseEntity.ok(users);
     }
-
 
     @GetMapping("/users/roles")
     public ResponseEntity<ApiPageResponseDto<List<UserRoleDto>>> getUserRoles(
@@ -91,20 +88,21 @@ public class UserController {
     @PutMapping("/users/{userId}")
     @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "')")
     public ResponseEntity<UserDto> updateUserById(@PathVariable Long userId, @RequestBody CreateUserDto userDto,
-                                                  @AuthenticationPrincipal User authenticatedUser) {
+            @AuthenticationPrincipal User authenticatedUser) {
         Long companyId = authenticatedUser.getCompany().getCompanyId();
         Long currentUserId = authenticatedUser.getUserId();
-        UserDto updatedUser = this.userService.updateUserById(userId, userDto, companyId,currentUserId);
+        UserDto updatedUser = this.userService.updateUserById(userId, userDto, companyId, currentUserId);
         return new ResponseEntity<>(updatedUser, HttpStatus.OK);
     }
+
     @DeleteMapping("/users/{userId}")
     @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "')")
     public ResponseEntity<GeneralResponseDto> deleteUser(@PathVariable Long userId,
-                                                         @AuthenticationPrincipal User authenticatedUser) {
+            @AuthenticationPrincipal User authenticatedUser) {
         // The authenticated user performing the deletion
         Long currentUserId = authenticatedUser.getUserId();
         Long companyId = authenticatedUser.getCompany().getCompanyId();
-        
+
         // Call the service method to delete the user
         userService.deleteUserById(currentUserId, userId, companyId);
         GeneralResponseDto response = new GeneralResponseDto("User deleted successfully", HttpStatus.OK.value());
@@ -113,7 +111,8 @@ public class UserController {
 
     @GetMapping("/users/{userId}")
     @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "')")
-    public ResponseEntity<UserDto> getUserById(@PathVariable Long userId, @AuthenticationPrincipal User authenticatedUser) {
+    public ResponseEntity<UserDto> getUserById(@PathVariable Long userId,
+            @AuthenticationPrincipal User authenticatedUser) {
         Long companyId = authenticatedUser.getCompany().getCompanyId();
         UserDto user = userService.getUserById(userId, companyId);
         return ResponseEntity.ok(user);
