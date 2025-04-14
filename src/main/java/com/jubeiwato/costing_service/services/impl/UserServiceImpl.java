@@ -193,17 +193,19 @@ public ApiPageResponseDto<List<UserRoleDto>> getUserRoles(int pageNo, int pageSi
     @Transactional
     public void deleteUserById(Long currentUserId, Long userIdToDelete, Long companyId) {
     User targetUser = getAndValidateUser(userIdToDelete, companyId);
-        String targetUserRole = targetUser.getUserRole().getRoleName().toUpperCase();
-        if (SUPER_ADMIN.equals(targetUserRole)) {
-         throw new AppException(ErrorMessageConstant.SUPER_ADMIN_DELETE_ERROR, HttpStatus.FORBIDDEN);
-        }
-
     User currentUser = getAndValidateUser(currentUserId, companyId);
-
-    String currentUserRole = currentUser.getUserRole().getRoleName().toUpperCase();
-    if (ADMIN.equals(targetUserRole) && !SUPER_ADMIN.equals(currentUserRole)) {
-        throw new AppException(ErrorMessageConstant.ADMIN_DELETE_ERROR, HttpStatus.FORBIDDEN);
-    }
+        String targetUserRole = targetUser.getUserRole().getRoleName().toUpperCase();
+        String currentUserRole = currentUser.getUserRole().getRoleName().toUpperCase();
+        String currentAuthority = AuthUtil.normalizeRole(currentUserRole);
+        String targetAuthority = AuthUtil.normalizeRole(targetUserRole);
+    
+        if (SUPER_ADMIN.equals(targetAuthority)) {
+            throw new AppException(ErrorMessageConstant.SUPER_ADMIN_DELETE_ERROR, HttpStatus.FORBIDDEN);
+        }
+    
+        if (ADMIN.equals(targetAuthority) && !SUPER_ADMIN.equals(currentAuthority)) {
+            throw new AppException(ErrorMessageConstant.ADMIN_DELETE_ERROR, HttpStatus.FORBIDDEN);
+        }
     userRepository.deleteById(userIdToDelete);
     }
 
