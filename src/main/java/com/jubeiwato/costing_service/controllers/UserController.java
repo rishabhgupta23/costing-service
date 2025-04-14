@@ -1,5 +1,6 @@
 package com.jubeiwato.costing_service.controllers;
 
+import com.jubeiwato.costing_service.entities.Company;
 import com.jubeiwato.costing_service.entities.User;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -9,6 +10,10 @@ import com.jubeiwato.costing_service.constants.Sorting;
 import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
 import com.jubeiwato.costing_service.dtos.CreateUserDto;
 import com.jubeiwato.costing_service.dtos.GeneralResponseDto;
+import org.springframework.security.core.Authentication;
+import com.jubeiwato.costing_service.dtos.OnboardingRequest;
+
+import com.jubeiwato.costing_service.dtos.CompanyDto;
 import com.jubeiwato.costing_service.dtos.UserDto;
 import com.jubeiwato.costing_service.dtos.UserRoleDto;
 import com.jubeiwato.costing_service.services.UserService;
@@ -46,7 +51,7 @@ public class UserController {
         GeneralResponseDto response = new GeneralResponseDto("Successful", HttpStatus.CREATED.value());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
-    
+
 
     @GetMapping("/users")
     public ResponseEntity<ApiPageResponseDto<List<UserDto>>> getUserListByCompanyId(
@@ -58,14 +63,13 @@ public class UserController {
             @RequestParam(required = false, defaultValue = "userId") String sortColumn,
             @RequestParam(required = false, defaultValue = "ASC") Sorting sortMode,
             @AuthenticationPrincipal User authenticatedUser) {
-    
         Long companyId = authenticatedUser.getCompany().getCompanyId();
         ApiPageResponseDto<List<UserDto>> users = userService.getUserListByCompany(authenticatedUser.getUserId(),
                 fullName, emailId, roleName, pageNo, pageSize, sortColumn, sortMode, companyId);
-    
+
         return ResponseEntity.ok(users);
     }
-    
+
 
     @GetMapping("/users/roles")
     public ResponseEntity<ApiPageResponseDto<List<UserRoleDto>>> getUserRoles(
@@ -103,11 +107,10 @@ public class UserController {
         
         // Call the service method to delete the user
         userService.deleteUserById(currentUserId, userId, companyId);
-        
         GeneralResponseDto response = new GeneralResponseDto("User deleted successfully", HttpStatus.OK.value());
         return ResponseEntity.ok(response);
     }
-    
+
     @GetMapping("/users/{userId}")
     @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "')")
     public ResponseEntity<UserDto> getUserById(@PathVariable Long userId, @AuthenticationPrincipal User authenticatedUser) {
