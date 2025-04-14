@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import com.jubeiwato.costing_service.authentication.config.AppException;
 import com.jubeiwato.costing_service.constants.ErrorMessageConstant;
+import com.jubeiwato.costing_service.constants.UserRoleConstants;
 import com.jubeiwato.costing_service.dtos.CompanyDto;
 import com.jubeiwato.costing_service.dtos.UserDto;
 import com.jubeiwato.costing_service.entities.Company;
@@ -54,7 +55,7 @@ public class CompanyServiceImpl implements CompanyService {
 
     @Override
     public CompanyDto getCompanyById(Long companyId, User currentUser) {
-        if (currentUser.getUserRole().getRoleName().equalsIgnoreCase("ADMIN")) {
+        if (currentUser.getUserRole().getRoleName().equalsIgnoreCase(UserRoleConstants.ADMIN)) {
             Long adminCompanyId = currentUser.getCompany().getCompanyId();
             if (!adminCompanyId.equals(companyId)) {
                 throw new AppException("You are not authorized to view details of this company", HttpStatus.FORBIDDEN);
@@ -69,7 +70,7 @@ public class CompanyServiceImpl implements CompanyService {
     @Override
     public CompanyDto updateCompanybyId(Long companyId, CompanyDto companyDto, User currentUser) {
 
-        if (currentUser.getUserRole().getRoleName().equalsIgnoreCase("ADMIN")) {
+        if (currentUser.getUserRole().getRoleName().equalsIgnoreCase(UserRoleConstants.ADMIN)) {
             Long adminCompanyId = currentUser.getCompany().getCompanyId();
             if (!adminCompanyId.equals(companyId)) {
                 throw new AppException("You are not authorized to update this company", HttpStatus.FORBIDDEN);
@@ -79,11 +80,20 @@ public class CompanyServiceImpl implements CompanyService {
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new AppException(ErrorMessageConstant.COMPANY_DOES_NOT_EXIST, HttpStatus.NOT_FOUND));
 
-        company.setCompanyName(companyDto.getCompanyName());
-        company.setCompanyEmailId(companyDto.getCompanyEmailId());
-        company.setCompanyAddress(companyDto.getCompanyAddress());
+        if (companyDto.getCompanyName() != null) {
+            company.setCompanyName(companyDto.getCompanyName());
+        }
 
-        if (currentUser.getUserRole().getRoleName().equalsIgnoreCase("SUPERADMIN")) {
+        if (companyDto.getCompanyEmailId() != null) {
+            company.setCompanyEmailId(companyDto.getCompanyEmailId());
+        }
+
+        if (companyDto.getCompanyAddress() != null) {
+            company.setCompanyAddress(companyDto.getCompanyAddress());
+        }
+
+        if (companyDto.getMaxUsers() != null &&
+                currentUser.getUserRole().getRoleName().equalsIgnoreCase(UserRoleConstants.SUPER_ADMIN)) {
             company.setMaxUsers(companyDto.getMaxUsers());
         }
 
