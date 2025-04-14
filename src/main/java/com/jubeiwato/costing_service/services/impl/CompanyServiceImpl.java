@@ -80,15 +80,15 @@ public class CompanyServiceImpl implements CompanyService {
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new AppException(ErrorMessageConstant.COMPANY_DOES_NOT_EXIST, HttpStatus.NOT_FOUND));
 
-        if (companyDto.getCompanyName() != null) {
+        if (companyDto.getCompanyName() != null && !companyDto.getCompanyName().isBlank()) {
             company.setCompanyName(companyDto.getCompanyName());
         }
 
-        if (companyDto.getCompanyEmailId() != null) {
+        if (companyDto.getCompanyEmailId() != null && !companyDto.getCompanyEmailId().isBlank()) {
             company.setCompanyEmailId(companyDto.getCompanyEmailId());
         }
 
-        if (companyDto.getCompanyAddress() != null) {
+        if (companyDto.getCompanyAddress() != null && !companyDto.getCompanyAddress().isBlank()) {
             company.setCompanyAddress(companyDto.getCompanyAddress());
         }
 
