@@ -53,7 +53,7 @@ public class UserController {
 
     @GetMapping("/users")
     public ResponseEntity<ApiPageResponseDto<List<UserDto>>> getUserListByCompanyId(
-            @RequestParam(required = false) String fullName,
+            @RequestParam(required = false) String displayName,
             @RequestParam(required = false) String emailId,
             @RequestParam(required = false) String roleName,
             @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNo,
@@ -63,7 +63,7 @@ public class UserController {
             @AuthenticationPrincipal User authenticatedUser) {
         Long companyId = authenticatedUser.getCompany().getCompanyId();
         ApiPageResponseDto<List<UserDto>> users = userService.getUserListByCompany(authenticatedUser.getUserId(),
-                fullName, emailId, roleName, pageNo, pageSize, sortColumn, sortMode, companyId);
+                displayName, emailId, roleName, pageNo, pageSize, sortColumn, sortMode, companyId);
 
         return ResponseEntity.ok(users);
     }
