@@ -36,7 +36,7 @@ public class PartController {
             @RequestParam(required = false) String partName,
             @RequestParam(required = false) String partNumber,
             @RequestParam(required = false) String categoryName,
-            @RequestParam(required = false) PartType type,
+            @RequestParam(required = false) String type,
             @RequestParam(required = false) String unit,
             @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNo,
             @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int pageSize,
@@ -44,8 +44,8 @@ public class PartController {
             @RequestParam(defaultValue = "ASC") Sorting sortMode,
             @AuthenticationPrincipal User authenticatedUser 
     ) {
-        Long companyId = authenticatedUser.getCompany().getCompanyId();
-        Part filter = Part.builder()
+        Long companyId = authenticatedUser.getCompany().getCompanyId();  
+            PartDto filter = PartDto.builder()
                 .partName(partName)
                 .partNumber(partNumber)
                 .categoryName(categoryName)
