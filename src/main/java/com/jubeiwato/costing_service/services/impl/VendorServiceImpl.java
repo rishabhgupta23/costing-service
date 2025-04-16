@@ -27,6 +27,7 @@ import com.jubeiwato.costing_service.repositories.PartRepository;
 import com.jubeiwato.costing_service.repositories.VendorRepository;
 import com.jubeiwato.costing_service.services.VendorService;
 import com.jubeiwato.costing_service.services.VendorSpecification;
+import com.jubeiwato.costing_service.utils.ValidationUtil;
 
 @Service
 public class VendorServiceImpl implements VendorService {
@@ -74,7 +75,15 @@ public class VendorServiceImpl implements VendorService {
 
         Sort sort = Sort.by(direction, sortColumn);
         Pageable pageable = PageRequest.of(pageNo, pageSize, sort); 
-        Specification<Vendor> spec = new VendorSpecification(companyId,name, address, emailId, contactNumber);
+       if (!ValidationUtil.isValidInput(name) ||
+    !ValidationUtil.isValidInput(address) ||
+    !ValidationUtil.isValidInput(emailId) ||
+    !ValidationUtil.isValidInput(contactNumber)) {
+    throw new AppException(ErrorMessageConstant.INVALID_INPUT, HttpStatus.BAD_REQUEST);
+}
+
+Specification<Vendor> spec = new VendorSpecification(companyId, name, address, emailId, contactNumber);
+
         Page<Vendor> vendorPage = vendorRepository.findAll(spec, pageable);
 
         List<VendorDto> vendorDtos = vendorPage.getContent().stream()

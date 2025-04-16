@@ -37,6 +37,7 @@ import com.jubeiwato.costing_service.repositories.PartRepository;
 import com.jubeiwato.costing_service.repositories.VendorRepository;
 import com.jubeiwato.costing_service.repositories.PartUnitRepository;
 import com.jubeiwato.costing_service.services.PartService;
+import com.jubeiwato.costing_service.utils.ValidationUtil;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -293,6 +294,12 @@ private PartCostCostFactor createPartCostCostFactor(Long costFactorId, Double va
 
 
         // Apply Specification
+                if (!ValidationUtil.isValidInput(filter.getPartName()) ||
+                !ValidationUtil.isValidInput(filter.getPartNumber()) ||
+                !ValidationUtil.isValidInput(filter.getCategoryName()) ||
+                !ValidationUtil.isValidInput(filter.getUnit())) {
+            throw new AppException(ErrorMessageConstant.INVALID_INPUT, HttpStatus.BAD_REQUEST);
+        }
         Specification<Part> spec = new PartSpecification(filter.getPartName(), filter.getPartNumber(), filter.getCategoryName(), filter.getType(), filter.getUnit())
         .and((root, query, cb) -> cb.equal(root.get("company").get("companyId"), companyId));;
         Page<Part> partPage = partRepository.findAll(spec, pageable);

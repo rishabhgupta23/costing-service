@@ -1,43 +1,45 @@
 package com.jubeiwato.costing_service.services;
 
-import org.springframework.data.jpa.domain.Specification;
-import org.springframework.http.HttpStatus;
-
-import com.jubeiwato.costing_service.authentication.config.AppException;
-import com.jubeiwato.costing_service.constants.ErrorMessageConstant;
 import com.jubeiwato.costing_service.entities.User;
-import com.jubeiwato.costing_service.utils.ValidationUtil;
+import jakarta.persistence.criteria.*;
+import org.springframework.data.jpa.domain.Specification;
 
-import jakarta.persistence.criteria.Predicate;
 import java.util.ArrayList;
 import java.util.List;
 
-public class UserSpecification {
+public class UserSpecification implements Specification<User> {
 
-    public static Specification<User> getFilteredUsers(Long companyId, String displayName, String emailId, String roleName) {
-        if (!ValidationUtil.isValidInput(displayName) || 
-        !ValidationUtil.isValidInput(emailId) || 
-        !ValidationUtil.isValidInput(roleName)){
-        throw new AppException(ErrorMessageConstant.INVALID_INPUT, HttpStatus.BAD_REQUEST);
+    private final Long companyId;
+    private final String displayName;
+    private final String emailId;
+    private final String roleName;
+
+    public UserSpecification(Long companyId, String displayName, String emailId, String roleName) {
+        this.companyId = companyId;
+        this.displayName = displayName;
+        this.emailId = emailId;
+        this.roleName = roleName;
     }
-        return (root, query, criteriaBuilder) -> {
-            List<Predicate> predicates = new ArrayList<>();
 
-            // Ensure company filter is always applied
-            predicates.add(criteriaBuilder.equal(root.get("company").get("companyId"), companyId));
+    @Override
+    public Predicate toPredicate(Root<User> root, CriteriaQuery<?> query, CriteriaBuilder cb) {
+        List<Predicate> predicates = new ArrayList<>();
 
-            // Apply filters only if values are provided
-            if (displayName != null && !displayName.trim().isEmpty()) {
-                predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("displayName")), "%" + displayName.toLowerCase() + "%"));
-            }
-            if (emailId != null && !emailId.trim().isEmpty()) {
-                predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("emailId")), "%" + emailId.toLowerCase() + "%"));
-            }
-            if (roleName != null && !roleName.trim().isEmpty()) {
-                predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("userRole").get("roleName")), "%" + roleName.toLowerCase() + "%"));
-            }
+        // Company condition
+        predicates.add(cb.equal(root.get("company").get("companyId"), companyId));
 
-            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
-        };
+        // Filters
+        if (displayName != null && !displayName.trim().isEmpty()) {
+            predicates.add(cb.like(cb.lower(root.get("displayName")), "%" + displayName.toLowerCase() + "%"));
+        }
+        if (emailId != null && !emailId.trim().isEmpty()) {
+            predicates.add(cb.like(cb.lower(root.get("emailId")), "%" + emailId.toLowerCase() + "%"));
+        }
+        if (roleName != null && !roleName.trim().isEmpty()) {
+            predicates.add(cb.like(cb.lower(root.get("userRole").get("roleName")), "%" + roleName.toLowerCase() + "%"));
+        }
+
+        query.distinct(true);
+        return cb.and(predicates.toArray(new Predicate[0]));
     }
 }

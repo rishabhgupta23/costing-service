@@ -30,12 +30,6 @@ public class VendorSpecification implements Specification<Vendor> {
     public Predicate toPredicate(Root<Vendor> root, CriteriaQuery<?> query, CriteriaBuilder cb) {
         List<Predicate> predicates = new ArrayList<>();
         predicates.add(cb.equal(root.get("company").get("companyId"), companyId));
-        if (!ValidationUtil.isValidInput(name) ||
-                !ValidationUtil.isValidInput(address) ||
-                !ValidationUtil.isValidInput(emailId) ||
-                !ValidationUtil.isValidInput(contactNumber)) {
-            throw new AppException(ErrorMessageConstant.INVALID_INPUT, HttpStatus.BAD_REQUEST);
-        }
 
         if (name != null && !name.trim().isEmpty()) {
             predicates.add(cb.like(cb.lower(root.get("name")), "%" + name.toLowerCase() + "%"));

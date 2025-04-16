@@ -28,12 +28,16 @@ import com.jubeiwato.costing_service.dtos.UserRoleDto;
 import com.jubeiwato.costing_service.entities.Company;
 import com.jubeiwato.costing_service.entities.User;
 import com.jubeiwato.costing_service.entities.UserRole;
+import com.jubeiwato.costing_service.entities.Vendor;
 import com.jubeiwato.costing_service.repositories.CompanyRepository;
 import com.jubeiwato.costing_service.repositories.UserRepository;
 import com.jubeiwato.costing_service.repositories.UserRoleRepository;
 import com.jubeiwato.costing_service.services.UserService;
 import com.jubeiwato.costing_service.services.UserSpecification;
+import com.jubeiwato.costing_service.services.VendorSpecification;
 import com.jubeiwato.costing_service.utils.AuthUtil;
+import com.jubeiwato.costing_service.utils.ValidationUtil;
+
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -146,7 +150,12 @@ public ApiPageResponseDto<List<UserRoleDto>> getUserRoles(int pageNo, int pageSi
         Sort.Direction direction = (sortMode == Sorting.DESC) ? Sort.Direction.DESC : Sort.Direction.ASC;
         Sort sort = Sort.by(direction, sortColumn);
         Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
-        Specification<User> spec = UserSpecification.getFilteredUsers(companyId, displayName, emailId, roleName);
+                if (!ValidationUtil.isValidInput(displayName) || 
+        !ValidationUtil.isValidInput(emailId) || 
+        !ValidationUtil.isValidInput(roleName)){
+        throw new AppException(ErrorMessageConstant.INVALID_INPUT, HttpStatus.BAD_REQUEST);
+    }
+        Specification<User> spec = new UserSpecification(companyId, displayName, emailId, roleName);
         Page<User> userPage = userRepository.findAll(spec, pageable);
         List<UserDto> userDtos = userPage.getContent()
                 .stream()

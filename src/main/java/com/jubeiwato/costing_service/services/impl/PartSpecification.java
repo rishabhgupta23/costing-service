@@ -31,14 +31,6 @@ public class PartSpecification implements Specification<Part> {
     public Predicate toPredicate(Root<Part> root, CriteriaQuery<?> query, CriteriaBuilder cb) {
         List<Predicate> predicates = new ArrayList<>();
 
-
-        if (!ValidationUtil.isValidInput(partName) ||
-                !ValidationUtil.isValidInput(partNumber) ||
-                !ValidationUtil.isValidInput(categoryName) ||
-                !ValidationUtil.isValidInput(unit)) {
-            throw new AppException(ErrorMessageConstant.INVALID_INPUT, HttpStatus.BAD_REQUEST);
-        }
-
         if (partName != null && !partName.isEmpty()) {
             predicates.add(cb.like(cb.lower(root.get("partName")), "%" + partName.toLowerCase() + "%"));
         }
