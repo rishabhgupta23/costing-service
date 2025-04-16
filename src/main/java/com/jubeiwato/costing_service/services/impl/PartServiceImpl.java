@@ -300,8 +300,7 @@ private PartCostCostFactor createPartCostCostFactor(Long costFactorId, Double va
                 !ValidationUtil.isValidInput(filter.getUnit())) {
             throw new AppException(ErrorMessageConstant.INVALID_INPUT, HttpStatus.BAD_REQUEST);
         }
-        Specification<Part> spec = new PartSpecification(filter.getPartName(), filter.getPartNumber(), filter.getCategoryName(), filter.getType(), filter.getUnit())
-        .and((root, query, cb) -> cb.equal(root.get("company").get("companyId"), companyId));;
+        Specification<Part> spec = new PartSpecification(companyId,filter.getPartName(), filter.getPartNumber(), filter.getCategoryName(), filter.getType(), filter.getUnit());
         Page<Part> partPage = partRepository.findAll(spec, pageable);
 
         // Extract Max Vendor Count

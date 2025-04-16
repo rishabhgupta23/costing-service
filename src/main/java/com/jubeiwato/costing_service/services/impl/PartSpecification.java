@@ -13,13 +13,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PartSpecification implements Specification<Part> {
+    private final Long companyId;
     private final String partName;
     private final String partNumber;
     private final String categoryName;
     private final String type;
     private final String unit;
 
-    public PartSpecification(String partName, String partNumber, String categoryName, String type, String unit) {
+    public PartSpecification(long companyId, String partName, String partNumber, String categoryName, String type, String unit) {
+        this.companyId=companyId;
         this.partName = partName;
         this.partNumber = partNumber;
         this.categoryName = categoryName;
@@ -30,7 +32,7 @@ public class PartSpecification implements Specification<Part> {
     @Override
     public Predicate toPredicate(Root<Part> root, CriteriaQuery<?> query, CriteriaBuilder cb) {
         List<Predicate> predicates = new ArrayList<>();
-
+        predicates.add(cb.equal(root.get("company").get("companyId"), companyId));
         if (partName != null && !partName.isEmpty()) {
             predicates.add(cb.like(cb.lower(root.get("partName")), "%" + partName.toLowerCase() + "%"));
         }
