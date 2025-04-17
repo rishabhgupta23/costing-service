@@ -46,7 +46,10 @@
             <sql>
                 DELETE FROM app.user_role 
                 WHERE role_name IN ('Super Admin', 'Admin', 'Maintainer', 'Guest');
-    
+
+                DELETE FROM app.company 
+                WHERE company_email_id = 'defaultcompany123@gmail.com' AND company_name ='Default company';
+
                 DROP TABLE IF EXISTS app.user_role CASCADE;
                 DROP TABLE IF EXISTS app.company CASCADE;
             </sql>
