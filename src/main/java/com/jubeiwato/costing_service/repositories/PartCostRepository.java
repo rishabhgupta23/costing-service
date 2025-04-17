@@ -29,8 +29,4 @@ public interface PartCostRepository extends JpaRepository<PartCost, Long> {
    " FROM app.part_cost GROUP BY part_id) AS subquery",
     nativeQuery = true)
     Integer getMaxVendorCount();
-
-   @Query("SELECT pc FROM PartCost pc WHERE pc.part = :part AND pc.part.company.companyId = :companyId")
-    List<PartCost> findByPartAndCompanyId(@Param("part") Part part, @Param("companyId") Long companyId);
-
 }

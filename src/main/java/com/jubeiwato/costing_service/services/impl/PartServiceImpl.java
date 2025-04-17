@@ -444,7 +444,7 @@ public PartDto updatePartById(Long partId, @Valid PartRequestDto request,Long co
     partRepository.save(existingPart);
 
     // Update vendor cost map if present
-    List<PartCost> partCosts = partCostRepository.findByPartAndCompanyId(existingPart, companyId);
+    List<PartCost> partCosts = partCostRepository.findByPart(existingPart);
     List<VendorCostDto> vendorCostList = request.getVendorCostList() != null 
     ? request.getVendorCostList() : Collections.emptyList();
     Set<Long> incomingVendorCostIds = vendorCostList.stream()
