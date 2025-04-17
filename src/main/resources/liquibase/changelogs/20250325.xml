@@ -7,7 +7,7 @@
 
     <changeSet id="20250325-1" author="Anusha">
         <sql>
-             CREATE TABLE IF NOT EXISTS app.company (
+            CREATE TABLE IF NOT EXISTS app.company (
                 delete_flag INTEGER DEFAULT 0,
                 company_id BIGSERIAL NOT NULL,
                 company_name VARCHAR(100) NOT NULL,
@@ -21,30 +21,35 @@
                 CONSTRAINT company_pkey PRIMARY KEY (company_id),
                 CONSTRAINT company_email_id_key UNIQUE (company_email_id)
             );
-
+    
+            INSERT INTO app.company (delete_flag, company_name, company_address, company_email_id, max_users, created_by, created_date_time, updated_by, updated_date_time)
+            VALUES (0, 'Default company', 'Patna', 'defaultcompany123@gmail.com', 6, -9, now(), -9, now());
+    
             CREATE TABLE IF NOT EXISTS app.user_role (
-            delete_flag INTEGER DEFAULT 0,
-            role_id BIGSERIAL NOT NULL PRIMARY KEY,
-            role_name VARCHAR(255) UNIQUE NOT NULL,
-            created_by BIGINT,
-            created_date_time TIMESTAMPTZ(6),
-            updated_by BIGINT,
-            updated_date_time TIMESTAMPTZ(6)
+                delete_flag INTEGER DEFAULT 0,
+                role_id BIGSERIAL NOT NULL PRIMARY KEY,
+                role_name VARCHAR(255) UNIQUE NOT NULL,
+                created_by BIGINT,
+                created_date_time TIMESTAMPTZ(6),
+                updated_by BIGINT,
+                updated_date_time TIMESTAMPTZ(6)
             );
-
-            ALTER TABLE app.app_user 
-            ADD COLUMN company_id BIGINT NOT NULL, 
-            ADD COLUMN role_id BIGINT NOT NULL,
-            ADD CONSTRAINT app_user_company_id_fkey 
-            FOREIGN KEY (company_id) REFERENCES app.company (company_id) ON DELETE CASCADE,
-            ADD CONSTRAINT app_user_role_id_fkey 
-            FOREIGN KEY (role_id) REFERENCES app.user_role (role_id);
+    
+            INSERT INTO app.user_role (delete_flag, role_name, created_by, created_date_time, updated_by, updated_date_time)
+            VALUES 
+            (0, 'Super Admin', -9, now(), -9, now()),
+            (0, 'Admin', -9, now(), -9, now()),
+            (0, 'Maintainer', -9, now(), -9, now()),
+            (0, 'Guest', -9 , now(), -9, now());
         </sql>
         <rollback>
             <sql>
-                ALTER TABLE app.app_user DROP CONSTRAINT app_user_company_id_fkey;
-                ALTER TABLE app.app_user DROP CONSTRAINT app_user_role_id_fkey;
-                ALTER TABLE app.app_user DROP COLUMN company_id, DROP COLUMN role_id;
+                DELETE FROM app.user_role 
+                WHERE role_name IN ('Super Admin', 'Admin', 'Maintainer', 'Guest');
+
+                DELETE FROM app.company 
+                WHERE company_email_id = 'defaultcompany123@gmail.com' AND company_name ='Default company';
+
                 DROP TABLE IF EXISTS app.user_role CASCADE;
                 DROP TABLE IF EXISTS app.company CASCADE;
             </sql>
@@ -54,9 +59,6 @@
     <changeSet id="20250325-2" author="Anusha">
         <sql>
             ALTER TABLE app.vendor ADD COLUMN company_id BIGINT;
-
-            INSERT INTO app.company (delete_flag, company_name, company_address, company_email_id, max_users, created_by, created_date_time, updated_by, updated_date_time)
-            VALUES (0, 'Default company', 'Patna', 'defaultcompany123@gmail.com', 6, -9, now(), -9, now());
 
             UPDATE app.vendor 
             SET company_id = (SELECT company_id FROM app.company WHERE company_name = 'Default company')
@@ -71,20 +73,31 @@
             <sql>
                 ALTER TABLE app.vendor DROP CONSTRAINT vendor_company_id_fkey;
                 ALTER TABLE app.vendor DROP COLUMN company_id;
-                TRUNCATE app.company CASCADE;
             </sql>
         </rollback>
     </changeSet>
-
+    
     <changeSet id="20250325-3" author="Anusha">
         <sql>
-            ALTER TABLE app.part 
-            ADD COLUMN company_id BIGINT NOT NULL,
+            ALTER TABLE app.part ADD COLUMN company_id BIGINT;  
+    
+            UPDATE app.part 
+            SET company_id = (SELECT company_id FROM app.company WHERE company_name = 'Default company')
+            WHERE company_id IS NULL;
+    
+            ALTER TABLE app.part
+            ALTER COLUMN company_id SET NOT NULL,
             ADD CONSTRAINT part_company_id_fkey 
             FOREIGN KEY (company_id) REFERENCES app.company (company_id) ON DELETE CASCADE;
-
-            ALTER TABLE app.part_category 
-            ADD COLUMN company_id BIGINT NOT NULL,
+    
+            ALTER TABLE app.part_category ADD COLUMN company_id BIGINT;  
+    
+            UPDATE app.part_category 
+            SET company_id = (SELECT company_id FROM app.company WHERE company_name = 'Default company')
+            WHERE company_id IS NULL;
+    
+            ALTER TABLE app.part_category
+            ALTER COLUMN company_id SET NOT NULL,
             ADD CONSTRAINT part_category_company_id_fkey 
             FOREIGN KEY (company_id) REFERENCES app.company (company_id) ON DELETE CASCADE;
         </sql>
@@ -121,24 +134,45 @@
 
     <changeSet id="20250325-5" author="Anusha">
         <sql>
-            INSERT INTO app.user_role (delete_flag, role_name, created_by, created_date_time, updated_by, updated_date_time)
-            VALUES 
-            (0, 'Super Admin', -9, now(), -9, now()),
-            (0, 'Admin', -9, now(), -9, now()),
-            (0, 'Maintainer', -9, now(), -9, now()),
-            (0, 'Guest', -9 , now(), -9, now());
+            ALTER TABLE app.app_user ADD COLUMN company_id BIGINT;
+            ALTER TABLE app.app_user ADD COLUMN role_id BIGINT;
 
+            UPDATE app.app_user 
+            SET company_id = (
+                SELECT company_id FROM app.company WHERE company_name = 'Default company'
+            )
+            WHERE company_id IS NULL;
+    
+            -- Set default role_id for existing users
+            UPDATE app.app_user 
+            SET role_id = (
+                SELECT role_id FROM app.user_role WHERE role_name = 'Guest'
+            )
+            WHERE role_id IS NULL;
+    
+            ALTER TABLE app.app_user
+            ALTER COLUMN company_id SET NOT NULL,
+            ALTER COLUMN role_id SET NOT NULL,
+            ADD CONSTRAINT app_user_company_id_fkey 
+            FOREIGN KEY (company_id) REFERENCES app.company (company_id) ON DELETE CASCADE,
+            ADD CONSTRAINT app_user_role_id_fkey 
+            FOREIGN KEY (role_id) REFERENCES app.user_role (role_id);
+    
             INSERT INTO app.app_user (delete_flag, created_by, created_date_time, updated_by, updated_date_time, email_id, name, password, company_id, role_id)
             VALUES (0, -9, now(), -9, now(), 'superadmin@example.com', 'Super Admin', '$2a$10$U2xjy6u1xUnW056/xprt6uDx5tfvsenufjH0JrvptvkuthrVXXKu.', (SELECT company_id FROM app.company WHERE company_name = 'Default company'), (SELECT role_id FROM app.user_role WHERE role_name = 'Super Admin'));
 
         </sql>
         <rollback>
             <sql>
-                TRUNCATE app.app_user CASCADE;
-                TRUNCATE app.user_role CASCADE;
+                ALTER TABLE app.app_user DROP CONSTRAINT app_user_company_id_fkey;
+                ALTER TABLE app.app_user DROP CONSTRAINT app_user_role_id_fkey;
+                ALTER TABLE app.app_user DROP COLUMN company_id, DROP COLUMN role_id;
+    
+                DELETE FROM app.app_user 
+                WHERE email_id = 'superadmin@example.com' AND name = 'Super Admin';
             </sql>
         </rollback>
-    </changeSet>
+    </changeSet>  
 
     <changeSet id="20250325-6" author="Anusha">
     <dropUniqueConstraint 
