@@ -2,7 +2,6 @@ package com.jubeiwato.costing_service.dtos;
 
 import java.util.List;
 
-import com.jubeiwato.costing_service.constants.PartType;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,7 +17,7 @@ public class PartRowDto extends PartDto {
 
 
     @Builder(builderMethodName = "superBuilder")
-    public PartRowDto(Long partId, String partName, String partNumber, String categoryName, PartType type,
+    public PartRowDto(Long partId, String partName, String partNumber, String categoryName, String type,
             String unit, List<String> vendorNames) {
         super(partId, partName, partNumber, categoryName, type, unit);
         this.vendorNames = vendorNames;

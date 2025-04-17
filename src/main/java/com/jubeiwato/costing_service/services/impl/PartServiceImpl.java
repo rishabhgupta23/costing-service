@@ -37,6 +37,7 @@ import com.jubeiwato.costing_service.repositories.PartRepository;
 import com.jubeiwato.costing_service.repositories.VendorRepository;
 import com.jubeiwato.costing_service.repositories.PartUnitRepository;
 import com.jubeiwato.costing_service.services.PartService;
+import com.jubeiwato.costing_service.utils.ValidationUtil;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -285,16 +286,21 @@ private PartCostCostFactor createPartCostCostFactor(Long costFactorId, Double va
     }
 
     @Override
-    public ApiPageResponseDto<PartDataDto> getParts(Part filter, long companyId, int pageNo, int pageSize, String sortBy, Sorting sortMode) {
+    public ApiPageResponseDto<PartDataDto> getParts(PartDto filter,long companyId, int pageNo, int pageSize, String sortBy, Sorting sortMode) {
         Sort sort = (sortMode == Sorting.DESC)
                 ? Sort.by(sortBy).descending()
                 : Sort.by(sortBy).ascending();
         Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
 
+
         // Apply Specification
-        Specification<Part> spec = Specification.where(new PartSpecification(filter))
-            .and((root, query, cb) -> cb.equal(root.get("company").get("companyId"), companyId));
-            
+                if (!ValidationUtil.isValidInput(filter.getPartName()) ||
+                !ValidationUtil.isValidInput(filter.getPartNumber()) ||
+                !ValidationUtil.isValidInput(filter.getCategoryName()) ||
+                !ValidationUtil.isValidInput(filter.getUnit())) {
+            throw new AppException(ErrorMessageConstant.INVALID_INPUT, HttpStatus.BAD_REQUEST);
+        }
+        Specification<Part> spec = new PartSpecification(companyId,filter.getPartName(), filter.getPartNumber(), filter.getCategoryName(), filter.getType(), filter.getUnit());
         Page<Part> partPage = partRepository.findAll(spec, pageable);
 
         // Extract Max Vendor Count
@@ -313,7 +319,7 @@ private PartCostCostFactor createPartCostCostFactor(Long costFactorId, Double va
                             .partName(part.getPartName())
                             .partNumber(part.getPartNumber())
                             .categoryName(part.getCategoryName())
-                            .type(part.getType())
+                            .type(part.getType().name())
                             .unit(part.getUnit())
                             .vendorNames(new ArrayList<>(vendorNames))
                             .build();
@@ -362,7 +368,7 @@ private PartCostCostFactor createPartCostCostFactor(Long costFactorId, Double va
                 .partNumber(part.getPartNumber())
                 .unit(part.getUnit())
                 .categoryName(part.getCategoryName())
-                .type(part.getType())
+                .type(part.getType().toString())
                 .bom(bomDtoList)
                 .vendorCostList(createVendorCostList(partCostList))
                 .build();

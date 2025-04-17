@@ -13,45 +13,44 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PartSpecification implements Specification<Part> {
-    private final transient Part filter;
+    private final Long companyId;
+    private final String partName;
+    private final String partNumber;
+    private final String categoryName;
+    private final String type;
+    private final String unit;
 
-    public PartSpecification(Part filter) {
-        this.filter = filter;
+    public PartSpecification(long companyId, String partName, String partNumber, String categoryName, String type, String unit) {
+        this.companyId=companyId;
+        this.partName = partName;
+        this.partNumber = partNumber;
+        this.categoryName = categoryName;
+        this.type = type;
+        this.unit = unit;
     }
 
     @Override
     public Predicate toPredicate(Root<Part> root, CriteriaQuery<?> query, CriteriaBuilder cb) {
-        if (filter == null) {
-            return cb.conjunction();
-        }
         List<Predicate> predicates = new ArrayList<>();
-
-
-        if (!ValidationUtil.isValidInput(filter.getPartName()) ||
-                !ValidationUtil.isValidInput(filter.getPartNumber()) ||
-                !ValidationUtil.isValidInput(filter.getCategoryName()) ||
-                !ValidationUtil.isValidInput(filter.getUnit())) {
-            throw new AppException(ErrorMessageConstant.INVALID_INPUT, HttpStatus.BAD_REQUEST);
+        predicates.add(cb.equal(root.get("company").get("companyId"), companyId));
+        if (partName != null && !partName.isEmpty()) {
+            predicates.add(cb.like(cb.lower(root.get("partName")), "%" + partName.toLowerCase() + "%"));
         }
-
-        if (filter.getPartName() != null && !filter.getPartName().isEmpty()) {
-            predicates.add(cb.like(cb.lower(root.get("partName")), "%" + filter.getPartName().toLowerCase() + "%"));
+        if (partNumber != null && !partNumber.isEmpty()) {
+            predicates.add(cb.like(cb.lower(root.get("partNumber")), "%" + partNumber.toLowerCase() + "%"));
         }
-        if (filter.getPartNumber() != null && !filter.getPartNumber().isEmpty()) {
-            predicates.add(cb.like(cb.lower(root.get("partNumber")), "%" + filter.getPartNumber().toLowerCase() + "%"));
+        if (categoryName != null && !categoryName.isEmpty()) {
+            predicates.add(cb.like(cb.lower(root.get("categoryName")), "%" + categoryName.toLowerCase() + "%"));
         }
-        if (filter.getCategoryName() != null && !filter.getCategoryName().isEmpty()) {
-            predicates.add(cb.like(cb.lower(root.get("categoryName")), filter.getCategoryName().toLowerCase()));
+        if (type != null && !type.isEmpty()) {
+            predicates.add(cb.like(cb.lower(root.get("type")), "%" + type.toLowerCase() + "%"));
         }
-        if (filter.getType() != null) {
-            predicates.add(cb.equal(root.get("type"), filter.getType()));
-        }
-        if (filter.getUnit() != null && !filter.getUnit().isEmpty()) {
-            predicates.add(cb.equal(cb.lower(root.get("unit")), filter.getUnit().toLowerCase()));
+        if (unit != null && !unit.isEmpty()) {
+            predicates.add(cb.like(cb.lower(root.get("unit")), "%" + unit.toLowerCase() + "%"));
         }
 
         query.distinct(true);
-        return cb.and(predicates.toArray(new Predicate[0]));
+        return cb.and(predicates.toArray((new Predicate[predicates.size()])));
     }
 
 }

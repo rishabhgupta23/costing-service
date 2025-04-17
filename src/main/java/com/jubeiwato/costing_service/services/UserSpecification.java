@@ -1,32 +1,45 @@
 package com.jubeiwato.costing_service.services;
 
-import org.springframework.data.jpa.domain.Specification;
 import com.jubeiwato.costing_service.entities.User;
-import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.*;
+import org.springframework.data.jpa.domain.Specification;
+
 import java.util.ArrayList;
 import java.util.List;
 
-public class UserSpecification {
+public class UserSpecification implements Specification<User> {
 
-    public static Specification<User> getFilteredUsers(Long companyId, String fullName, String emailId, String roleName) {
-        return (root, query, criteriaBuilder) -> {
-            List<Predicate> predicates = new ArrayList<>();
+    private final Long companyId;
+    private final String displayName;
+    private final String emailId;
+    private final String roleName;
 
-            // Ensure company filter is always applied
-            predicates.add(criteriaBuilder.equal(root.get("company").get("companyId"), companyId));
+    public UserSpecification(Long companyId, String displayName, String emailId, String roleName) {
+        this.companyId = companyId;
+        this.displayName = displayName;
+        this.emailId = emailId;
+        this.roleName = roleName;
+    }
 
-            // Apply filters only if values are provided
-            if (fullName != null && !fullName.trim().isEmpty()) {
-                predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("fullName")), "%" + fullName.toLowerCase() + "%"));
-            }
-            if (emailId != null && !emailId.trim().isEmpty()) {
-                predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("emailId")), "%" + emailId.toLowerCase() + "%"));
-            }
-            if (roleName != null && !roleName.trim().isEmpty()) {
-                predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("role").get("roleName")), "%" + roleName.toLowerCase() + "%"));
-            }
+    @Override
+    public Predicate toPredicate(Root<User> root, CriteriaQuery<?> query, CriteriaBuilder cb) {
+        List<Predicate> predicates = new ArrayList<>();
 
-            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
-        };
+        // Company condition
+        predicates.add(cb.equal(root.get("company").get("companyId"), companyId));
+
+        // Filters
+        if (displayName != null && !displayName.trim().isEmpty()) {
+            predicates.add(cb.like(cb.lower(root.get("displayName")), "%" + displayName.toLowerCase() + "%"));
+        }
+        if (emailId != null && !emailId.trim().isEmpty()) {
+            predicates.add(cb.like(cb.lower(root.get("emailId")), "%" + emailId.toLowerCase() + "%"));
+        }
+        if (roleName != null && !roleName.trim().isEmpty()) {
+            predicates.add(cb.like(cb.lower(root.get("userRole").get("roleName")), "%" + roleName.toLowerCase() + "%"));
+        }
+
+        query.distinct(true);
+        return cb.and(predicates.toArray(new Predicate[0]));
     }
 }
