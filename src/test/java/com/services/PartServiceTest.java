@@ -224,20 +224,17 @@ public class PartServiceTest {
         Long partId = 1L;
         Long companyId = 1L;
 
-        // Simulate the part not being found
         when(partRepository.findByPartIdAndCompany_CompanyId(partId, companyId))
                 .thenReturn(Optional.empty());
 
-        // Using reflection to call the private method
         Method method = PartServiceImpl.class.getDeclaredMethod("getValidatedPart", Long.class, Long.class);
         method.setAccessible(true);
 
-        // Check if AppException is thrown
         try {
             method.invoke(partServiceImpl, partId, companyId);
             fail("Expected AppException to be thrown");
         } catch (InvocationTargetException ex) {
-            // Unwrap the exception and assert that it's an AppException
+
             Throwable cause = ex.getCause();
             assertTrue(cause instanceof AppException,
                     "Expected AppException but got " + cause.getClass().getSimpleName());
@@ -262,7 +259,6 @@ public class PartServiceTest {
         Map<Long, Vendor> vendorMap = new HashMap<>();
         Map<Long, CostFactor> costFactorMap = new HashMap<>();
 
-        // Access private method via reflection
         Method method = PartServiceImpl.class.getDeclaredMethod(
                 "validateCreatePartRequest",
                 PartRequestDto.class, Long.class, Map.class, Map.class);
@@ -272,7 +268,7 @@ public class PartServiceTest {
             method.invoke(partService, request, companyId, vendorMap, costFactorMap);
             fail("Expected AppException to be thrown");
         } catch (InvocationTargetException e) {
-            // Unwrap the exception to get the underlying AppException
+
             Throwable cause = e.getCause();
             if (cause instanceof AppException) {
                 AppException exception = (AppException) cause;
@@ -293,26 +289,16 @@ public class PartServiceTest {
                 .partNumber(partNumber)
                 .build();
 
-        // Simulate the case where the unit is null or empty
-        // You can set the unit value in the request to null or empty to trigger the
-        // exception
-
-        // In your test, assume there's a 'unit' field, which should be checked for
-        // null/empty.
-        // request.setUnit(""); // Uncomment and use actual setter if there's one, or
-        // add the unit to the DTO
-
         Map<Long, Vendor> vendorMap = new HashMap<>();
         Map<Long, CostFactor> costFactorMap = new HashMap<>();
 
-        // Access private method via reflection
         Method method = PartServiceImpl.class.getDeclaredMethod(
                 "validateCreatePartRequest",
                 PartRequestDto.class, Long.class, Map.class, Map.class);
         method.setAccessible(true);
 
         try {
-            // Simulate the case when the part number exists in the repository
+
             when(partRepository.existsByCompany_CompanyIdAndPartNumber(companyId, partNumber)).thenReturn(true);
 
             // Invoke method
@@ -390,7 +376,6 @@ public class PartServiceTest {
         costFactorDto.setName("Material Cost");
         costFactorDto.setValue(100.0);
 
-        // Create a valid VendorCostDto (extends VendorDto)
         VendorCostDto vendorCostDto = VendorCostDto.superBuilder()
                 .id(1L)
                 .name("Vendor1")
@@ -410,7 +395,6 @@ public class PartServiceTest {
                 .vendorCostList(Collections.singletonList(vendorCostDto))
                 .build();
 
-        // Mock the valid Company
         Company validCompany = new Company();
         validCompany.setCompanyId(companyId);
         validCompany.setCompanyName("Test Company");
@@ -422,7 +406,6 @@ public class PartServiceTest {
         PartUnit validPartUnit = new PartUnit();
         validPartUnit.setUnitName("Kg");
 
-        // Mock VendorRepository
         Vendor validVendor = new Vendor();
         validVendor.setVendorId(1L);
         validVendor.setName("Vendor1");
@@ -472,29 +455,22 @@ public class PartServiceTest {
 
         Set<Long> vendorIds = Set.of(100L); // A valid set of vendor IDs
 
-        // Stubbing the repository method to return the vendor list when vendor IDs
-        // match
         when(vendorRepository.findByVendorIdInAndCompany_CompanyId(vendorIds, companyId))
                 .thenReturn(List.of(vendor));
 
-        // Create vendorCostList (using a valid list with no null values)
         List<VendorCostDto> vendorCostList = new ArrayList<>();
         VendorCostDto costDto = new VendorCostDto();
         costDto.setId(100L);
         vendorCostList.add(costDto);
 
-        // Create an empty vendorMap to be populated
         Map<Long, Vendor> vendorMap = new HashMap<>();
 
-        // Access private method using reflection
         Method method = PartServiceImpl.class.getDeclaredMethod(
                 "validateAndStoreVendors", List.class, Long.class, Map.class);
         method.setAccessible(true); // Allow access to the private method
 
-        // Act: invoke the method
         method.invoke(partService, vendorCostList, companyId, vendorMap);
 
-        // Assert: Check if the vendor is added to the map
         assertEquals(1, vendorMap.size());
         assertTrue(vendorMap.containsKey(100L)); // The vendor ID should be in the map
         assertEquals(vendor, vendorMap.get(100L)); // Ensure the vendor object matches
@@ -502,7 +478,7 @@ public class PartServiceTest {
 
     @Test
     void testValidateAndStoreCostFactors_ShouldPopulateMap_WhenCostFactorsExist() throws Exception {
-        // Create mock VendorCostDto and CostFactorDto
+
         VendorCostDto vendorCost = new VendorCostDto();
         CostFactorDto costFactorDto = new CostFactorDto();
         costFactorDto.setId(100L);
@@ -512,33 +488,28 @@ public class PartServiceTest {
         Long companyId = 1L;
         Map<Long, CostFactor> costFactorMap = new HashMap<>();
 
-        // Mock the repository to return a valid CostFactor
         CostFactor costFactor = new CostFactor();
         costFactor.setFactorId(100L);
         when(costFactorRepository.findByFactorIdInAndCompany_CompanyId(anySet(), eq(companyId)))
                 .thenReturn(Collections.singletonList(costFactor));
 
-        // Access the private method using reflection
         Method method = PartServiceImpl.class.getDeclaredMethod("validateAndStoreCostFactors", List.class, Long.class,
                 Map.class);
-        method.setAccessible(true); // bypass visibility
+        method.setAccessible(true);
 
-        // Act
         method.invoke(partService, vendorCostList, companyId, costFactorMap);
 
-        // Assert: Verify the map is populated correctly
         assertEquals(1, costFactorMap.size());
         assertEquals(costFactor, costFactorMap.get(100L));
     }
 
     @Test
     void testValidateAndSaveBom_WithValidChildren_ShouldSaveBom() throws Exception {
-        // Arrange
+
         BomDto bomDto = new BomDto();
         bomDto.setChildPartId(validChildPart.getPartId());
         bomDto.setQuantity(5.0);
 
-        // Using Lombok's builder pattern to create PartRequestDto
         PartRequestDto requestDto = PartRequestDto.builder()
                 .partName("Parent Part")
                 .partNumber("P1234")
@@ -547,19 +518,15 @@ public class PartServiceTest {
                 .bom(List.of(bomDto)) // Set BOM list with the created BomDto
                 .build();
 
-        // Mock repository behavior
         when(partRepository.findByPartIdInAndCompany_CompanyId(
                 Set.of(validChildPart.getPartId()), companyId)).thenReturn(List.of(validChildPart));
 
-        // Access private method using reflection
         Method method = PartServiceImpl.class.getDeclaredMethod(
                 "validateAndSaveBom", PartRequestDto.class, Long.class, Part.class);
-        method.setAccessible(true); // bypass visibility
+        method.setAccessible(true);
 
-        // Act: Call the private method
         method.invoke(partService, requestDto, companyId, parentPart);
 
-        // Assert: Capture the saved BOM and verify the behavior
         ArgumentCaptor<List<Bom>> captor = ArgumentCaptor.forClass(List.class);
         verify(bomRepository).saveAll(captor.capture());
 
@@ -586,7 +553,6 @@ public class PartServiceTest {
                 1L, "Vendor A", "123 Vendor St", "vendor@example.com", "123-456-7890",
                 List.of(costFactorDto));
 
-        // Mock the Vendor and CostFactor maps
         Vendor vendor = new Vendor();
         vendor.setVendorId(1L);
         vendor.setName("Vendor A");
@@ -601,12 +567,10 @@ public class PartServiceTest {
         Map<Long, CostFactor> costFactorMap = new HashMap<>();
         costFactorMap.put(costFactor.getFactorId(), costFactor);
 
-        // Use reflection to access the private createPartCostEntity method
         Method createPartCostEntityMethod = PartServiceImpl.class.getDeclaredMethod(
                 "createPartCostEntity", Part.class, VendorCostDto.class, Map.class, Map.class);
         createPartCostEntityMethod.setAccessible(true); // Make it accessible
 
-        // Invoke the method with the required parameters
         PartCost partCost = (PartCost) createPartCostEntityMethod.invoke(
                 partServiceImpl, part, vendorCostDto, vendorMap, costFactorMap);
 
@@ -720,25 +684,19 @@ public class PartServiceTest {
         int pageSize = 2;
         Long companyId = 123L;
 
-        // Create dummy cost factor
         CostFactor costFactor = new CostFactor();
         costFactor.setFactorId(1L); // Make sure the getter is getFactorId()
         costFactor.setFactorName("CostFactor 1");
 
-        // Pass value explicitly as 100.0 in the DTO conversion
         Double value = 100.0;
 
-        // Create Page<CostFactor>
         Page<CostFactor> costFactorPage = new PageImpl<>(List.of(costFactor));
 
-        // Mock repository call
         when(costFactorRepository.findByCompany_CompanyId(companyId, PageRequest.of(pageNo, pageSize)))
                 .thenReturn(costFactorPage);
 
-        // When the method is called
         ApiPageResponseDto<List<CostFactorDto>> response = partService.getCostFactors(pageNo, pageSize, companyId);
 
-        // Then assert the expected results
         assertNotNull(response);
         assertEquals(1, response.getData().size());
         assertEquals("CostFactor 1", response.getData().get(0).getName());
@@ -803,8 +761,8 @@ public class PartServiceTest {
                 .unit("kg")
                 .vendorCostList(new ArrayList<>())
                 .bom(new ArrayList<>())
-                .build(); // Setup your request with the builder
-        Long companyId = 1L; // Set appropriate companyId
+                .build();
+        Long companyId = 1L;
         Map<Long, Vendor> vendorMap = new HashMap<>(); // Setup vendor map
         Map<Long, CostFactor> costFactorMap = new HashMap<>(); // Setup cost factor map
 
@@ -831,20 +789,15 @@ public class PartServiceTest {
         Long partId = 1L;
         Long companyId = 100L;
 
-        // Mock the repository to return a valid Part object
         when(partRepository.findByPartIdAndCompany_CompanyId(partId, companyId))
                 .thenReturn(Optional.of(validatedPart));
 
-        // Mock partCostRepository to return an empty list
         when(partCostRepository.findByPartId(partId)).thenReturn(List.of());
 
-        // Mock bomRepository to return an empty list
         when(bomRepository.findByParentPart(validatedPart)).thenReturn(List.of());
 
-        // Call the method under test
         PartDto result = partService.getPartById(partId, companyId);
 
-        // Basic assertion to check that the result is not null
         assertNotNull(result, "The result should not be null");
     }
 
@@ -853,16 +806,13 @@ public class PartServiceTest {
         Long partId = 1L;
         Long companyId = 100L;
 
-        // Mock the repository to return an empty Optional to simulate Part not found
         when(partRepository.findByPartIdAndCompany_CompanyId(partId, companyId))
                 .thenReturn(Optional.empty());
 
-        // Call the method under test and expect an exception to be thrown
         AppException exception = assertThrows(AppException.class, () -> {
             partService.getPartById(partId, companyId);
         });
 
-        // Verify the exception message
         assertEquals(ErrorMessageConstant.PART_NOT_FOUND, exception.getMessage());
         assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
     }
@@ -870,7 +820,6 @@ public class PartServiceTest {
     @Test
     void testCreatePartResponseDto() throws Exception {
 
-        // Create mocks
         Part part = new Part();
         part.setPartId(1L);
         part.setPartName("Screw");
@@ -879,14 +828,12 @@ public class PartServiceTest {
         List<PartCost> partCostList = new ArrayList<>();
         List<Bom> bomList = new ArrayList<>();
 
-        // Use reflection to call the private method
         Method method = PartServiceImpl.class.getDeclaredMethod("createPartResponseDto", Part.class, List.class,
                 List.class);
-        method.setAccessible(true); // Make private method accessible
+        method.setAccessible(true);
 
         PartResponseDto dto = (PartResponseDto) method.invoke(partServiceImpl, part, partCostList, bomList);
 
-        // Perform assertions
         assertNotNull(dto);
         assertEquals(1L, dto.getPartId());
         assertEquals("Screw", dto.getPartName());
@@ -894,32 +841,26 @@ public class PartServiceTest {
 
     @Test
     void testDownloadPartsToExcel() throws IOException {
-        // Given: mock data
         Long companyId = 1L;
-        // Mocking the Part entity
+
         Part part1 = mock(Part.class);
         Part part2 = mock(Part.class);
-
-        // Mocking the PartCost entities
         PartCost partCost1 = mock(PartCost.class);
         PartCost partCost2 = mock(PartCost.class);
 
-        // Mocking Vendor entities
         Vendor vendor1 = mock(Vendor.class);
         Vendor vendor2 = mock(Vendor.class);
 
-        // Creating a List<PartCost> for each part
         List<PartCost> partCosts1 = new ArrayList<>();
         partCosts1.add(partCost1);
 
         List<PartCost> partCosts2 = new ArrayList<>();
         partCosts2.add(partCost2);
 
-        // Setting up behavior for the Part objects
         when(part1.getPartNumber()).thenReturn("P001");
         when(part1.getPartName()).thenReturn("Part One");
         when(part1.getUnit()).thenReturn("kg");
-        when(part1.getType()).thenReturn(PartType.UNIT); // Assuming PartType is an enum
+        when(part1.getType()).thenReturn(PartType.UNIT);
         when(part1.getCategoryName()).thenReturn("Category1");
         when(part1.getPartCosts()).thenReturn(partCosts1);
         when(partCost1.getVendor()).thenReturn(vendor1);
@@ -928,24 +869,19 @@ public class PartServiceTest {
         when(part2.getPartNumber()).thenReturn("P002");
         when(part2.getPartName()).thenReturn("Part Two");
         when(part2.getUnit()).thenReturn("m");
-        when(part2.getType()).thenReturn(PartType.UNIT); // Assuming another type
+        when(part2.getType()).thenReturn(PartType.UNIT);
         when(part2.getCategoryName()).thenReturn("Category2");
         when(part2.getPartCosts()).thenReturn(partCosts2);
         when(partCost2.getVendor()).thenReturn(vendor2);
         when(vendor2.getName()).thenReturn("Vendor2");
 
-        // Mocking the PartRepository to return the mocked parts
         when(partRepository.findByCompany_CompanyId(eq(companyId), any()))
                 .thenReturn(Arrays.asList(part1, part2)); // Returning List<Part> (not Set<Part>)
 
-        // Mocking the ExcelService to return mock byte data for the spreadsheet
         byte[] mockExcelData = new byte[1]; // Simulated byte data for the Excel file
         when(excelService.generateSpreadsheet(any(), any())).thenReturn(mockExcelData);
 
-        // Testing the method
         byte[] result = partService.downloadPartsToExcel(companyId);
-
-        // Asserting the result
         assertNotNull(result, "The generated Excel data should not be null.");
         assertArrayEquals(mockExcelData, result, "The generated Excel data should match the expected byte array.");
     }
@@ -960,32 +896,25 @@ public class PartServiceTest {
         vendor.setEmailId("vendor1@example.com");
         vendor.setContactNumber("1234567890");
 
-        // Mock CostFactor
         CostFactor costFactor = new CostFactor();
         costFactor.setFactorId(1L);
         costFactor.setFactorName("Factor A");
 
-        // Mock PartCostCostFactor (this will hold the cost factor and its value)
         PartCostCostFactor costFactorLink = new PartCostCostFactor();
         costFactorLink.setCostFactor(costFactor);
-        costFactorLink.setValue(100.0); // Set value to be used in the CostFactorDto
+        costFactorLink.setValue(100.0);
 
-        // Mock PartCost
         PartCost partCost = new PartCost();
         partCost.setVendor(vendor);
-        partCost.setCostFactorList(Arrays.asList(costFactorLink)); // List of PartCostCostFactor
+        partCost.setCostFactorList(Arrays.asList(costFactorLink));
 
-        // Create the list of PartCost
         List<PartCost> partCostList = Arrays.asList(partCost);
 
-        // Call the service method to get VendorCostDto list
         List<VendorCostDto> vendorCostList = partService.createVendorCostList(partCostList);
 
-        // Assert that the list is not empty
         assertNotNull(vendorCostList);
         assertFalse(vendorCostList.isEmpty());
 
-        // Assert the content of VendorCostDto
         VendorCostDto vendorCostDto = vendorCostList.get(0);
         assertEquals(1L, vendorCostDto.getId());
         assertEquals("Vendor 1", vendorCostDto.getName());
@@ -993,7 +922,6 @@ public class PartServiceTest {
         assertEquals("vendor1@example.com", vendorCostDto.getEmailId());
         assertEquals("1234567890", vendorCostDto.getContactNumber());
 
-        // Assert the CostFactorDto content
         assertNotNull(vendorCostDto.getCostFactorValues());
         assertEquals(1, vendorCostDto.getCostFactorValues().size());
         CostFactorDto costFactorDto = vendorCostDto.getCostFactorValues().get(0);
@@ -1004,13 +932,10 @@ public class PartServiceTest {
 
     @Test
     void testCreateVendorCostList_EmptyList() {
-        // Arrange
+
         List<PartCost> partCostList = new ArrayList<>();
 
-        // Act
         List<VendorCostDto> result = partService.createVendorCostList(partCostList);
-
-        // Assert
         assertTrue(result.isEmpty(), "The list should be empty when no PartCosts are provided.");
     }
 
@@ -1055,22 +980,18 @@ public class PartServiceTest {
         Long vendorId = 2L;
         Long companyId = 3L;
 
-        // Mock Part entity (returned by partRepository)
         Part part = mock(Part.class);
         when(partRepository.findByPartIdAndCompany_CompanyId(partId, companyId))
                 .thenReturn(Optional.of(part));
 
-        // Mock CostFactor
         CostFactor costFactor = mock(CostFactor.class);
         when(costFactor.getFactorId()).thenReturn(10L);
         when(costFactor.getFactorName()).thenReturn("Material");
 
-        // Mock PartCostCostFactor
         PartCostCostFactor costFactorLink = mock(PartCostCostFactor.class);
         when(costFactorLink.getCostFactor()).thenReturn(costFactor);
         when(costFactorLink.getValue()).thenReturn(100.0);
 
-        // Mock PartCost
         PartCost partCost = mock(PartCost.class);
         when(partCost.getUpdatedDateTime()).thenReturn(ZonedDateTime.now());
         when(partCost.getCostFactorList()).thenReturn(List.of(costFactorLink));
@@ -1078,10 +999,8 @@ public class PartServiceTest {
         List<PartCost> partCosts = List.of(partCost);
         when(partCostRepository.fetchByPartIdAndVendorId(partId, vendorId)).thenReturn(partCosts);
 
-        // Call the method under test
         CostHistoryResponseDto result = partServiceImpl.getPartCostsByPartAndVendor(partId, vendorId, companyId);
 
-        // Assertions
         assertNotNull(result);
         assertEquals(partId, result.getPartId());
         assertEquals(vendorId, result.getVendorId());
