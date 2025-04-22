@@ -40,7 +40,7 @@ public class PartSpecification implements Specification<Part> {
             predicates.add(cb.like(cb.lower(root.get("partNumber")), "%" + partNumber.toLowerCase() + "%"));
         }
         if (categoryName != null && !categoryName.isEmpty()) {
-            predicates.add(cb.like(cb.lower(root.get("categoryName")), "%" + categoryName.toLowerCase() + "%"));
+            predicates.add(cb.like(cb.lower(root.get("category").get("name")), "%" + categoryName.toLowerCase() + "%"));
         }
         if (type != null && !type.isEmpty()) {
             predicates.add(cb.like(cb.lower(root.get("type")), "%" + type.toLowerCase() + "%"));

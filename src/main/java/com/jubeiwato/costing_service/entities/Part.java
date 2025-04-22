@@ -36,8 +36,9 @@ public class Part extends BaseEntity{
         @Column(name = "part_number")
         private String partNumber;
 
-        @Column(name = "category_name")
-        private String categoryName;
+        @ManyToOne
+        @JoinColumn(name = "category_id", referencedColumnName = "category_id", nullable = true)
+        private Category category;
 
         @Column(name = "type")
         @Enumerated(EnumType.STRING)

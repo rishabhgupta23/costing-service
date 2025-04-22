@@ -7,7 +7,6 @@ import java.util.List;
 
 import com.jubeiwato.costing_service.constants.*;
 import com.jubeiwato.costing_service.dtos.*;
-import com.jubeiwato.costing_service.entities.Part;
 import com.jubeiwato.costing_service.entities.User;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
