@@ -20,9 +20,11 @@ public class CategorySpecification implements Specification<Category> {
     @Override
     public Predicate toPredicate(Root<Category> root, CriteriaQuery<?> query, CriteriaBuilder cb) {
         List<Predicate> predicates = new ArrayList<>();
-
+        
+        if (companyId != null) {
         predicates.add(cb.equal(root.get("company").get("companyId"), companyId));
-
+        }
+        
         if (name != null && !name.trim().isEmpty()) {
             predicates.add(cb.like(cb.lower(root.get("name")), "%" + name.toLowerCase() + "%"));
         }

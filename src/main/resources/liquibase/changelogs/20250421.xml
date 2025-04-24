@@ -5,7 +5,7 @@
     xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog 
                         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
 
-    <changeSet id="20250418-02-add-category-fk" author="your_name">
+    <changeSet id="20250422" author="Anusha">
 
         <sql>
             ALTER TABLE app.part 
@@ -25,4 +25,21 @@
         </rollback>
     </changeSet>
 
+    <changeSet id="20250423" author="Anusha">
+        <sql>
+            ALTER TABLE app.part_category 
+            DROP CONSTRAINT IF EXISTS part_category_name_key;
+    
+            ALTER TABLE app.part_category 
+            ADD CONSTRAINT part_category_company_name_unique UNIQUE (company_id, name);
+        </sql>
+    
+        <rollback>
+            ALTER TABLE app.part_category 
+            DROP CONSTRAINT IF EXISTS part_category_company_name_unique;
+    
+            ALTER TABLE app.part_category 
+            ADD CONSTRAINT part_category_name_key UNIQUE (name);
+        </rollback>
+    </changeSet>
 </databaseChangeLog>

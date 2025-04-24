@@ -20,6 +20,7 @@ import com.jubeiwato.costing_service.dtos.CategoryDto;
 import com.jubeiwato.costing_service.dtos.GeneralResponseDto;
 import com.jubeiwato.costing_service.entities.User;
 import com.jubeiwato.costing_service.services.CategoryService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -58,7 +59,7 @@ public ResponseEntity<ApiPageResponseDto<List<CategoryDto>>> getCategoryList(
 
     @PostMapping()
     @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "') or hasRole('" + MAINTAINER + "')")
-    public ResponseEntity<GeneralResponseDto> createCategory(@RequestBody CategoryDto request, @AuthenticationPrincipal User authenticatedUser) {
+    public ResponseEntity<GeneralResponseDto> createCategory(@Valid @RequestBody CategoryDto request, @AuthenticationPrincipal User authenticatedUser) {
         Long companyId = authenticatedUser.getCompany().getCompanyId();
         this.categoryService.createCategory(request.getName(),companyId);
         GeneralResponseDto response = new GeneralResponseDto("Successful", HttpStatus.CREATED.value());
@@ -75,7 +76,7 @@ public ResponseEntity<ApiPageResponseDto<List<CategoryDto>>> getCategoryList(
     }
 
     @DeleteMapping("/{categoryId}")
-    @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "') or hasRole('" + MAINTAINER + "')")
+    @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "')")
     public ResponseEntity<GeneralResponseDto> deleteCategoryById(@PathVariable Long categoryId,@AuthenticationPrincipal User authenticatedUser ) {
         Long companyId = authenticatedUser.getCompany().getCompanyId();
         categoryService.deleteCategoryById(categoryId, companyId);
