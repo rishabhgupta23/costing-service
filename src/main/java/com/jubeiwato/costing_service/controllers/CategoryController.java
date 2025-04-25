@@ -69,7 +69,7 @@ public ResponseEntity<ApiPageResponseDto<List<CategoryDto>>> getCategoryList(
 
       @PutMapping("/{categoryId}")
       @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "')")
-      public ResponseEntity<CategoryDto> updateCategoryById(@PathVariable Long categoryId, @RequestBody CategoryDto request, @AuthenticationPrincipal User authenticatedUser) {
+      public ResponseEntity<CategoryDto> updateCategoryById(@PathVariable Long categoryId,@Valid @RequestBody CategoryDto request, @AuthenticationPrincipal User authenticatedUser) {
         Long companyId = authenticatedUser.getCompany().getCompanyId();
         CategoryDto updatedUser = this.categoryService.updateCategoryById(categoryId, request, companyId);
         return new ResponseEntity<>(updatedUser, HttpStatus.OK);

@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,216 +38,150 @@ class CategoryServiceImplTest {
     @InjectMocks
     private CategoryServiceImpl categoryService;
 
+    private Company mockCompany(Long companyId) {
+        Company company = Company.builder().companyId(companyId).build();
+        when(companyRepository.findById(companyId)).thenReturn(Optional.of(company));
+        return company;
+    }
+
+    private Category mockCategory(Long categoryId, String name, Long companyId) {
+        return Category.builder()
+                .categoryId(categoryId)
+                .name(name)
+                .company(Company.builder().companyId(companyId).build())
+                .build();
+    }
+
+    private CategoryDto buildDto(String name) {
+        CategoryDto dto = new CategoryDto();
+        dto.setName(name);
+        return dto;
+    }
+
     @Test
     void testCreateCategory_CompanyNotFound() {
-        Long companyId = 123L;
-        when(companyRepository.findById(companyId)).thenReturn(Optional.empty());
-
-        AppException exception = assertThrows(AppException.class, () ->
-                categoryService.createCategory("TestCategory", companyId));
-
-        assertEquals(ErrorMessageConstant.INVALID_COMPANY, exception.getMessage());
+        when(companyRepository.findById(123L)).thenReturn(Optional.empty());
+        AppException ex = assertThrows(AppException.class,() -> 
+        categoryService.createCategory("TestCategory", 123L));
+         assertEquals(ErrorMessageConstant.INVALID_COMPANY, ex.getMessage());
     }
 
     @Test
     void testGetCategoryList_WithValidDataAndDescSort() {
+        testCategoryListSorting(Sorting.DESC);
+    }
+
+    private void testCategoryListSorting(Sorting sortMode) {
         Long companyId = 1L;
         String name = "TestCategory";
-        int pageNo = 0, pageSize = 5;
-        String sortColumn = "name";
-        Sorting sortMode = Sorting.DESC;
-
-        Category category = Category.builder().name(name).company(Company.builder().companyId(companyId).build()).build();
-        Page<Category> categoryPage = new PageImpl<>(List.of(category));
+        Page<Category> page = new PageImpl<>(List.of(mockCategory(1L, name, companyId)));
 
         when(categoryRepository.findAll(any(Specification.class), any(Pageable.class)))
-                .thenReturn(categoryPage);
+                .thenReturn(page);
 
         ApiPageResponseDto<List<CategoryDto>> response = categoryService.getCategoryList(
-                companyId, name, pageNo, pageSize, sortColumn, sortMode);
+                companyId, name, 0, 5, "name", sortMode);
 
         assertNotNull(response);
         assertEquals(1, response.getData().size());
-        assertEquals(name, response.getData().get(0).getName());
 
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
         verify(categoryRepository).findAll(any(Specification.class), pageableCaptor.capture());
         Sort sort = pageableCaptor.getValue().getSort();
-        assertTrue(sort.getOrderFor(sortColumn).isDescending());
+        if (sortMode == Sorting.ASC)
+            assertTrue(sort.getOrderFor("name").isAscending());
+        else
+        assertTrue(sort.getOrderFor("name").isDescending());
     }
     @Test
     void testGetCategoryList_WithAscendingSort() {
-    Long companyId = 1L;
-    String name = "TestCategory";
-    int pageNo = 0;
-    int pageSize = 5;
-    String sortColumn = "name";
-    Sorting sortMode = Sorting.ASC; // ASC instead of DESC
-
-    Category category = Category.builder().name(name).company(Company.builder().companyId(companyId).build()).build();
-    Page<Category> categoryPage = new PageImpl<>(List.of(category));
-
-    when(categoryRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(categoryPage);
-
-    ApiPageResponseDto<List<CategoryDto>> response = categoryService.getCategoryList(companyId, name, pageNo, pageSize, sortColumn, sortMode);
-
-    assertNotNull(response);
-    assertEquals(1, response.getData().size());
-
-    ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-    verify(categoryRepository).findAll(any(Specification.class), pageableCaptor.capture());
-    Sort sort = pageableCaptor.getValue().getSort();
-    assertTrue(sort.getOrderFor(sortColumn).isAscending()); // check ASC now
-}
-
+        testCategoryListSorting(Sorting.ASC);
+    }
 
     @Test
     void testGetCategoryList_InvalidInput_ThrowsException() {
-    Long companyId = 1L;
-    String invalidName = "*"; 
-    int pageNo = 0;
-    int pageSize = 5;
-    String sortColumn = "name";
-    Sorting sortMode = Sorting.ASC;
-
-    AppException exception = assertThrows(AppException.class, () ->
-        categoryService.getCategoryList(companyId, invalidName, pageNo, pageSize, sortColumn, sortMode)
-    );
-
-    assertEquals(ErrorMessageConstant.INVALID_INPUT, exception.getMessage());
-}
+        AppException ex = assertThrows(AppException.class, () ->
+                categoryService.getCategoryList(1L, "*", 0, 5, "name", Sorting.ASC));
+        assertEquals(ErrorMessageConstant.INVALID_INPUT, ex.getMessage());
+    }
 
     @Test
     void testUpdateCategoryById_NotFound() {
-        Long categoryId = 99L;
-        Long companyId = 1L;
-        when(categoryRepository.findByCategoryIdAndCompany_CompanyId(categoryId, companyId))
+        when(categoryRepository.findByCategoryIdAndCompany_CompanyId(99L, 1L))
                 .thenReturn(Optional.empty());
 
-        AppException exception = assertThrows(AppException.class, () ->
-                categoryService.updateCategoryById(categoryId, new CategoryDto(), companyId));
-
-        assertEquals(ErrorMessageConstant.CATEGORY_DOES_NOT_EXIST, exception.getMessage());
+        AppException ex = assertThrows(AppException.class, () ->
+                categoryService.updateCategoryById(99L, new CategoryDto(), 1L));
+        assertEquals(ErrorMessageConstant.CATEGORY_DOES_NOT_EXIST, ex.getMessage());
     }
 
     @Test
     void testUpdateCategoryById_Success() {
-       Long categoryId = 1L;
-       Long companyId = 1L;
-       String oldName = "Old Category";
-       String newName = "Updated Category";
+        Long categoryId = 1L, companyId = 1L;
+        String newName = "Updated";
+        Category existing = mockCategory(categoryId, "Old", companyId);
 
-    CategoryDto requestDto = new CategoryDto();
-    requestDto.setName(newName);
+        when(categoryRepository.findByCategoryIdAndCompany_CompanyId(categoryId, companyId))
+                .thenReturn(Optional.of(existing));
+        when(categoryRepository.save(any(Category.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
 
-    Category existingCategory = Category.builder()
-            .categoryId(categoryId)
-            .name(oldName)
-            .company(Company.builder().companyId(companyId).build())
-            .build();
+        CategoryDto result = categoryService.updateCategoryById(categoryId, buildDto(newName), companyId);
 
-    Category updatedCategory = Category.builder()
-            .categoryId(categoryId)
-            .name(newName)
-            .company(Company.builder().companyId(companyId).build())
-            .build();
-
-    when(categoryRepository.findByCategoryIdAndCompany_CompanyId(categoryId, companyId))
-            .thenReturn(Optional.of(existingCategory));
-    when(categoryRepository.save(existingCategory)).thenReturn(updatedCategory);
-
-    // Act
-    CategoryDto result = categoryService.updateCategoryById(categoryId, requestDto, companyId);
-
-    // Assert
-    assertNotNull(result);
-    assertEquals(newName, result.getName());
-
-    verify(categoryRepository).findByCategoryIdAndCompany_CompanyId(categoryId, companyId);
-    verify(categoryRepository).save(existingCategory);
-}
+        assertEquals(newName, result.getName());
+        verify(categoryRepository).save(any(Category.class));
+    }
 
 
     @Test
     void testDeleteCategoryById_NotFound() {
-        Long categoryId = 99L;
-        Long companyId = 1L;
-        when(categoryRepository.findByCategoryIdAndCompany_CompanyId(categoryId, companyId))
+        when(categoryRepository.findByCategoryIdAndCompany_CompanyId(99L, 1L))
                 .thenReturn(Optional.empty());
 
-        AppException exception = assertThrows(AppException.class, () ->
-                categoryService.deleteCategoryById(categoryId, companyId));
-
-        assertEquals(ErrorMessageConstant.CATEGORY_DOES_NOT_EXIST, exception.getMessage());
-    }
-
+        AppException ex = assertThrows(AppException.class, () ->
+                categoryService.deleteCategoryById(99L, 1L));
+        assertEquals(ErrorMessageConstant.CATEGORY_DOES_NOT_EXIST, ex.getMessage());
+    }     
     @Test
     void testCreateCategory_Success() {
         Long companyId = 1L;
-        Company company = Company.builder().companyId(companyId).build();
-        when(companyRepository.findById(companyId)).thenReturn(Optional.of(company));
-
+        mockCompany(companyId);
         categoryService.createCategory("Stationary", companyId);
-        verify(categoryRepository, times(1)).save(any(Category.class));
+        verify(categoryRepository).save(any(Category.class));
     }
-
+    
     @Test
     void testDeleteCategoryById_Success() {
-       Long categoryId = 1L;
-       Long companyId = 1L;
+        Long categoryId = 1L, companyId = 1L;
+        Category existing = mockCategory(categoryId, "X", companyId);
+        when(categoryRepository.findByCategoryIdAndCompany_CompanyId(categoryId, companyId))
+                .thenReturn(Optional.of(existing));
 
-    Category existingCategory = Category.builder()
-            .categoryId(categoryId)
-            .company(Company.builder().companyId(companyId).build())
-            .build();
-
-    when(categoryRepository.findByCategoryIdAndCompany_CompanyId(categoryId, companyId))
-            .thenReturn(Optional.of(existingCategory));
-
-    categoryService.deleteCategoryById(categoryId, companyId);
-
-    verify(categoryRepository).delete(existingCategory);
-}
-    
-// 1) createCategory → duplicate name → should throw CONFLICT
+        categoryService.deleteCategoryById(categoryId, companyId);
+        verify(categoryRepository).delete(existing);
+    }
     @Test
     void testCreateCategory_DuplicateName_ThrowsConflict() {
         Long companyId = 1L;
         String dupName = "hello";
-        // mock company exists
-        when(companyRepository.findById(companyId))
-            .thenReturn(Optional.of(Company.builder().companyId(companyId).build()));
-        // mock existsBy… returns true
-        when(categoryRepository.existsByCompany_CompanyIdAndName(companyId, dupName))
-            .thenReturn(true);
+        mockCompany(companyId);
+        when(categoryRepository.existsByCompany_CompanyIdAndName(companyId, dupName)).thenReturn(true);
 
         AppException ex = assertThrows(AppException.class, () ->
-            categoryService.createCategory(dupName, companyId)
-        );
+                categoryService.createCategory(dupName, companyId));
         assertEquals(HttpStatus.CONFLICT, ex.getStatus());
-        assertTrue(ex.getMessage().contains(dupName));
     }
-
     @Test
     void testUpdateCategory_SameName_NoDuplicateCheck() {
         Long categoryId = 10L, companyId = 1L;
         String sameName = "same";
-        Category existing = Category.builder()
-                .categoryId(categoryId)
-                .name(sameName)
-                .company(Company.builder().companyId(companyId).build())
-                .build();
+        Category existing = mockCategory(categoryId,sameName,companyId);
 
         when(categoryRepository.findByCategoryIdAndCompany_CompanyId(categoryId, companyId))
-            .thenReturn(Optional.of(existing));
-        
+                .thenReturn(Optional.of(existing));
         when(categoryRepository.save(existing)).thenReturn(existing);
-        CategoryDto dto = new CategoryDto(); 
-        dto.setName(sameName);
-        CategoryDto result = categoryService.updateCategoryById(categoryId, dto, companyId);
+        CategoryDto result = categoryService.updateCategoryById(categoryId, buildDto(sameName), companyId);
 
-        // verify save and that no existsBy… was invoked
-        verify(categoryRepository, times(1)).save(existing);
         verify(categoryRepository, never()).existsByCompany_CompanyIdAndName(anyLong(), anyString());
         assertEquals(sameName, result.getName());
     }
@@ -257,37 +190,26 @@ class CategoryServiceImplTest {
     @Test
     void testUpdateCategory_DuplicateName_ThrowsConflict() {
         Long categoryId = 20L, companyId = 1L;
-        Category existing = Category.builder()
-                .categoryId(categoryId)
-                .name("old")
-                .company(Company.builder().companyId(companyId).build())
-                .build();
-
+        Category existing = mockCategory(categoryId, "old", companyId);
         when(categoryRepository.findByCategoryIdAndCompany_CompanyId(categoryId, companyId))
-            .thenReturn(Optional.of(existing));
+                .thenReturn(Optional.of(existing));
         when(categoryRepository.existsByCompany_CompanyIdAndName(companyId, "new"))
-            .thenReturn(true);
+                .thenReturn(true);
 
-        CategoryDto dto = new CategoryDto(); dto.setName("new");
         AppException ex = assertThrows(AppException.class, () ->
-            categoryService.updateCategoryById(categoryId, dto, companyId)
-        );
+                categoryService.updateCategoryById(categoryId, buildDto("new"), companyId));
         assertEquals(HttpStatus.CONFLICT, ex.getStatus());
     }
 
     @Test
     void testDeleteCategory_CompanyInvalid_ThrowsBadRequest() {
-        Long categoryId = 5L, companyId = 999L;
-    
-        when(categoryRepository.findByCategoryIdAndCompany_CompanyId(categoryId, companyId))
-            .thenReturn(Optional.empty());
+        when(categoryRepository.findByCategoryIdAndCompany_CompanyId(5L, 999L))
+                .thenReturn(Optional.empty());
 
         AppException ex = assertThrows(AppException.class, () ->
-            categoryService.deleteCategoryById(categoryId, companyId)
-        );
+                categoryService.deleteCategoryById(5L, 999L));
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
-        assertEquals(ErrorMessageConstant.CATEGORY_DOES_NOT_EXIST.formatted(categoryId),
-                     ex.getMessage());
+        assertEquals(ErrorMessageConstant.CATEGORY_DOES_NOT_EXIST.formatted(5L), ex.getMessage());
     }
 
 

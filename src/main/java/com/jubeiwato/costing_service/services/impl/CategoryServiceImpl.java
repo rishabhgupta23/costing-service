@@ -53,12 +53,6 @@ public class CategoryServiceImpl implements CategoryService {
             }
     }
 
-    private Company validateAndGetCompany(Long companyId) {
-        return companyRepository.findById(companyId)
-            .orElseThrow(() -> new AppException(
-                ErrorMessageConstant.INVALID_COMPANY, HttpStatus.BAD_REQUEST));
-    }
-
     
     @Override
     public ApiPageResponseDto<List<CategoryDto>> getCategoryList(Long companyId, String name, int pageNo, int pageSize, String sortColumn, Sorting sortMode) {
@@ -94,7 +88,9 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public void createCategory(String categoryName, Long companyId) {
-        Company company = validateAndGetCompany(companyId);
+        Company company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new AppException(
+                        ErrorMessageConstant.INVALID_COMPANY, HttpStatus.BAD_REQUEST));
         validateUniqueCategoryName(categoryName, companyId);
 
         Category category = Category.builder().name(categoryName).company(company).build();
