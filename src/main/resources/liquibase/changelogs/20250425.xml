@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="20250425-1" author="Vidisha">
+    <sql>
+            CREATE TABLE IF NOT EXISTS app.part_attribute (
+                 delete_flag INTEGER DEFAULT 0,
+                attribute_id BIGSERIAL NOT NULL,
+                name VARCHAR(255) NOT NULL,
+                company_id BIGINT NOT NULL,
+                created_by BIGINT,
+                created_date_time TIMESTAMPTZ(6),
+                updated_by BIGINT,
+                updated_date_time TIMESTAMPTZ(6),
+                CONSTRAINT part_attribute_pkey PRIMARY KEY (attribute_id),
+                CONSTRAINT part_attribute_company_id_fkey FOREIGN KEY (company_id)
+                    REFERENCES app.company (company_id) ON DELETE CASCADE,
+                CONSTRAINT part_attribute_name_key UNIQUE (name, company_id)
+            );
+
+        </sql>
+
+        <rollback>
+            -- Drop the table if it exists (inverse of create table)
+            DROP TABLE IF EXISTS app.part_attribute;
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
