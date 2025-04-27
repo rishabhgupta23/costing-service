@@ -17,7 +17,7 @@ public class ErrorMessageConstant {
     public static final String INVALID_PRICE_MODE = "Invalid price mode provided.";
     public static final String VENDOR_DOES_NOT_EXIST = "Vendor does not exist";
     public static final String COMPANY_DOES_NOT_EXIST = "Company does not exist";
-
+    public static final String PARTATTRIBUTE_MUST_BE_NOTNULL = "PartAttribute name must not be null or empty";
     public static final String JWT_TOKEN_EXPIRED = "JWT token has expired";
     public static final String UNEXPECTED_ERROR_OCCURED = "unexpected error occured";
     public static final String JWT_TOKEN_MISSING = "JWT token is missing";

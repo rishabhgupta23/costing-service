@@ -42,6 +42,10 @@ public class PartAttributeServiceImpl implements PartAttributeService {
 
     @Override
     public PartAttribute createPartAttribute(PartAttributeDto partAttributeDto, Long companyId) {
+
+        if (partAttributeDto.getName() == null || partAttributeDto.getName().trim().isEmpty()) {
+            throw new AppException(ErrorMessageConstant.PARTATTRIBUTE_MUST_BE_NOTNULL, HttpStatus.BAD_REQUEST);
+        }
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new AppException(
                         ErrorMessageConstant.INVALID_COMPANY,
@@ -72,24 +76,19 @@ public class PartAttributeServiceImpl implements PartAttributeService {
             throw new AppException(ErrorMessageConstant.INVALID_INPUT, HttpStatus.BAD_REQUEST);
         }
 
-        // Build the Sort object based on the sorting mode
         Sort.Direction direction = (sortMode == Sorting.DESC) ? Sort.Direction.DESC : Sort.Direction.ASC;
         Sort sort = Sort.by(direction, sortColumn);
         Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
 
-        // Create the Specification object to filter by companyId and name
         Specification<PartAttribute> spec = PartAttributeSpecification.getFilteredPartAttributes(companyId, name);
 
-        // Use the Specification with the findAll method of the JpaRepository
         Page<PartAttribute> partAttributePage = partAttributeRepository.findAll(spec, pageable);
 
-        // Convert the partAttributePage content to DTOs
         List<PartAttributeDto> dtoList = partAttributePage.getContent()
                 .stream()
                 .map(PartAttributeDto::entityToDto)
                 .toList();
 
-        // Build page info
         PageInfoDto pageInfo = PageInfoDto.builder()
                 .totalPages(partAttributePage.getTotalPages())
                 .pageNumber(pageNo)
@@ -97,7 +96,6 @@ public class PartAttributeServiceImpl implements PartAttributeService {
                 .totalRecords(partAttributePage.getTotalElements())
                 .build();
 
-        // Return the response
         return ApiPageResponseDto.<List<PartAttributeDto>>builder()
                 .data(dtoList)
                 .pageInfo(pageInfo)
@@ -110,15 +108,19 @@ public class PartAttributeServiceImpl implements PartAttributeService {
     }
 
     @Override
-    public PartAttribute updatePartAttribute(Long attributeId, PartAttributeDto dto, Long companyId) {
+    public PartAttribute updatePartAttribute(Long attributeId, PartAttributeDto partAttributeDto, Long companyId) {
 
         PartAttribute existing = getValidatedPartAttribute(attributeId);
+
+        if (partAttributeDto.getName() == null || partAttributeDto.getName().trim().isEmpty()) {
+            throw new AppException(ErrorMessageConstant.PARTATTRIBUTE_MUST_BE_NOTNULL, HttpStatus.BAD_REQUEST);
+        }
 
         if (!existing.getCompany().getCompanyId().equals(companyId)) {
             throw new AppException("Invalid company", HttpStatus.BAD_REQUEST);
         }
 
-        existing.setName(dto.getName());
+        existing.setName(partAttributeDto.getName());
 
         return partAttributeRepository.save(existing);
     }
