@@ -151,8 +151,6 @@ public class PartServiceTest {
         bom.getChildPart().setPartName("Child Part");
         bom.setQuantity(10.00);
 
-        companyId = 1L;
-
         company.setCompanyId(companyId);
 
         parentPart = new Part();
