@@ -41,6 +41,7 @@ public class ErrorMessageConstant {
     public static final String COST_FACTOR_DOES_NOT_EXIST = "Costfactor does not exist";
     public static final String SUPER_ADMIN_CREATION_ERROR = "Super Admins cannot be creted or updated";
     public static final String ADMIN_CREATION_RESTRICTED = "Admins cannot be created or updated";
+    public static final String COST_FACTOR_ALREADY_EXISTS_TEMPLATE = "Costfactor with costfactor name '%s' already exists";
 
     private ErrorMessageConstant() {
 

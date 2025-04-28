@@ -7,7 +7,6 @@ import java.util.List;
 
 import com.jubeiwato.costing_service.constants.*;
 import com.jubeiwato.costing_service.dtos.*;
-import com.jubeiwato.costing_service.entities.Part;
 import com.jubeiwato.costing_service.entities.User;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -70,12 +69,6 @@ public class PartController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/cost-factors")
-    public ResponseEntity<ApiPageResponseDto<List<CostFactorDto>>> getCostFactors(@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNo,@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int pageSize, @AuthenticationPrincipal User authenticatedUser) {
-       Long companyId = authenticatedUser.getCompany().getCompanyId();
-       ApiPageResponseDto<List<CostFactorDto>> response = partService.getCostFactors(pageNo, pageSize,companyId);
-       return new ResponseEntity<>(response, HttpStatus.OK);
-}
 
     @GetMapping("/{partId}")
     public ResponseEntity<PartDto> getPartById(@PathVariable Long partId, @AuthenticationPrincipal User authenticatedUser) {
