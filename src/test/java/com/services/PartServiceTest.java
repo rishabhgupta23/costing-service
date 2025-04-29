@@ -833,29 +833,40 @@ public class PartServiceTest {
     void testDownloadPartsToExcel() throws IOException {
         Long companyId = 1L;
 
-        Part part1 = createMockPart("P001", "Part One", "kg", "Category1");
-        Part part2 = createMockPart("P002", "Part Two", "m", "Category2");
+        Company company = Company.builder()
+                .companyId(companyId)
+                .build();
+
+        Part part1 = Part.builder()
+                .partNumber("P001")
+                .partName("Part One")
+                .unit("kg")
+                .type(PartType.UNIT)
+                .categoryName("Category1")
+                .company(company)
+                .partCosts(Collections.emptyList())
+                .build();
+
+        Part part2 = Part.builder()
+                .partNumber("P002")
+                .partName("Part Two")
+                .unit("m")
+                .type(PartType.UNIT)
+                .categoryName("Category2")
+                .company(company)
+                .partCosts(Collections.emptyList())
+                .build();
 
         when(partRepository.findByCompany_CompanyId(eq(companyId), any()))
                 .thenReturn(Arrays.asList(part1, part2));
 
-        byte[] mockExcelData = new byte[1]; // Simulated byte data for the Excel file
+        byte[] mockExcelData = new byte[1]; // Simulated byte data
         when(excelService.generateSpreadsheet(any(), any())).thenReturn(mockExcelData);
 
         byte[] result = partService.downloadPartsToExcel(companyId);
 
         assertNotNull(result, "The generated Excel data should not be null.");
         assertArrayEquals(mockExcelData, result, "The generated Excel data should match the expected byte array.");
-    }
-
-    private Part createMockPart(String partNumber, String partName, String unit, String category) {
-        Part part = mock(Part.class);
-        when(part.getPartNumber()).thenReturn(partNumber);
-        when(part.getPartName()).thenReturn(partName);
-        when(part.getUnit()).thenReturn(unit);
-        when(part.getType()).thenReturn(PartType.UNIT);
-        when(part.getCategoryName()).thenReturn(category);
-        return part;
     }
 
     @Test
