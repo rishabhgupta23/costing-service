@@ -242,8 +242,8 @@ public class PartServiceImpl implements PartService {
             .company(company)
             .build();
             if(request.getCategoryId() != null) {
-                        part.setCategoryName(categoryRepository.findById(request.getCategoryId())
-                        .orElseThrow(() -> new AppException(ErrorMessageConstant.CATEGORY_DOES_NOT_EXIST, HttpStatus.BAD_REQUEST)).getName()
+                        part.setCategory(categoryRepository.findById(request.getCategoryId())
+                        .orElseThrow(() -> new AppException(ErrorMessageConstant.CATEGORY_DOES_NOT_EXIST, HttpStatus.BAD_REQUEST))
                         );
     }
     return part;
@@ -326,12 +326,12 @@ private PartCostCostFactor createPartCostCostFactor(Long costFactorId, Double va
                             .map(Vendor::getName)
                             .collect(Collectors.toSet());
 
-                    return PartRowDto.superBuilder()
+                            return PartRowDto.superBuilder()
                             .partId(part.getPartId())
                             .partName(part.getPartName())
                             .partNumber(part.getPartNumber())
-                            .categoryName(part.getCategoryName())
-                            .type(part.getType().name())
+                            .categoryName(part.getCategory() != null ? part.getCategory().getName() : null)
+                            .type(part.getType() != null ? part.getType().name() : null)
                             .unit(part.getUnit())
                             .vendorNames(new ArrayList<>(vendorNames))
                             .build();
@@ -379,7 +379,7 @@ private PartCostCostFactor createPartCostCostFactor(Long costFactorId, Double va
                 .partName(part.getPartName())
                 .partNumber(part.getPartNumber())
                 .unit(part.getUnit())
-                .categoryName(part.getCategoryName())
+                .categoryName(part.getCategory().getName())
                 .type(part.getType().toString())
                 .bom(bomDtoList)
                 .vendorCostList(createVendorCostList(partCostList))
@@ -442,9 +442,8 @@ public PartDto updatePartById(Long partId, @Valid PartRequestDto request,Long co
             .getUnitName());
 
     if (request.getCategoryId() != null) {
-        existingPart.setCategoryName(categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new AppException(ErrorMessageConstant.INVALID_CATEGORY , HttpStatus.BAD_REQUEST))
-                .getName());
+        existingPart.setCategory(categoryRepository.findById(request.getCategoryId())
+                .orElseThrow(() -> new AppException(ErrorMessageConstant.INVALID_CATEGORY , HttpStatus.BAD_REQUEST)));
     }
 
     partRepository.save(existingPart);
@@ -536,7 +535,7 @@ public CostHistoryResponseDto getPartCostsByPartAndVendor(Long partId, Long vend
                         part.getPartName(),
                         part.getUnit(),
                         part.getType().toString(),
-                        part.getCategoryName(),
+                        part.getCategory() != null ? part.getCategory().getName() : "",
                         String.join(", ", vendorNames)
                 };
             })

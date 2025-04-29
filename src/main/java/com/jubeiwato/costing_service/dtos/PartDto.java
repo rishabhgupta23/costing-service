@@ -28,7 +28,7 @@ public class PartDto {
         .partId(entity.getPartId())
         .partName(entity.getPartName())
         .partNumber(entity.getPartNumber())
-        .categoryName(entity.getCategoryName())
+        .categoryName(entity.getCategory() != null ? entity.getCategory().getName() : null)
         .type(entity.getType().name())
         .unit(entity.getUnit())
         .build();
