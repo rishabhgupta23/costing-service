@@ -33,8 +33,8 @@ public class PartAttributeServiceImpl implements PartAttributeService {
 
     private final CompanyRepository companyRepository;
 
-    private PartAttribute getValidatedPartAttribute(Long id) {
-        return partAttributeRepository.findById(id)
+    private PartAttribute getValidatedPartAttribute(Long attributeId) {
+        return partAttributeRepository.findById(attributeId)
                 .orElseThrow(() -> new AppException(
                         ErrorMessageConstant.ATTRIBUTE_NOT_FOUND,
                         HttpStatus.NOT_FOUND));
@@ -104,7 +104,7 @@ public class PartAttributeServiceImpl implements PartAttributeService {
 
     @Override
     public PartAttribute getPartAttributeById(Long attributeId) {
-        return getValidatedPartAttribute(attributeId); // Return the PartAttribute entity
+        return getValidatedPartAttribute(attributeId);
     }
 
     @Override
