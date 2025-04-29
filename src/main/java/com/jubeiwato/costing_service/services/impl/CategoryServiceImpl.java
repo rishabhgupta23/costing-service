@@ -40,7 +40,17 @@ public class CategoryServiceImpl implements CategoryService {
         return categoryRepository
                 .findByCategoryIdAndCompany_CompanyId(categoryId, companyId)
                 .orElseThrow(() ->new AppException(
-                        ErrorMessageConstant.PART_NOT_FOUND,HttpStatus.NOT_FOUND));
+                        ErrorMessageConstant.CATEGORY_DOES_NOT_EXIST,HttpStatus.NOT_FOUND));
+    }
+
+    private void validateUniqueCategoryName(String name, Long companyId) {
+        boolean exists = categoryRepository
+            .existsByCompany_CompanyIdAndName(companyId, name);
+            if (exists) {
+                String msg = ErrorMessageConstant.getFormattedMessage(
+                    ErrorMessageConstant.CATEGORY_ALREADY_EXISTS_TEMPLATE, name);
+                throw new AppException(msg, HttpStatus.CONFLICT);
+            }
     }
 
     
@@ -78,8 +88,10 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public void createCategory(String categoryName, Long companyId) {
-       Company company = companyRepository.findById(companyId)
-                .orElseThrow(() -> new AppException(ErrorMessageConstant.INVALID_COMPANY, HttpStatus.BAD_REQUEST));
+        Company company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new AppException(
+                        ErrorMessageConstant.INVALID_COMPANY, HttpStatus.BAD_REQUEST));
+        validateUniqueCategoryName(categoryName, companyId);
 
         Category category = Category.builder().name(categoryName).company(company).build();
         categoryRepository.save(category);
@@ -88,10 +100,13 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public CategoryDto updateCategoryById(Long categoryId, CategoryDto request, Long companyId) {
         Category category = getValidatedCategory(categoryId, companyId);
-        category.setName(request.getName());
-
-        Category updatedCategory = categoryRepository.save(category);
-        return CategoryDto.entityToDto(updatedCategory);
+        String newName = request.getName();
+        if (!category.getName().equals(newName)) {
+            validateUniqueCategoryName(newName, companyId);
+            category.setName(newName);
+        }
+        Category updated = categoryRepository.save(category);
+        return CategoryDto.entityToDto(updated);
     }
 
     @Override

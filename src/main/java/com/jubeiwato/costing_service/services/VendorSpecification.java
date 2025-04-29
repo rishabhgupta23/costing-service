@@ -1,11 +1,7 @@
 package com.jubeiwato.costing_service.services;
-import com.jubeiwato.costing_service.authentication.config.AppException;
-import com.jubeiwato.costing_service.constants.ErrorMessageConstant;
 import com.jubeiwato.costing_service.entities.Vendor;
-import com.jubeiwato.costing_service.utils.ValidationUtil;
 import jakarta.persistence.criteria.*;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.http.HttpStatus;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,8 +25,10 @@ public class VendorSpecification implements Specification<Vendor> {
     @Override
     public Predicate toPredicate(Root<Vendor> root, CriteriaQuery<?> query, CriteriaBuilder cb) {
         List<Predicate> predicates = new ArrayList<>();
-        predicates.add(cb.equal(root.get("company").get("companyId"), companyId));
 
+        if (companyId != null) {
+        predicates.add(cb.equal(root.get("company").get("companyId"), companyId));
+        }
         if (name != null && !name.trim().isEmpty()) {
             predicates.add(cb.like(cb.lower(root.get("name")), "%" + name.toLowerCase() + "%"));
         }

@@ -1,13 +1,9 @@
 package com.jubeiwato.costing_service.services.impl;
 
-import com.jubeiwato.costing_service.authentication.config.AppException;
-import com.jubeiwato.costing_service.constants.ErrorMessageConstant;
 import com.jubeiwato.costing_service.entities.Part;
-import com.jubeiwato.costing_service.utils.ValidationUtil;
 
 import jakarta.persistence.criteria.*;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.http.HttpStatus;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,7 +28,9 @@ public class PartSpecification implements Specification<Part> {
     @Override
     public Predicate toPredicate(Root<Part> root, CriteriaQuery<?> query, CriteriaBuilder cb) {
         List<Predicate> predicates = new ArrayList<>();
+        if (companyId != null) {
         predicates.add(cb.equal(root.get("company").get("companyId"), companyId));
+        }
         if (partName != null && !partName.isEmpty()) {
             predicates.add(cb.like(cb.lower(root.get("partName")), "%" + partName.toLowerCase() + "%"));
         }
