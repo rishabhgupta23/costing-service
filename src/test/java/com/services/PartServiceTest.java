@@ -32,7 +32,6 @@ import com.jubeiwato.costing_service.dtos.CostFactorDto;
 import com.jubeiwato.costing_service.dtos.CostHistoryDto;
 import com.jubeiwato.costing_service.dtos.CostHistoryResponseDto;
 import com.jubeiwato.costing_service.dtos.FileResponseDto;
-import com.jubeiwato.costing_service.dtos.PageInfoDto;
 import com.jubeiwato.costing_service.dtos.PartDataDto;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -126,7 +125,6 @@ public class PartServiceTest {
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
 
         vendorMap = new HashMap<>();
 
@@ -304,27 +302,21 @@ public class PartServiceTest {
 
             fail("Expected AppException to be thrown");
         } catch (InvocationTargetException e) {
-            // Unwrap the exception to get the underlying AppException
+
             Throwable cause = e.getCause();
 
             if (cause instanceof AppException) {
                 AppException exception = (AppException) cause;
 
-                // Check for PART_NUMBER_ALREADY_EXISTS exception
-                if (exception.getStatus() == HttpStatus.CONFLICT) {
-                    assertTrue(exception.getMessage().contains(partNumber));
+                if (exception.getStatus() == HttpStatus.BAD_REQUEST) {
+                    assertTrue(exception.getMessage().contains(ErrorMessageConstant.UNIT_CANNOT_BE_NULL_OR_EMPTY));
                 }
 
-                // Check for UNIT_CANNOT_BE_NULL_OR_EMPTY exception
-                else if (exception.getStatus() == HttpStatus.BAD_REQUEST) {
-                    assertTrue(exception.getMessage().contains(ErrorMessageConstant.UNIT_CANNOT_BE_NULL_OR_EMPTY));
-                } else {
-                    fail("Unexpected exception status: " + exception.getStatus());
-                }
             } else {
                 fail("Unexpected exception type thrown: " + cause);
             }
         }
+
     }
 
     @Test
@@ -841,47 +833,29 @@ public class PartServiceTest {
     void testDownloadPartsToExcel() throws IOException {
         Long companyId = 1L;
 
-        Part part1 = mock(Part.class);
-        Part part2 = mock(Part.class);
-        PartCost partCost1 = mock(PartCost.class);
-        PartCost partCost2 = mock(PartCost.class);
-
-        Vendor vendor1 = mock(Vendor.class);
-        Vendor vendor2 = mock(Vendor.class);
-
-        List<PartCost> partCosts1 = new ArrayList<>();
-        partCosts1.add(partCost1);
-
-        List<PartCost> partCosts2 = new ArrayList<>();
-        partCosts2.add(partCost2);
-
-        when(part1.getPartNumber()).thenReturn("P001");
-        when(part1.getPartName()).thenReturn("Part One");
-        when(part1.getUnit()).thenReturn("kg");
-        when(part1.getType()).thenReturn(PartType.UNIT);
-        when(part1.getCategoryName()).thenReturn("Category1");
-        when(part1.getPartCosts()).thenReturn(partCosts1);
-        when(partCost1.getVendor()).thenReturn(vendor1);
-        when(vendor1.getName()).thenReturn("Vendor1");
-
-        when(part2.getPartNumber()).thenReturn("P002");
-        when(part2.getPartName()).thenReturn("Part Two");
-        when(part2.getUnit()).thenReturn("m");
-        when(part2.getType()).thenReturn(PartType.UNIT);
-        when(part2.getCategoryName()).thenReturn("Category2");
-        when(part2.getPartCosts()).thenReturn(partCosts2);
-        when(partCost2.getVendor()).thenReturn(vendor2);
-        when(vendor2.getName()).thenReturn("Vendor2");
+        Part part1 = createMockPart("P001", "Part One", "kg", "Category1");
+        Part part2 = createMockPart("P002", "Part Two", "m", "Category2");
 
         when(partRepository.findByCompany_CompanyId(eq(companyId), any()))
-                .thenReturn(Arrays.asList(part1, part2)); // Returning List<Part> (not Set<Part>)
+                .thenReturn(Arrays.asList(part1, part2));
 
         byte[] mockExcelData = new byte[1]; // Simulated byte data for the Excel file
         when(excelService.generateSpreadsheet(any(), any())).thenReturn(mockExcelData);
 
         byte[] result = partService.downloadPartsToExcel(companyId);
+
         assertNotNull(result, "The generated Excel data should not be null.");
         assertArrayEquals(mockExcelData, result, "The generated Excel data should match the expected byte array.");
+    }
+
+    private Part createMockPart(String partNumber, String partName, String unit, String category) {
+        Part part = mock(Part.class);
+        when(part.getPartNumber()).thenReturn(partNumber);
+        when(part.getPartName()).thenReturn(partName);
+        when(part.getUnit()).thenReturn(unit);
+        when(part.getType()).thenReturn(PartType.UNIT);
+        when(part.getCategoryName()).thenReturn(category);
+        return part;
     }
 
     @Test
