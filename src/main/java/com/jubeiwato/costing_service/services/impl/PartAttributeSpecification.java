@@ -23,6 +23,8 @@ public class PartAttributeSpecification {
                         "%" + name.toLowerCase() + "%"));
             }
 
+            predicates.add(criteriaBuilder.equal(root.get("deleteFlag"), 0));
+
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };
     }

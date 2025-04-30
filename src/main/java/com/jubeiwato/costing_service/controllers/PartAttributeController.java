@@ -51,8 +51,10 @@ public class PartAttributeController {
     }
 
     @GetMapping("/{attributeId}")
-    public ResponseEntity<PartAttributeDto> getPartAttributeById(@PathVariable Long attributeId) {
-        PartAttribute partAttribute = partAttributeService.getPartAttributeById(attributeId);
+    public ResponseEntity<PartAttributeDto> getPartAttributeById(@PathVariable Long attributeId,
+            @AuthenticationPrincipal User authenticatedUser) {
+        Long companyId = authenticatedUser.getCompany().getCompanyId();
+        PartAttribute partAttribute = partAttributeService.getPartAttributeById(attributeId, companyId);
         PartAttributeDto partAttributeDto = PartAttributeDto.entityToDto(partAttribute);
         return ResponseEntity.ok(partAttributeDto);
     }
@@ -70,8 +72,10 @@ public class PartAttributeController {
 
     @DeleteMapping("/{attributeId}")
     @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "') ")
-    public ResponseEntity<GeneralResponseDto> deletePartAttribute(@PathVariable Long attributeId) {
-        partAttributeService.deletePartAttribute(attributeId);
+    public ResponseEntity<GeneralResponseDto> deletePartAttribute(@PathVariable Long attributeId,
+            @AuthenticationPrincipal User authenticatedUser) {
+        Long companyId = authenticatedUser.getCompany().getCompanyId();
+        partAttributeService.deletePartAttribute(attributeId, companyId);
         GeneralResponseDto response = new GeneralResponseDto("PART-ATTRIBUTE deleted successfully",
                 HttpStatus.OK.value());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);

@@ -4,6 +4,7 @@ import com.jubeiwato.costing_service.authentication.config.AppException;
 import com.jubeiwato.costing_service.constants.ErrorMessageConstant;
 import com.jubeiwato.costing_service.constants.Sorting;
 import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
+import com.jubeiwato.costing_service.dtos.GeneralResponseDto;
 import com.jubeiwato.costing_service.dtos.PageInfoDto;
 import com.jubeiwato.costing_service.dtos.PartAttributeDto;
 import com.jubeiwato.costing_service.entities.Company;
@@ -33,8 +34,8 @@ public class PartAttributeServiceImpl implements PartAttributeService {
 
     private final CompanyRepository companyRepository;
 
-    private PartAttribute getValidatedPartAttribute(Long attributeId) {
-        return partAttributeRepository.findById(attributeId)
+    private PartAttribute getValidatedPartAttribute(Long attributeId, Long companyId) {
+        return partAttributeRepository.findAllByAttributeIdAndCompany_CompanyIdAndDeleteFlag(attributeId, companyId, 0)
                 .orElseThrow(() -> new AppException(
                         ErrorMessageConstant.ATTRIBUTE_NOT_FOUND,
                         HttpStatus.NOT_FOUND));
@@ -52,12 +53,11 @@ public class PartAttributeServiceImpl implements PartAttributeService {
                         HttpStatus.BAD_REQUEST));
 
         boolean exists = partAttributeRepository
-                .existsByNameAndCompany_CompanyId(partAttributeDto.getName(), companyId);
+                .existsByNameAndCompany_CompanyIdAndDeleteFlag(partAttributeDto.getName(), companyId, 0);
 
         if (exists) {
             throw new AppException(
-                    ErrorMessageConstant.ATTRIBUTE_ALREADY_EXISTS,
-                    HttpStatus.CONFLICT);
+                    ErrorMessageConstant.ATTRIBUTE_ALREADY_EXISTS, HttpStatus.CONFLICT);
         }
 
         PartAttribute partAttribute = PartAttribute.builder()
@@ -103,21 +103,25 @@ public class PartAttributeServiceImpl implements PartAttributeService {
     }
 
     @Override
-    public PartAttribute getPartAttributeById(Long attributeId) {
-        return getValidatedPartAttribute(attributeId);
+    public PartAttribute getPartAttributeById(Long attributeId, Long companyId) {
+        return getValidatedPartAttribute(attributeId, companyId);
     }
 
     @Override
     public PartAttribute updatePartAttribute(Long attributeId, PartAttributeDto partAttributeDto, Long companyId) {
 
-        PartAttribute existing = getValidatedPartAttribute(attributeId);
+        PartAttribute existing = getValidatedPartAttribute(attributeId, companyId);
+
+        if (existing.getDeleteFlag() == 1) {
+            throw new AppException(ErrorMessageConstant.ATTRIBUTE_MARKED_DELETED, HttpStatus.BAD_REQUEST);
+        }
 
         if (partAttributeDto.getName() == null || partAttributeDto.getName().trim().isEmpty()) {
             throw new AppException(ErrorMessageConstant.PARTATTRIBUTE_MUST_BE_NOTNULL, HttpStatus.BAD_REQUEST);
         }
 
         if (!existing.getCompany().getCompanyId().equals(companyId)) {
-            throw new AppException("Invalid company", HttpStatus.BAD_REQUEST);
+            throw new AppException(ErrorMessageConstant.INVALID_COMPANY, HttpStatus.BAD_REQUEST);
         }
 
         existing.setName(partAttributeDto.getName());
@@ -126,10 +130,22 @@ public class PartAttributeServiceImpl implements PartAttributeService {
     }
 
     @Override
-    public void deletePartAttribute(Long attributeId) {
-        PartAttribute existing = getValidatedPartAttribute(attributeId);
+    public GeneralResponseDto deletePartAttribute(Long attributeId, Long companyId) {
 
-        partAttributeRepository.delete(existing);
+        PartAttribute existing = partAttributeRepository.findByAttributeIdAndCompany_CompanyId(attributeId, companyId)
+                .orElseThrow(() -> new AppException(
+                        ErrorMessageConstant.ATTRIBUTE_NOT_FOUND, HttpStatus.NOT_FOUND));
+        if (existing.getDeleteFlag() != null && existing.getDeleteFlag() == 1) {
+            throw new AppException(ErrorMessageConstant.ATTRIBUTE_NOT_FOUND, HttpStatus.NOT_FOUND);
+        }
+
+        existing.setDeleteFlag(1);
+        partAttributeRepository.save(existing);
+
+        return GeneralResponseDto.builder()
+                .message("Part attribute deleted successfully.")
+                .status(HttpStatus.OK.value())
+                .build();
     }
 
 }

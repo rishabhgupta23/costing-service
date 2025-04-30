@@ -6,6 +6,7 @@
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
     <changeSet id="20250425-1" author="Vidisha">
+
     <sql>
             CREATE TABLE IF NOT EXISTS app.part_attribute (
                  delete_flag INTEGER DEFAULT 0,
