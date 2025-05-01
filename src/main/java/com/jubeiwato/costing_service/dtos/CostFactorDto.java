@@ -14,7 +14,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class  CostFactorDto {
     private Long id;
-    @NotBlank(message = "CostFactor name cannot be empty or null")
     private String name;
     private Double value;
 
