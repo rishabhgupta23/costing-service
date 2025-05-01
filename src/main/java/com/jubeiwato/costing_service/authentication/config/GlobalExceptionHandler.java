@@ -15,7 +15,7 @@ import com.jubeiwato.costing_service.dtos.ErrorResponseDto;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-        @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ExceptionHandler(MethodArgumentNotValidException.class)
 public ResponseEntity<ErrorResponseDto> handleValidationException(MethodArgumentNotValidException ex) {
     String errorMessages = ex.getBindingResult().getFieldErrors()
             .stream()
