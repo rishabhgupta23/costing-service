@@ -19,5 +19,7 @@ public interface PartAttributeRepository extends JpaRepository<PartAttribute, Lo
 
     Page<PartAttribute> findAll(Specification<PartAttribute> spec, Pageable pageable);
 
+    Optional<PartAttribute> findByNameAndCompany_CompanyId(String name, Long companyId);
+
     boolean existsByNameAndCompany_CompanyIdAndDeleteFlag(String name, Long companyId, Integer deleteFlag);
 }

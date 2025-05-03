@@ -25,6 +25,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -52,12 +53,19 @@ public class PartAttributeServiceImpl implements PartAttributeService {
                         ErrorMessageConstant.INVALID_COMPANY,
                         HttpStatus.BAD_REQUEST));
 
-        boolean exists = partAttributeRepository
-                .existsByNameAndCompany_CompanyIdAndDeleteFlag(partAttributeDto.getName(), companyId, 0);
+        Optional<PartAttribute> existing = partAttributeRepository
+                .findByNameAndCompany_CompanyId(partAttributeDto.getName(), companyId);
 
-        if (exists) {
-            throw new AppException(
-                    ErrorMessageConstant.ATTRIBUTE_ALREADY_EXISTS, HttpStatus.CONFLICT);
+        if (existing.isPresent()) {
+            PartAttribute existingAttribute = existing.get();
+            if (existingAttribute.getDeleteFlag() == 0) {
+                // Attribute exists and is active
+                throw new AppException(ErrorMessageConstant.ATTRIBUTE_ALREADY_EXISTS, HttpStatus.CONFLICT);
+            } else {
+                // Attribute exists but is soft-deleted — reactivate it
+                existingAttribute.setDeleteFlag(0);
+                return partAttributeRepository.save(existingAttribute);
+            }
         }
 
         PartAttribute partAttribute = PartAttribute.builder()
@@ -122,6 +130,13 @@ public class PartAttributeServiceImpl implements PartAttributeService {
 
         if (!existing.getCompany().getCompanyId().equals(companyId)) {
             throw new AppException(ErrorMessageConstant.INVALID_COMPANY, HttpStatus.BAD_REQUEST);
+        }
+        Optional<PartAttribute> name = partAttributeRepository
+                .findByNameAndCompany_CompanyId(partAttributeDto.getName(), companyId);
+
+        if (name.isPresent() && !name.get().getAttributeId().equals(attributeId)
+                && name.get().getDeleteFlag() == 0) {
+            throw new AppException(ErrorMessageConstant.ATTRIBUTE_ALREADY_EXISTS, HttpStatus.CONFLICT);
         }
 
         existing.setName(partAttributeDto.getName());
