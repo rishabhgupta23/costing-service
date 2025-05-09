@@ -45,33 +45,30 @@ public class CostFactorServiceImpl implements CostFactorService {
    }
     
      
-   private void validateFactorNameUniquenessOrReactivate(String factorName, Long companyId, Long excludeIdIfUpdating) {
-    if (factorName == null || factorName.trim().isEmpty()) {
+private Optional<CostFactor> findConflictingCostFactor(String factorName, Long companyId, Long excludeIdIfUpdating) {
+    String trimmedName = (factorName != null) ? factorName.trim() : "";
+
+    if (trimmedName.isEmpty()) {
         throw new AppException(ErrorMessageConstant.INVALID_COST_FACTOR, HttpStatus.BAD_REQUEST);
     }
-    Optional<CostFactor> conflictOpt = costFactorRepository
-            .findByCompany_CompanyIdAndFactorNameIgnoreCase(companyId, factorName);
+    List<CostFactor> matches = costFactorRepository.findByCompany_CompanyIdAndFactorNameIgnoreCase(companyId, trimmedName);
 
-    if (conflictOpt.isPresent()) {
-        CostFactor conflict = conflictOpt.get();
-
-        // Updating: ignore if it's the same record
-        if (excludeIdIfUpdating != null && conflict.getFactorId() == excludeIdIfUpdating) return;
+    for (CostFactor conflict : matches) {
+        if (excludeIdIfUpdating != null && conflict.getFactorId() == excludeIdIfUpdating) {
+            continue;
+        }
 
         if (Objects.equals(conflict.getDeleteFlag(), DeleteFlag.NEGATIVE.getValue())) {
-            // Conflict with another active record
+            // Active conflict
             String msg = ErrorMessageConstant.getFormattedMessage(
-                    ErrorMessageConstant.COST_FACTOR_ALREADY_EXISTS_TEMPLATE, factorName);
+                    ErrorMessageConstant.COST_FACTOR_ALREADY_EXISTS_TEMPLATE, trimmedName);
             throw new AppException(msg, HttpStatus.CONFLICT);
         } else {
-            // Soft-deleted, reactivate
-            conflict.setDeleteFlag(DeleteFlag.NEGATIVE.getValue());
-            conflict.setFactorName(factorName);
-            costFactorRepository.save(conflict);
-            throw new AppException(ErrorMessageConstant.COST_FACTOR_CREATED,
-                    HttpStatus.OK);
+            // Soft-deleted
+            return Optional.of(conflict);
         }
     }
+   return Optional.empty();
 }
 
 
@@ -83,7 +80,7 @@ public ApiPageResponseDto<List<CostFactorDto>> getCostFactors(int pageNo, int pa
     throw new AppException(ErrorMessageConstant.INVALID_INPUT, HttpStatus.BAD_REQUEST);
 }
     Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
-    Specification<CostFactor> spec = new CostFactorSpecification(companyId, factorName);
+    Specification<CostFactor> spec = new CostFactorSpecification(companyId, factorName,DeleteFlag.NEGATIVE.getValue() );
     Page<CostFactor> costFactorPage = costFactorRepository.findAll(spec, pageable);
 
     List<CostFactorDto> costFactorDtos = costFactorPage.getContent()
@@ -112,14 +109,22 @@ public ApiPageResponseDto<List<CostFactorDto>> getCostFactors(int pageNo, int pa
 @Override
 public void createCostFactor(String factorName, Long companyId) {
     Company company = companyRepository.findById(companyId)
-        .orElseThrow(() -> new AppException(ErrorMessageConstant.INVALID_COMPANY, HttpStatus.BAD_REQUEST));
+            .orElseThrow(() -> new AppException(ErrorMessageConstant.INVALID_COMPANY, HttpStatus.BAD_REQUEST));
 
-    validateFactorNameUniquenessOrReactivate(factorName, companyId, null);
+    Optional<CostFactor> softDeleted = findConflictingCostFactor(factorName, companyId, null);
+
+    if (softDeleted.isPresent()) {
+        CostFactor reactivated = softDeleted.get();
+        reactivated.setDeleteFlag(DeleteFlag.NEGATIVE.getValue());
+        reactivated.setFactorName(factorName.trim());
+        costFactorRepository.save(reactivated);
+        throw new AppException(ErrorMessageConstant.COST_FACTOR_CREATED, HttpStatus.OK);
+    }
 
     CostFactor costFactor = CostFactor.builder()
-        .factorName(factorName)
-        .company(company)
-        .build();
+            .factorName(factorName.trim())
+            .company(company)
+            .build();
 
     costFactorRepository.save(costFactor);
 }
@@ -127,10 +132,16 @@ public void createCostFactor(String factorName, Long companyId) {
 @Override
 public CostFactorDto updateCostFactor(Long id, String factorName, Long companyId) {
     CostFactor existing = getValidatedCostFactor(id, companyId);
+    String trimmedName = (factorName != null) ? factorName.trim() : "";
 
-    if (!existing.getFactorName().equalsIgnoreCase(factorName)) {
-        validateFactorNameUniquenessOrReactivate(factorName, companyId, id);
-        existing.setFactorName(factorName);
+    if (trimmedName.isEmpty()) {
+        throw new AppException(ErrorMessageConstant.INVALID_COST_FACTOR, HttpStatus.BAD_REQUEST);
+    }
+
+    if (!existing.getFactorName().equalsIgnoreCase(trimmedName)) {
+        findConflictingCostFactor(trimmedName, companyId, id);
+
+        existing.setFactorName(trimmedName);
     }
 
     costFactorRepository.save(existing);
@@ -145,8 +156,15 @@ public CostFactorDto updateCostFactor(Long id, String factorName, Long companyId
 
 @Override
 public GeneralResponseDto deleteCostFactor(Long id, Long companyId) {
-   CostFactor existing = getValidatedCostFactor(id, companyId); 
-    existing.setDeleteFlag(1);
+    CostFactor existing = getValidatedCostFactor(id, companyId);
+    if (Objects.equals(existing.getDeleteFlag(), DeleteFlag.POSITIVE.getValue())) {
+        return GeneralResponseDto.builder()
+                .message("Cost factor is already deleted.")
+                .status(HttpStatus.OK.value())
+                .build();
+    }
+
+    existing.setDeleteFlag(DeleteFlag.POSITIVE.getValue());
     costFactorRepository.save(existing);
 
     return GeneralResponseDto.builder()

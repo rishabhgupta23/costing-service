@@ -8,21 +8,18 @@
 
         <changeSet id="20250427" author="Anusha">
             <sql>
-                ALTER TABLE app.cost_factor 
-                DROP CONSTRAINT IF EXISTS cost_factor_company_name_unique;
         
                 ALTER TABLE app.cost_factor 
-                ADD CONSTRAINT cost_factor_company_name_unique UNIQUE (company_id, factor_name);
+                ADD CONSTRAINT cost_factor_company_name_delete_flag_unique 
+                UNIQUE (company_id, factor_name, delete_flag);
             </sql>
         
             <rollback>
                 ALTER TABLE app.cost_factor 
-                DROP CONSTRAINT IF EXISTS cost_factor_company_name_unique;
+                DROP CONSTRAINT IF EXISTS cost_factor_company_name_delete_flag_unique;
         
-                ALTER TABLE app.cost_factor 
-                ADD CONSTRAINT cost_factor_factor_name_key UNIQUE (factor_name);
             </rollback>
         </changeSet>
-        
+  
 
 </databaseChangeLog>

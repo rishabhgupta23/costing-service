@@ -41,7 +41,8 @@ public class ErrorMessageConstant {
     public static final String COST_FACTOR_DOES_NOT_EXIST = "Costfactor does not exist";
     public static final String SUPER_ADMIN_CREATION_ERROR = "Super Admins cannot be created or updated";
     public static final String ADMIN_CREATION_RESTRICTED = "Admins cannot be created or updated";
-    public static final String CATEGORY_ALREADY_EXISTS_TEMPLATE = "Category with categoryName '%s' already exists";    public static final String COST_FACTOR_ALREADY_EXISTS_TEMPLATE = "Cost factor with costfactor name '%s' already exists";
+    public static final String CATEGORY_ALREADY_EXISTS_TEMPLATE = "Category with categoryName '%s' already exists";   
+     public static final String COST_FACTOR_ALREADY_EXISTS_TEMPLATE = "Cost factor with costfactors name '%s' already exists";
     public static final String COST_FACTOR_CREATED = "Cost Factor created successfully";
     public static final String INVALID_COST_FACTOR= "Cost Factor can not be empty or null";
 

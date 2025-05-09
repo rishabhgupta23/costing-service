@@ -11,10 +11,12 @@ public class CostFactorSpecification implements Specification<CostFactor> {
 
     private final Long companyId;
     private final String factorName;
+    private final Integer deleteFlag;
 
-    public CostFactorSpecification(Long companyId, String factorName) {
+    public CostFactorSpecification(Long companyId, String factorName, Integer deleteFlag) {
         this.companyId = companyId;
         this.factorName = factorName;
+        this.deleteFlag = deleteFlag;
     }
 
     @Override
@@ -26,7 +28,7 @@ public class CostFactorSpecification implements Specification<CostFactor> {
         }
 
         if (root.get("deleteFlag") != null) {
-            predicates.add(cb.equal(root.get("deleteFlag"), 0));
+            predicates.add(cb.equal(root.get("deleteFlag"), deleteFlag));
         }
 
         if (factorName != null && !factorName.trim().isEmpty()) {
