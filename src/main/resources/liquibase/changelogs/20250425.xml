@@ -20,7 +20,7 @@
                 CONSTRAINT part_attribute_pkey PRIMARY KEY (attribute_id),
                 CONSTRAINT part_attribute_company_id_fkey FOREIGN KEY (company_id)
                     REFERENCES app.company (company_id) ON DELETE CASCADE,
-                CONSTRAINT part_attribute_name_key UNIQUE (name, company_id)
+                CONSTRAINT part_attribute_name_key UNIQUE (name, company_id,  delete_flag)
             );
 
         </sql>

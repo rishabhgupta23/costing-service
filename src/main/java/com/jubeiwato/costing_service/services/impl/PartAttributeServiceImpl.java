@@ -54,7 +54,7 @@ public class PartAttributeServiceImpl implements PartAttributeService {
                         HttpStatus.BAD_REQUEST));
 
         Optional<PartAttribute> existing = partAttributeRepository
-                .findByNameAndCompany_CompanyId(partAttributeDto.getName(), companyId);
+                .findByNameAndCompany_CompanyIdAndDeleteFlag(partAttributeDto.getName(), companyId, 0);
 
         if (existing.isPresent()) {
             PartAttribute existingAttribute = existing.get();
@@ -132,10 +132,9 @@ public class PartAttributeServiceImpl implements PartAttributeService {
             throw new AppException(ErrorMessageConstant.INVALID_COMPANY, HttpStatus.BAD_REQUEST);
         }
         Optional<PartAttribute> name = partAttributeRepository
-                .findByNameAndCompany_CompanyId(partAttributeDto.getName(), companyId);
+                .findByNameAndCompany_CompanyIdAndDeleteFlag(partAttributeDto.getName(), companyId, 0);
 
-        if (name.isPresent() && !name.get().getAttributeId().equals(attributeId)
-                && name.get().getDeleteFlag() == 0) {
+        if (name.isPresent() && !name.get().getAttributeId().equals(attributeId)) {
             throw new AppException(ErrorMessageConstant.ATTRIBUTE_ALREADY_EXISTS, HttpStatus.CONFLICT);
         }
 
@@ -153,6 +152,11 @@ public class PartAttributeServiceImpl implements PartAttributeService {
         if (existing.getDeleteFlag() != null && existing.getDeleteFlag() == 1) {
             throw new AppException(ErrorMessageConstant.ATTRIBUTE_NOT_FOUND, HttpStatus.NOT_FOUND);
         }
+
+        Optional<PartAttribute> duplicateSoftDeleted = partAttributeRepository
+                .findByNameAndCompany_CompanyIdAndDeleteFlag(existing.getName(), companyId, 1);
+
+        duplicateSoftDeleted.ifPresent(partAttributeRepository::delete);
 
         existing.setDeleteFlag(1);
         partAttributeRepository.save(existing);

@@ -9,7 +9,7 @@ import lombok.*;
 @Builder
 @Entity
 @Table(name = "part_attribute", schema = "app", uniqueConstraints = @UniqueConstraint(columnNames = { "name",
-        "company_id" }))
+        "company_id", "delete_flag" }))
 public class PartAttribute extends BaseEntity {
 
     @Id
