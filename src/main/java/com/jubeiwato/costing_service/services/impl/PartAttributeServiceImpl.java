@@ -54,7 +54,7 @@ public class PartAttributeServiceImpl implements PartAttributeService {
                         HttpStatus.BAD_REQUEST));
 
         Optional<PartAttribute> existing = partAttributeRepository
-                .findByNameAndCompany_CompanyIdAndDeleteFlag(partAttributeDto.getName(), companyId, 0);
+                .findByNameAndCompany_CompanyId(partAttributeDto.getName(), companyId);
 
         if (existing.isPresent()) {
             PartAttribute existingAttribute = existing.get();
