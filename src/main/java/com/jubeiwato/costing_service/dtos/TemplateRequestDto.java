@@ -21,5 +21,5 @@ public class TemplateRequestDto {
 
     @NotNull(message = "Part attributes must not be null")
     @NotEmpty(message = "Part attributes must not be empty")
-    private List<PartAttributeDto> partAttributes;
+    private List<Long> partAttributes;
 }

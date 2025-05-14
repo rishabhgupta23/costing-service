@@ -46,6 +46,9 @@ public class ErrorMessageConstant {
     public static final String ATTRIBUTE_ALREADY_EXISTS = "Attribute with the same name already exists.";
 
     public static final String CATEGORY_ALREADY_EXISTS_TEMPLATE = "Category with categoryName '%s' already exists";
+    public static final String TEMPLATE_NOT_FOUND = "Template not found";
+    public static final String TEMPLATE_ALREADY_EXISTS = "Template name already exists for the company.";
+
 
     private ErrorMessageConstant() {
 

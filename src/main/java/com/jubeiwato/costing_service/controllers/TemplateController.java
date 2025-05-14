@@ -2,6 +2,7 @@ package com.jubeiwato.costing_service.controllers;
 
 import com.jubeiwato.costing_service.dtos.TemplateDto;
 import com.jubeiwato.costing_service.dtos.TemplateRequestDto;
+import com.jubeiwato.costing_service.dtos.TemplateResponseDto;
 import com.jubeiwato.costing_service.dtos.GeneralResponseDto;
 import com.jubeiwato.costing_service.services.TemplateService;
 import com.jubeiwato.costing_service.entities.User;
@@ -33,40 +34,39 @@ public class TemplateController {
                 .body(new GeneralResponseDto("Template created successfully", HttpStatus.CREATED.value()));
     }
 
-    // @PutMapping("/{templateId}")
-    // @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
-    // public ResponseEntity<TemplateDto> updateTemplate(
-    //         @PathVariable Long templateId,
-    //         @RequestBody TemplateRequestDto templateDto,
-    //         @AuthenticationPrincipal User authenticatedUser) {
-    //     Long companyId = authenticatedUser.getCompany().getCompanyId();
-    //     TemplateDto updatedTemplate = templateService.updateTemplate(templateId, templateDto, companyId);
-    //     return ResponseEntity.ok(updatedTemplate);
-    // }
+    @GetMapping
+    public ResponseEntity<List<TemplateDto>> getAllTemplates(@AuthenticationPrincipal User authenticatedUser) {
+        Long companyId = authenticatedUser.getCompany().getCompanyId();
+        return ResponseEntity.ok(templateService.getAllTemplates(companyId));
+    }
 
-    // @DeleteMapping("/{templateId}")
-    // @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
-    // public ResponseEntity<GeneralResponseDto> deleteTemplate(
-    //         @PathVariable Long templateId,
-    //         @AuthenticationPrincipal User authenticatedUser) {
-    //     Long companyId = authenticatedUser.getCompany().getCompanyId();
-    //     templateService.deleteTemplate(templateId, companyId);
-    //     return ResponseEntity.ok(new GeneralResponseDto("Template deleted successfully", HttpStatus.OK.value()));
-    // }
 
-    // @GetMapping
-    // public ResponseEntity<List<TemplateDto>> getTemplates(@AuthenticationPrincipal User authenticatedUser) {
-    //     Long companyId = authenticatedUser.getCompany().getCompanyId();
-    //     List<TemplateDto> templates = templateService.getTemplates(companyId);
-    //     return ResponseEntity.ok(templates);
-    // }
+    @GetMapping("/{id}")
+    public ResponseEntity<TemplateResponseDto> getTemplateById(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User authenticatedUser) {
+        Long companyId = authenticatedUser.getCompany().getCompanyId();
+        return ResponseEntity.ok(templateService.getTemplateById(id, companyId));
+    }
 
-    // @GetMapping("/{templateId}")
-    // public ResponseEntity<TemplateDto> getTemplateById(
-    //         @PathVariable Long templateId,
-    //         @AuthenticationPrincipal User authenticatedUser) {
-    //     Long companyId = authenticatedUser.getCompany().getCompanyId();
-    //     TemplateDto template = templateService.getTemplateById(templateId, companyId);
-    //     return ResponseEntity.ok(template);
-    // }
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+    public ResponseEntity<TemplateResponseDto> updateTemplate(
+            @PathVariable Long id,
+            @RequestBody TemplateRequestDto templateDto,
+            @AuthenticationPrincipal User authenticatedUser) {
+        Long companyId = authenticatedUser.getCompany().getCompanyId();
+        TemplateResponseDto updatedTemplate = templateService.updateTemplate(id, templateDto, companyId);
+        return ResponseEntity.ok(updatedTemplate);
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+    public ResponseEntity<GeneralResponseDto> deleteTemplate(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User authenticatedUser) {
+        Long companyId = authenticatedUser.getCompany().getCompanyId();
+        templateService.deleteTemplate(id, companyId);
+        return ResponseEntity.ok(new GeneralResponseDto("Template deleted successfully", HttpStatus.OK.value()));
+    }
 }

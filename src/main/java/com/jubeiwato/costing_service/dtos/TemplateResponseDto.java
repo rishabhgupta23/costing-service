@@ -1,5 +1,7 @@
 package com.jubeiwato.costing_service.dtos;
 
+import java.util.List;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -7,9 +9,11 @@ import lombok.NoArgsConstructor;
 
 @Data
 @Builder
-@NoArgsConstructor
 @AllArgsConstructor
-public class TemplateDto {
+@NoArgsConstructor
+public class TemplateResponseDto {
     private Long templateId;
     private String name;
+    private List<PartAttributeDto> partAttributes;
 }
+
