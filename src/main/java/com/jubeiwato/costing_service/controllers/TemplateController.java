@@ -3,9 +3,12 @@ package com.jubeiwato.costing_service.controllers;
 import com.jubeiwato.costing_service.dtos.TemplateDto;
 import com.jubeiwato.costing_service.dtos.TemplateRequestDto;
 import com.jubeiwato.costing_service.dtos.TemplateResponseDto;
+import com.jubeiwato.costing_service.constants.Sorting;
+import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
 import com.jubeiwato.costing_service.dtos.GeneralResponseDto;
 import com.jubeiwato.costing_service.services.TemplateService;
 import com.jubeiwato.costing_service.entities.User;
+import static com.jubeiwato.costing_service.constants.UserRoleConstants.*;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -24,7 +27,7 @@ public class TemplateController {
     private final TemplateService templateService;
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "')")
     public ResponseEntity<GeneralResponseDto> createTemplate(
             @RequestBody TemplateRequestDto templateDto,
             @AuthenticationPrincipal User authenticatedUser) {
@@ -35,9 +38,16 @@ public class TemplateController {
     }
 
     @GetMapping
-    public ResponseEntity<List<TemplateDto>> getAllTemplates(@AuthenticationPrincipal User authenticatedUser) {
+    public ResponseEntity<ApiPageResponseDto<List<TemplateDto>>> getAllTemplates( @RequestParam(required = false) String name,
+            @RequestParam(defaultValue = "0") int pageNo,
+            @RequestParam(defaultValue = "10") int pageSize,
+            @RequestParam(defaultValue = "name") String sortColumn,
+            @RequestParam(defaultValue = "ASC") Sorting sortMode,
+            @AuthenticationPrincipal User authenticatedUser) {
         Long companyId = authenticatedUser.getCompany().getCompanyId();
-        return ResponseEntity.ok(templateService.getAllTemplates(companyId));
+                ApiPageResponseDto<List<TemplateDto>> response = templateService.getAllTemplates(
+                companyId, name, pageNo, pageSize, sortColumn, sortMode);
+        return ResponseEntity.ok(response);
     }
 
 
@@ -50,7 +60,7 @@ public class TemplateController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "')")
     public ResponseEntity<TemplateResponseDto> updateTemplate(
             @PathVariable Long id,
             @RequestBody TemplateRequestDto templateDto,
@@ -61,7 +71,7 @@ public class TemplateController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "')")
     public ResponseEntity<GeneralResponseDto> deleteTemplate(
             @PathVariable Long id,
             @AuthenticationPrincipal User authenticatedUser) {

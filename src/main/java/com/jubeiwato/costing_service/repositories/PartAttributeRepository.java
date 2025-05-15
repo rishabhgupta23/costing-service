@@ -24,5 +24,5 @@ public interface PartAttributeRepository extends JpaRepository<PartAttribute, Lo
 
     boolean existsByNameAndCompany_CompanyIdAndDeleteFlag(String name, Long companyId, Integer deleteFlag);
 
-    List<PartAttribute> findByAttributeIdInAndCompany(List<Long> distinctIds, Company company);
+    List<PartAttribute> findByAttributeIdInAndCompany(List<Long> distinctIds, Company companyId);
 }

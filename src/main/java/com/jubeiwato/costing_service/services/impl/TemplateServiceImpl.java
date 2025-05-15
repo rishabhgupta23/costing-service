@@ -2,6 +2,9 @@ package com.jubeiwato.costing_service.services.impl;
 
 import com.jubeiwato.costing_service.authentication.config.AppException;
 import com.jubeiwato.costing_service.constants.ErrorMessageConstant;
+import com.jubeiwato.costing_service.constants.Sorting;
+import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
+import com.jubeiwato.costing_service.dtos.PageInfoDto;
 import com.jubeiwato.costing_service.dtos.PartAttributeDto;
 import com.jubeiwato.costing_service.dtos.TemplateDto;
 import com.jubeiwato.costing_service.dtos.TemplateRequestDto;
@@ -9,8 +12,15 @@ import com.jubeiwato.costing_service.dtos.TemplateResponseDto;
 import com.jubeiwato.costing_service.entities.*;
 import com.jubeiwato.costing_service.repositories.*;
 import com.jubeiwato.costing_service.services.TemplateService;
+import com.jubeiwato.costing_service.utils.ValidationUtil;
 
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,11 +37,23 @@ public class TemplateServiceImpl implements TemplateService {
     private final CompanyRepository companyRepository;
     private final TemplatePartAttributeRepository templatePartAttributeRepository;
 
+    private void validateTemplateInput(TemplateRequestDto dto) {
+        if (dto.getName() == null || dto.getName().trim().isEmpty()) {
+            throw new AppException(ErrorMessageConstant.TEMPLATE_MUST_BE_NOTNULL, HttpStatus.BAD_REQUEST);
+        }
+        if (dto.getPartAttributes() == null || dto.getPartAttributes().isEmpty()) {
+            throw new AppException(ErrorMessageConstant.ATTRIBUTE_NOT_SELECTED, HttpStatus.BAD_REQUEST);
+        }
+    }
     @Override
     @Transactional
     public void createTemplate(TemplateRequestDto dto, Long companyId) {
-        Company company = getValidatedCompany(companyId);
 
+        validateTemplateInput(dto);
+            Company company = companyRepository.findById(companyId)
+                    .orElseThrow(() -> new AppException(
+                            ErrorMessageConstant.INVALID_COMPANY,
+                            HttpStatus.BAD_REQUEST));
         checkIfTemplateNameExists(dto.getName(), company);
 
         Template temp = Template.builder()
@@ -86,29 +108,47 @@ public class TemplateServiceImpl implements TemplateService {
         return foundAttributes;
     } 
 
-    private Company getValidatedCompany(Long companyId) {
-        return companyRepository.findById(companyId)
-                .orElseThrow(() -> new AppException(ErrorMessageConstant.COMPANY_NOT_FOUND, HttpStatus.NOT_FOUND));
-    }
-
     @Override
-    public List<TemplateDto> getAllTemplates(Long companyId) {
-        Company company = getValidatedCompany(companyId);
+    public ApiPageResponseDto<List<TemplateDto>> getAllTemplates(Long companyId, String name, int pageNo,
+    int pageSize, String sortColumn, Sorting sortMode) {
+        if (!ValidationUtil.isValidInput(name)) {
+                throw new AppException(ErrorMessageConstant.INVALID_INPUT, HttpStatus.BAD_REQUEST);
+            }
+    
+            Sort.Direction direction = (sortMode == Sorting.DESC) ? Sort.Direction.DESC : Sort.Direction.ASC;
+            Sort sort = Sort.by(direction, sortColumn);
+            Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
+            Specification<Template> spec = TemplateSpecification.getfilteredTemplates(companyId, name);
 
-        return templateRepository.findByCompany(company).stream()
-                .map(template -> TemplateDto.builder()
-                        .templateId(template.getTemplateId())
-                        .name(template.getName())
-                        .build())
-                .toList();
+            Page<Template> templatePage = templateRepository.findAll(spec, pageable);
+
+            List<TemplateDto> dtoList = templatePage.getContent()
+            .stream()
+            .map(TemplateDto::entityToDto)
+            .toList();
+
+    PageInfoDto pageInfo = PageInfoDto.builder()
+            .totalPages(templatePage.getTotalPages())
+            .pageNumber(pageNo)
+            .pageSize(pageSize)
+            .totalRecords(templatePage.getTotalElements())
+            .build();
+
+    return ApiPageResponseDto.<List<TemplateDto>>builder()
+            .data(dtoList)
+            .pageInfo(pageInfo)
+            .build();
+}
+private Template getValidatedTemplate(Long templateId, Long companyId) {
+        return templateRepository.findAllByTemplateIdAndCompany_CompanyIdAndDeleteFlag(templateId, companyId, 0)
+                .orElseThrow(() -> new AppException(
+                        ErrorMessageConstant.TEMPLATE_NOT_FOUND,
+                        HttpStatus.NOT_FOUND));
     }
-
 @Override
 public TemplateResponseDto getTemplateById(Long templateId, Long companyId) {
-        Company company = getValidatedCompany(companyId);
 
-        Template template = templateRepository.findByTemplateIdAndCompany(templateId, company)
-                .orElseThrow(() -> new AppException(ErrorMessageConstant.TEMPLATE_NOT_FOUND, HttpStatus.NOT_FOUND));
+        Template template = getValidatedTemplate(templateId, companyId);
 
         List<PartAttributeDto> partAttributes = templatePartAttributeRepository.findByTemplate(template).stream()
                 .map(rel -> PartAttributeDto.entityToDto(rel.getPartAttribute()))
@@ -124,18 +164,18 @@ public TemplateResponseDto getTemplateById(Long templateId, Long companyId) {
     @Override
 @Transactional
 public TemplateResponseDto updateTemplate(Long templateId, TemplateRequestDto dto, Long companyId) {
-    Company company = getValidatedCompany(companyId);
 
-    Template template = templateRepository.findByTemplateIdAndCompany(templateId, company)
-            .orElseThrow(() -> new AppException(ErrorMessageConstant.TEMPLATE_NOT_FOUND, HttpStatus.NOT_FOUND));
+        validateTemplateInput(dto);
 
+
+        Template template = getValidatedTemplate(templateId, companyId);
     String newName = dto.getName().trim();
     if (!template.getName().equalsIgnoreCase(newName)) {
-        checkIfTemplateNameExists(newName, company);
+        checkIfTemplateNameExists(newName, template.getCompany());
         template.setName(newName);
     }
 
-    List<PartAttribute> validAttributes = getValidPartAttributes(dto.getPartAttributes(), company);
+    List<PartAttribute> validAttributes = getValidPartAttributes(dto.getPartAttributes(),template.getCompany());
 
     templatePartAttributeRepository.deleteByTemplate(template);
 
@@ -163,10 +203,8 @@ public TemplateResponseDto updateTemplate(Long templateId, TemplateRequestDto dt
 @Override
 @Transactional
 public void deleteTemplate(Long templateId, Long companyId) {
-    Company company = getValidatedCompany(companyId);
 
-    Template template = templateRepository.findByTemplateIdAndCompany(templateId, company)
-            .orElseThrow(() -> new AppException(ErrorMessageConstant.TEMPLATE_NOT_FOUND, HttpStatus.NOT_FOUND));
+        Template template = getValidatedTemplate(templateId, companyId);
 
     templatePartAttributeRepository.deleteByTemplate(template);
     templateRepository.delete(template);
