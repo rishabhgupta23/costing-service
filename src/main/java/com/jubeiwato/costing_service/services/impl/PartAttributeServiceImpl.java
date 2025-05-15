@@ -1,6 +1,7 @@
 package com.jubeiwato.costing_service.services.impl;
 
 import com.jubeiwato.costing_service.authentication.config.AppException;
+import com.jubeiwato.costing_service.constants.DeleteFlag;
 import com.jubeiwato.costing_service.constants.ErrorMessageConstant;
 import com.jubeiwato.costing_service.constants.Sorting;
 import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
@@ -36,7 +37,9 @@ public class PartAttributeServiceImpl implements PartAttributeService {
     private final CompanyRepository companyRepository;
 
     private PartAttribute getValidatedPartAttribute(Long attributeId, Long companyId) {
-        return partAttributeRepository.findAllByAttributeIdAndCompany_CompanyIdAndDeleteFlag(attributeId, companyId, 0)
+        return partAttributeRepository
+                .findAllByAttributeIdAndCompany_CompanyIdAndDeleteFlag(attributeId, companyId,
+                        DeleteFlag.NEGATIVE.getValue())
                 .orElseThrow(() -> new AppException(
                         ErrorMessageConstant.ATTRIBUTE_NOT_FOUND,
                         HttpStatus.NOT_FOUND));
@@ -54,16 +57,16 @@ public class PartAttributeServiceImpl implements PartAttributeService {
                         HttpStatus.BAD_REQUEST));
 
         Optional<PartAttribute> existing = partAttributeRepository
-                .findByNameAndCompany_CompanyIdAndDeleteFlag(partAttributeDto.getName(), companyId, 0);
+                .findByNameAndCompany_CompanyId(partAttributeDto.getName(), companyId);
 
         if (existing.isPresent()) {
             PartAttribute existingAttribute = existing.get();
-            if (existingAttribute.getDeleteFlag() == 0) {
-                // Attribute exists and is active
+            if (existingAttribute.getDeleteFlag().equals(DeleteFlag.NEGATIVE.getValue())) {
+
                 throw new AppException(ErrorMessageConstant.ATTRIBUTE_ALREADY_EXISTS, HttpStatus.CONFLICT);
             } else {
-                // Attribute exists but is soft-deleted — reactivate it
-                existingAttribute.setDeleteFlag(0);
+
+                existingAttribute.setDeleteFlag(DeleteFlag.NEGATIVE.getValue());
                 return partAttributeRepository.save(existingAttribute);
             }
         }
@@ -132,7 +135,8 @@ public class PartAttributeServiceImpl implements PartAttributeService {
             throw new AppException(ErrorMessageConstant.INVALID_COMPANY, HttpStatus.BAD_REQUEST);
         }
         Optional<PartAttribute> name = partAttributeRepository
-                .findByNameAndCompany_CompanyIdAndDeleteFlag(partAttributeDto.getName(), companyId, 0);
+                .findByNameAndCompany_CompanyIdAndDeleteFlag(partAttributeDto.getName(), companyId,
+                        DeleteFlag.NEGATIVE.getValue());
 
         if (name.isPresent() && !name.get().getAttributeId().equals(attributeId)) {
             throw new AppException(ErrorMessageConstant.ATTRIBUTE_ALREADY_EXISTS, HttpStatus.CONFLICT);
@@ -149,16 +153,17 @@ public class PartAttributeServiceImpl implements PartAttributeService {
         PartAttribute existing = partAttributeRepository.findByAttributeIdAndCompany_CompanyId(attributeId, companyId)
                 .orElseThrow(() -> new AppException(
                         ErrorMessageConstant.ATTRIBUTE_NOT_FOUND, HttpStatus.NOT_FOUND));
-        if (existing.getDeleteFlag() != null && existing.getDeleteFlag() == 1) {
+        if (existing.getDeleteFlag() != null && existing.getDeleteFlag().equals(DeleteFlag.POSITIVE.getValue())) {
             throw new AppException(ErrorMessageConstant.ATTRIBUTE_NOT_FOUND, HttpStatus.NOT_FOUND);
         }
 
         Optional<PartAttribute> duplicateSoftDeleted = partAttributeRepository
-                .findByNameAndCompany_CompanyIdAndDeleteFlag(existing.getName(), companyId, 1);
+                .findByNameAndCompany_CompanyIdAndDeleteFlag(existing.getName(), companyId,
+                        DeleteFlag.POSITIVE.getValue());
 
         duplicateSoftDeleted.ifPresent(partAttributeRepository::delete);
 
-        existing.setDeleteFlag(1);
+        existing.setDeleteFlag(DeleteFlag.POSITIVE.getValue());
         partAttributeRepository.save(existing);
 
         return GeneralResponseDto.builder()
