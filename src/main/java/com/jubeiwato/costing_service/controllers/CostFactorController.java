@@ -44,9 +44,8 @@ public class CostFactorController {
     @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     public ResponseEntity<GeneralResponseDto> createCostFactor(@RequestParam String factorName, @AuthenticationPrincipal User authenticatedUser) {
         Long companyId = authenticatedUser.getCompany().getCompanyId();
-        costFactorService.createCostFactor(factorName, companyId);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(new GeneralResponseDto("Cost Factor created successfully", HttpStatus.CREATED.value()));
+        GeneralResponseDto response = costFactorService.createCostFactor(factorName, companyId);
+    return ResponseEntity.status(response.getStatus()).body(response);
     }
 
     @PutMapping("/{id}")

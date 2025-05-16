@@ -9,7 +9,7 @@ import com.jubeiwato.costing_service.dtos.GeneralResponseDto;
 public interface CostFactorService {
     public ApiPageResponseDto<List<CostFactorDto>> getCostFactors(int pageNo, int pageSize, Long companyId, String factorName,String sortColumn,Sorting sortMode);
     
-    void createCostFactor(String factorName, Long companyId);
+    GeneralResponseDto createCostFactor(String factorName, Long companyId);
         
     CostFactorDto updateCostFactor(Long id, String factorName, Long companyId);
 
