@@ -11,7 +11,7 @@
             CREATE TABLE IF NOT EXISTS app.part_attribute (
                  delete_flag INTEGER DEFAULT 0,
                 attribute_id BIGSERIAL NOT NULL,
-                name VARCHAR(255) NOT NULL,
+                attribute_name VARCHAR(255) NOT NULL,
                 company_id BIGINT NOT NULL,
                 created_by BIGINT,
                 created_date_time TIMESTAMPTZ(6),
@@ -20,7 +20,7 @@
                 CONSTRAINT part_attribute_pkey PRIMARY KEY (attribute_id),
                 CONSTRAINT part_attribute_company_id_fkey FOREIGN KEY (company_id)
                     REFERENCES app.company (company_id) ON DELETE CASCADE,
-                CONSTRAINT part_attribute_name_key UNIQUE (name, company_id,  delete_flag)
+                CONSTRAINT part_attribute_name_key UNIQUE (attribute_name, company_id,  delete_flag)
             );
 
         </sql>
