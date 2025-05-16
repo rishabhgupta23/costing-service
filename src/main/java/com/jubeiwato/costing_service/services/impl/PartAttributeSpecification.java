@@ -9,7 +9,7 @@ import java.util.List;
 
 public class PartAttributeSpecification {
 
-    public static Specification<PartAttribute> getFilteredPartAttributes(Long companyId, String name) {
+    public static Specification<PartAttribute> getFilteredPartAttributes(Long companyId, String attributeName) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -17,10 +17,10 @@ public class PartAttributeSpecification {
                 predicates.add(criteriaBuilder.equal(root.get("company").get("companyId"), companyId));
             }
 
-            if (name != null && !name.isEmpty()) {
+            if (attributeName != null && !attributeName.isEmpty()) {
                 predicates.add(criteriaBuilder.like(
-                        criteriaBuilder.lower(root.get("name")),
-                        "%" + name.toLowerCase() + "%"));
+                        criteriaBuilder.lower(root.get("attributeName")),
+                        "%" + attributeName.toLowerCase() + "%"));
             }
 
             predicates.add(criteriaBuilder.equal(root.get("deleteFlag"), 0));

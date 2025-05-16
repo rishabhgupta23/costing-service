@@ -12,17 +12,14 @@ import java.util.Optional;
 @Repository
 public interface PartAttributeRepository extends JpaRepository<PartAttribute, Long> {
 
-        Optional<PartAttribute> findAllByAttributeIdAndCompany_CompanyIdAndDeleteFlag(Long attributeId, Long companyId,
-                        Integer deleteFlag);
-
-        Optional<PartAttribute> findByNameAndCompany_CompanyIdAndDeleteFlag(String name, Long companyId,
+        Optional<PartAttribute> findByAttributeNameAndCompany_CompanyIdAndDeleteFlag(String attributeName,
+                        Long companyId,
                         Integer deleteFlag);
 
         Optional<PartAttribute> findByAttributeIdAndCompany_CompanyId(Long attributeId, Long companyId);
 
         Page<PartAttribute> findAll(Specification<PartAttribute> spec, Pageable pageable);
 
-        Optional<PartAttribute> findByNameAndCompany_CompanyId(String name, Long companyId);
+        Optional<PartAttribute> findByAttributeNameAndCompany_CompanyId(String attributeName, Long companyId);
 
-        boolean existsByNameAndCompany_CompanyIdAndDeleteFlag(String name, Long companyId, Integer deleteFlag);
 }

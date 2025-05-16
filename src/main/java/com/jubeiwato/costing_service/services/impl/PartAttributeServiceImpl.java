@@ -38,8 +38,7 @@ public class PartAttributeServiceImpl implements PartAttributeService {
 
     private PartAttribute getValidatedPartAttribute(Long attributeId, Long companyId) {
         return partAttributeRepository
-                .findAllByAttributeIdAndCompany_CompanyIdAndDeleteFlag(attributeId, companyId,
-                        DeleteFlag.NEGATIVE.getValue())
+                .findByAttributeIdAndCompany_CompanyId(attributeId, companyId)
                 .orElseThrow(() -> new AppException(
                         ErrorMessageConstant.ATTRIBUTE_NOT_FOUND,
                         HttpStatus.NOT_FOUND));
@@ -48,7 +47,7 @@ public class PartAttributeServiceImpl implements PartAttributeService {
     @Override
     public PartAttribute createPartAttribute(PartAttributeDto partAttributeDto, Long companyId) {
 
-        if (partAttributeDto.getName() == null || partAttributeDto.getName().trim().isEmpty()) {
+        if (partAttributeDto.getAttributeName() == null || partAttributeDto.getAttributeName().trim().isEmpty()) {
             throw new AppException(ErrorMessageConstant.PARTATTRIBUTE_MUST_BE_NOTNULL, HttpStatus.BAD_REQUEST);
         }
         Company company = companyRepository.findById(companyId)
@@ -57,7 +56,7 @@ public class PartAttributeServiceImpl implements PartAttributeService {
                         HttpStatus.BAD_REQUEST));
 
         Optional<PartAttribute> existing = partAttributeRepository
-                .findByNameAndCompany_CompanyId(partAttributeDto.getName(), companyId);
+                .findByAttributeNameAndCompany_CompanyId(partAttributeDto.getAttributeName(), companyId);
 
         if (existing.isPresent()) {
             PartAttribute existingAttribute = existing.get();
@@ -72,7 +71,7 @@ public class PartAttributeServiceImpl implements PartAttributeService {
         }
 
         PartAttribute partAttribute = PartAttribute.builder()
-                .name(partAttributeDto.getName())
+                .attributeName(partAttributeDto.getAttributeName())
                 .company(company)
                 .build();
 
@@ -80,10 +79,11 @@ public class PartAttributeServiceImpl implements PartAttributeService {
     }
 
     @Override
-    public ApiPageResponseDto<List<PartAttributeDto>> getPartAttributeList(Long companyId, String name, int pageNo,
+    public ApiPageResponseDto<List<PartAttributeDto>> getPartAttributeList(Long companyId, String attributeName,
+            int pageNo,
             int pageSize, String sortColumn, Sorting sortMode) {
 
-        if (!ValidationUtil.isValidInput(name)) {
+        if (!ValidationUtil.isValidInput(attributeName)) {
             throw new AppException(ErrorMessageConstant.INVALID_INPUT, HttpStatus.BAD_REQUEST);
         }
 
@@ -91,7 +91,8 @@ public class PartAttributeServiceImpl implements PartAttributeService {
         Sort sort = Sort.by(direction, sortColumn);
         Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
 
-        Specification<PartAttribute> spec = PartAttributeSpecification.getFilteredPartAttributes(companyId, name);
+        Specification<PartAttribute> spec = PartAttributeSpecification.getFilteredPartAttributes(companyId,
+                attributeName);
 
         Page<PartAttribute> partAttributePage = partAttributeRepository.findAll(spec, pageable);
 
@@ -123,53 +124,54 @@ public class PartAttributeServiceImpl implements PartAttributeService {
 
         PartAttribute existing = getValidatedPartAttribute(attributeId, companyId);
 
-        if (existing.getDeleteFlag() == 1) {
+        if (existing.getDeleteFlag().equals(DeleteFlag.POSITIVE.getValue())) {
             throw new AppException(ErrorMessageConstant.ATTRIBUTE_MARKED_DELETED, HttpStatus.BAD_REQUEST);
         }
 
-        if (partAttributeDto.getName() == null || partAttributeDto.getName().trim().isEmpty()) {
+        if (partAttributeDto.getAttributeName() == null || partAttributeDto.getAttributeName().trim().isEmpty()) {
             throw new AppException(ErrorMessageConstant.PARTATTRIBUTE_MUST_BE_NOTNULL, HttpStatus.BAD_REQUEST);
         }
 
-        if (!existing.getCompany().getCompanyId().equals(companyId)) {
-            throw new AppException(ErrorMessageConstant.INVALID_COMPANY, HttpStatus.BAD_REQUEST);
-        }
-        Optional<PartAttribute> name = partAttributeRepository
-                .findByNameAndCompany_CompanyIdAndDeleteFlag(partAttributeDto.getName(), companyId,
-                        DeleteFlag.NEGATIVE.getValue());
+        String newName = partAttributeDto.getAttributeName();
 
-        if (name.isPresent() && !name.get().getAttributeId().equals(attributeId)) {
-            throw new AppException(ErrorMessageConstant.ATTRIBUTE_ALREADY_EXISTS, HttpStatus.CONFLICT);
-        }
+        if (!existing.getAttributeName().equalsIgnoreCase(newName)) {
 
-        existing.setName(partAttributeDto.getName());
+            // Check if active attribute with the new name exists
+            Optional<PartAttribute> activeAttribute = partAttributeRepository
+                    .findByAttributeNameAndCompany_CompanyIdAndDeleteFlag(newName, companyId,
+                            DeleteFlag.NEGATIVE.getValue());
+
+            if (activeAttribute.isPresent()) {
+                // Active attribute exists with that name - conflict
+                throw new AppException(ErrorMessageConstant.ATTRIBUTE_ALREADY_EXISTS, HttpStatus.CONFLICT);
+            }
+
+            Optional<PartAttribute> softDeletedAttribute = partAttributeRepository
+                    .findByAttributeNameAndCompany_CompanyIdAndDeleteFlag(newName, companyId,
+                            DeleteFlag.POSITIVE.getValue());
+
+            if (softDeletedAttribute.isPresent()) {
+                String errorMsg = String.format(ErrorMessageConstant.UPDATE_NOT_ALLOWED_SOFT_DELETED, newName);
+                throw new AppException(errorMsg, HttpStatus.BAD_REQUEST);
+            }
+
+            existing.setAttributeName(newName);
+        }
 
         return partAttributeRepository.save(existing);
     }
 
     @Override
-    public GeneralResponseDto deletePartAttribute(Long attributeId, Long companyId) {
+    public void deletePartAttribute(Long attributeId, Long companyId) {
 
-        PartAttribute existing = partAttributeRepository.findByAttributeIdAndCompany_CompanyId(attributeId, companyId)
-                .orElseThrow(() -> new AppException(
-                        ErrorMessageConstant.ATTRIBUTE_NOT_FOUND, HttpStatus.NOT_FOUND));
+        PartAttribute existing = getValidatedPartAttribute(attributeId, companyId);
+
         if (existing.getDeleteFlag() != null && existing.getDeleteFlag().equals(DeleteFlag.POSITIVE.getValue())) {
             throw new AppException(ErrorMessageConstant.ATTRIBUTE_NOT_FOUND, HttpStatus.NOT_FOUND);
         }
-
-        Optional<PartAttribute> duplicateSoftDeleted = partAttributeRepository
-                .findByNameAndCompany_CompanyIdAndDeleteFlag(existing.getName(), companyId,
-                        DeleteFlag.POSITIVE.getValue());
-
-        duplicateSoftDeleted.ifPresent(partAttributeRepository::delete);
-
         existing.setDeleteFlag(DeleteFlag.POSITIVE.getValue());
         partAttributeRepository.save(existing);
 
-        return GeneralResponseDto.builder()
-                .message("Part attribute deleted successfully.")
-                .status(HttpStatus.OK.value())
-                .build();
     }
 
 }
