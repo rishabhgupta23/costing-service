@@ -105,7 +105,7 @@ public class CostFactorServiceImpl implements CostFactorService {
 
 
     @Override
-    public  GeneralResponseDto createCostFactor(String factorName, Long companyId) {
+    public  void createCostFactor(String factorName, Long companyId) {
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new AppException(ErrorMessageConstant.INVALID_COMPANY, HttpStatus.BAD_REQUEST));
 
@@ -117,18 +117,14 @@ public class CostFactorServiceImpl implements CostFactorService {
             reactivated.setFactorName(factorName.trim());
             costFactorRepository.save(reactivated);
         }
-
-        CostFactor costFactor = CostFactor.builder()
+        else{
+                CostFactor costFactor = CostFactor.builder()
                 .factorName(factorName.trim())
                 .company(company)
                 .build();
 
         costFactorRepository.save(costFactor);
-
-        return GeneralResponseDto.builder()
-        .message("Cost Factor created successfully")
-        .status(HttpStatus.CREATED.value())
-        .build();
+        }
     }
 
     @Override
