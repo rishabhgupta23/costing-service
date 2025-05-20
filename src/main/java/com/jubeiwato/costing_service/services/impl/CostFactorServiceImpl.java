@@ -44,18 +44,15 @@ public class CostFactorServiceImpl implements CostFactorService {
                 .orElseThrow(() -> new AppException(ErrorMessageConstant.COST_FACTOR_DOES_NOT_EXIST, HttpStatus.NOT_FOUND));
     }
 
-    private Optional<CostFactor> getConflictingCostFactor(String factorName, Long companyId, Long excludeIdIfAny) {
+    private Optional<CostFactor> getConflictingCostFactor(String factorName, Long companyId) {
         String trimmedName = (factorName != null) ? factorName.trim() : ""; 
         if (trimmedName.isEmpty()) {
             throw new AppException(ErrorMessageConstant.INVALID_COST_FACTOR, HttpStatus.BAD_REQUEST);
         }
     
         return costFactorRepository
-                .findByCompany_CompanyIdAndFactorNameIgnoreCase(companyId, trimmedName)
-                .stream()
-                .filter(c -> excludeIdIfAny == null || !Objects.equals(c.getFactorId(), excludeIdIfAny))
-                .findFirst();
-    }
+                .findByCompany_CompanyIdAndFactorNameIgnoreCase(companyId, trimmedName);
+    }  
     
     @Override
     public ApiPageResponseDto<List<CostFactorDto>> getCostFactors(int pageNo, int pageSize, Long companyId, String factorName, String sortColumn, Sorting sortMode) {
@@ -96,11 +93,8 @@ public class CostFactorServiceImpl implements CostFactorService {
             .orElseThrow(() -> new AppException(ErrorMessageConstant.INVALID_COMPANY, HttpStatus.BAD_REQUEST));
     
         String trimmedName = (factorName != null) ? factorName.trim() : "";
-        if (trimmedName.isEmpty()) {
-            throw new AppException(ErrorMessageConstant.INVALID_COST_FACTOR, HttpStatus.BAD_REQUEST);
-        }
     
-        Optional<CostFactor> conflictOpt = getConflictingCostFactor(trimmedName, companyId, null);
+        Optional<CostFactor> conflictOpt = getConflictingCostFactor(trimmedName, companyId);
     
         if (conflictOpt.isPresent()) {
             CostFactor existing = conflictOpt.get();
@@ -130,12 +124,9 @@ public class CostFactorServiceImpl implements CostFactorService {
         CostFactor existing = getValidatedCostFactor(id, companyId);
         String trimmedName = (factorName != null) ? factorName.trim() : "";
     
-        if (trimmedName.isEmpty()) {
-            throw new AppException(ErrorMessageConstant.INVALID_COST_FACTOR, HttpStatus.BAD_REQUEST);
-        }
-    
         if (!existing.getFactorName().equalsIgnoreCase(trimmedName)) {
-            Optional<CostFactor> conflictOpt = getConflictingCostFactor(trimmedName, companyId, id);
+            Optional<CostFactor> conflictOpt = getConflictingCostFactor(factorName, companyId)
+                    .filter(c -> !Objects.equals(c.getFactorId(), id)); // Exclude current ID here
     
             if (conflictOpt.isPresent()) {
                 CostFactor conflict = conflictOpt.get();
@@ -160,7 +151,7 @@ public class CostFactorServiceImpl implements CostFactorService {
                 .id(existing.getFactorId())
                 .name(existing.getFactorName())
                 .build();
-    }
+    }    
 
 
 

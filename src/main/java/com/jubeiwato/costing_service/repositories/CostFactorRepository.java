@@ -10,6 +10,6 @@ import com.jubeiwato.costing_service.entities.CostFactor;
 public interface CostFactorRepository extends JpaRepository<CostFactor, Long>, JpaSpecificationExecutor<CostFactor> {
     List<CostFactor> findByFactorIdInAndCompany_CompanyId(Set<Long> factorIds, Long companyId);
     Optional<CostFactor> findByFactorIdAndCompany_CompanyIdAndDeleteFlag(Long factorId, Long companyId, Integer deleteFlag);
-    List<CostFactor> findByCompany_CompanyIdAndFactorNameIgnoreCase(Long companyId, String name);
+    Optional<CostFactor> findByCompany_CompanyIdAndFactorNameIgnoreCase(Long companyId, String name);
 
 }
