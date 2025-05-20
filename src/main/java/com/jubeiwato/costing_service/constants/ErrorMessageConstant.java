@@ -39,9 +39,14 @@ public class ErrorMessageConstant {
     public static final String CATEGORY_DOES_NOT_EXIST = "Category does not exist";
     public static final String PART_NUMBER_ALREADY_EXISTS_TEMPLATE = "Part with partNumber '%s' already exists";
     public static final String COST_FACTOR_DOES_NOT_EXIST = "Costfactor does not exist";
-    public static final String SUPER_ADMIN_CREATION_ERROR = "Super Admins cannot be creted or updated";
+    public static final String SUPER_ADMIN_CREATION_ERROR = "Super Admins cannot be created or updated";
     public static final String ADMIN_CREATION_RESTRICTED = "Admins cannot be created or updated";
-    public static final String CATEGORY_ALREADY_EXISTS_TEMPLATE = "Category with categoryName '%s' already exists";
+    public static final String CATEGORY_ALREADY_EXISTS_TEMPLATE = "Category with name '%s' already exists";   
+    public static final String COST_FACTOR_ALREADY_EXISTS_TEMPLATE = "Cost factor with name '%s' already exists";
+    public static final String COST_FACTOR_CREATED = "Cost Factor created successfully";
+    public static final String INVALID_COST_FACTOR= "Cost Factor can not be empty or null";
+    public static final String COST_FACTOR_SOFT_DELETED_EXISTS_TEMPLATE ="A deactivated cost factor with name '%s' already exists. To activate it, please create a cost factor with this name.";
+
     private ErrorMessageConstant() {
 
     }

@@ -26,7 +26,6 @@ public ResponseEntity<ErrorResponseDto> handleValidationException(MethodArgument
             .body(ErrorResponseDto.of(errorMessages, HttpStatus.BAD_REQUEST));
 }
 
-
     @ExceptionHandler(value = {AppException.class, InternalAuthenticationServiceException.class})
     public ResponseEntity<ErrorResponseDto> handleAppException(AppException ex) {
         return ResponseEntity.status(ex.getStatus())

@@ -4,7 +4,7 @@ import lombok.Getter;
 
 @Getter
 public enum DeleteFlag {
-    POSTITVE(1),
+    POSITIVE(1),
     NEGATIVE(0);
 
 
