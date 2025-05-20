@@ -23,8 +23,8 @@ import lombok.NoArgsConstructor;
     name = "cost_factor",
     schema = "app",
     uniqueConstraints = @UniqueConstraint(
-        name = "cost_factor_company_name_delete_flag_unique",
-        columnNames = {"company_id", "factor_name", "delete_flag"}
+        name = "cost_factor_company_name_unique",
+        columnNames = {"factor_name", "company_id"}
     )
 )
 public class CostFactor extends BaseEntity {
