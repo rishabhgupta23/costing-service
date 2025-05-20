@@ -17,7 +17,7 @@ public class ErrorMessageConstant {
     public static final String INVALID_PRICE_MODE = "Invalid price mode provided.";
     public static final String VENDOR_DOES_NOT_EXIST = "Vendor does not exist";
     public static final String COMPANY_DOES_NOT_EXIST = "Company does not exist";
-    public static final String PARTATTRIBUTE_MUST_BE_NOTNULL = "PartAttribute name must not be null or empty";
+    public static final String PART_ATTRIBUTE_NOT_NULL = "Part attribute name must not be null or empty";
     public static final String JWT_TOKEN_EXPIRED = "JWT token has expired";
     public static final String UNEXPECTED_ERROR_OCCURED = "unexpected error occured";
     public static final String JWT_TOKEN_MISSING = "JWT token is missing";
@@ -42,7 +42,7 @@ public class ErrorMessageConstant {
     public static final String SUPER_ADMIN_CREATION_ERROR = "Super Admins cannot be creted or updated";
     public static final String ADMIN_CREATION_RESTRICTED = "Admins cannot be created or updated";
     public static final String ATTRIBUTE_NOT_FOUND = "Part attribute not found.";
-    public static final String ATTRIBUTE_MARKED_DELETED = "PartAttribute is marked as deleted and cannot be updated.";
+    public static final String ATTRIBUTE_MARKED_DELETED = "Part attribute is marked as deleted and cannot be updated.";
     public static final String ATTRIBUTE_ALREADY_EXISTS = "Attribute with the same name already exists.";
     public static final String UPDATE_NOT_ALLOWED_SOFT_DELETED = "Update not allowed. A soft-deleted part attribute with the name '%s' already exists.";
 

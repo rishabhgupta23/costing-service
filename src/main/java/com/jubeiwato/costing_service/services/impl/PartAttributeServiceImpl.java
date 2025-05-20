@@ -48,7 +48,7 @@ public class PartAttributeServiceImpl implements PartAttributeService {
     public PartAttribute createPartAttribute(PartAttributeDto partAttributeDto, Long companyId) {
 
         if (partAttributeDto.getAttributeName() == null || partAttributeDto.getAttributeName().trim().isEmpty()) {
-            throw new AppException(ErrorMessageConstant.PARTATTRIBUTE_MUST_BE_NOTNULL, HttpStatus.BAD_REQUEST);
+            throw new AppException(ErrorMessageConstant.PART_ATTRIBUTE_NOT_NULL, HttpStatus.BAD_REQUEST);
         }
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new AppException(
@@ -129,7 +129,7 @@ public class PartAttributeServiceImpl implements PartAttributeService {
         }
 
         if (partAttributeDto.getAttributeName() == null || partAttributeDto.getAttributeName().trim().isEmpty()) {
-            throw new AppException(ErrorMessageConstant.PARTATTRIBUTE_MUST_BE_NOTNULL, HttpStatus.BAD_REQUEST);
+            throw new AppException(ErrorMessageConstant.PART_ATTRIBUTE_NOT_NULL, HttpStatus.BAD_REQUEST);
         }
 
         String newName = partAttributeDto.getAttributeName();
