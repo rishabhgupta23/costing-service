@@ -125,8 +125,7 @@ public class CostFactorServiceImpl implements CostFactorService {
         String trimmedName = (factorName != null) ? factorName.trim() : "";
     
         if (!existing.getFactorName().equalsIgnoreCase(trimmedName)) {
-            Optional<CostFactor> conflictOpt = getConflictingCostFactor(factorName, companyId)
-                    .filter(c -> !Objects.equals(c.getFactorId(), id)); // Exclude current ID here
+            Optional<CostFactor> conflictOpt = getConflictingCostFactor(factorName, companyId);
     
             if (conflictOpt.isPresent()) {
                 CostFactor conflict = conflictOpt.get();
