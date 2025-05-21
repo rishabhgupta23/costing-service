@@ -12,12 +12,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class TemplateDto {
     private Long templateId;
-    private String name;
+    private String templateName;
 
         public static TemplateDto entityToDto(Template template) {
         return TemplateDto.builder()
                 .templateId(template.getTemplateId())
-                .name(template.getName())
+                .templateName(template.getTemplateName())
                 .build();
     }
 }

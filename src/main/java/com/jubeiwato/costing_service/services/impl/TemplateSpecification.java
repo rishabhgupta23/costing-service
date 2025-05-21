@@ -10,7 +10,7 @@ import com.jubeiwato.costing_service.entities.Template;
 import jakarta.persistence.criteria.Predicate;
 
 public class TemplateSpecification {
-     public static Specification<Template> getfilteredTemplates(Long companyId, String name) {
+     public static Specification<Template> getfilteredTemplates(Long companyId, String templateName) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -18,10 +18,10 @@ public class TemplateSpecification {
                 predicates.add(criteriaBuilder.equal(root.get("company").get("companyId"), companyId));
             }
 
-            if (name != null && !name.isEmpty()) {
+            if (templateName != null && !templateName.isEmpty()) {
                 predicates.add(criteriaBuilder.like(
-                        criteriaBuilder.lower(root.get("name")),
-                        "%" + name.toLowerCase() + "%"));
+                        criteriaBuilder.lower(root.get("templateName")),
+                        "%" + templateName.toLowerCase() + "%"));
             }
 
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));

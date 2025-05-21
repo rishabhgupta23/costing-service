@@ -38,15 +38,15 @@ public class TemplateController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiPageResponseDto<List<TemplateDto>>> getAllTemplates( @RequestParam(required = false) String name,
+    public ResponseEntity<ApiPageResponseDto<List<TemplateDto>>> getAllTemplates( @RequestParam(required = false) String templateName,
             @RequestParam(defaultValue = "0") int pageNo,
             @RequestParam(defaultValue = "10") int pageSize,
-            @RequestParam(defaultValue = "name") String sortColumn,
+            @RequestParam(defaultValue = "templateName") String sortColumn,
             @RequestParam(defaultValue = "ASC") Sorting sortMode,
             @AuthenticationPrincipal User authenticatedUser) {
         Long companyId = authenticatedUser.getCompany().getCompanyId();
                 ApiPageResponseDto<List<TemplateDto>> response = templateService.getAllTemplates(
-                companyId, name, pageNo, pageSize, sortColumn, sortMode);
+                companyId, templateName, pageNo, pageSize, sortColumn, sortMode);
         return ResponseEntity.ok(response);
     }
 

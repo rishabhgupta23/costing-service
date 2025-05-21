@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class TemplateResponseDto {
     private Long templateId;
-    private String name;
+    private String templateName;
     private List<PartAttributeDto> partAttributes;
 }
 

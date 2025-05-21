@@ -38,7 +38,7 @@ public class TemplateServiceImpl implements TemplateService {
     private final TemplatePartAttributeRepository templatePartAttributeRepository;
 
     private void validateTemplateInput(TemplateRequestDto dto) {
-        if (dto.getName() == null || dto.getName().trim().isEmpty()) {
+        if (dto.getTemplateName() == null || dto.getTemplateName().trim().isEmpty()) {
             throw new AppException(ErrorMessageConstant.TEMPLATE_MUST_BE_NOTNULL, HttpStatus.BAD_REQUEST);
         }
         if (dto.getPartAttributes() == null || dto.getPartAttributes().isEmpty()) {
@@ -54,10 +54,10 @@ public class TemplateServiceImpl implements TemplateService {
                     .orElseThrow(() -> new AppException(
                             ErrorMessageConstant.INVALID_COMPANY,
                             HttpStatus.BAD_REQUEST));
-        checkIfTemplateNameExists(dto.getName(), company);
+        checkIfTemplateNameExists(dto.getTemplateName(), company);
 
         Template temp = Template.builder()
-                .name(dto.getName())
+                .templateName(dto.getTemplateName())
                 .company(company)
                 .build();
                 
@@ -76,7 +76,7 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
     private void checkIfTemplateNameExists(String name, Company company) {
-        boolean exists = templateRepository.existsByNameIgnoreCaseAndCompany(name.trim(), company);
+        boolean exists = templateRepository.existsBytemplateNameIgnoreCaseAndCompany(name.trim(), company);
         if (exists) {
                 throw new AppException(ErrorMessageConstant.TEMPLATE_ALREADY_EXISTS, HttpStatus.BAD_REQUEST);
         }
@@ -140,7 +140,7 @@ public class TemplateServiceImpl implements TemplateService {
             .build();
 }
 private Template getValidatedTemplate(Long templateId, Long companyId) {
-        return templateRepository.findAllByTemplateIdAndCompany_CompanyIdAndDeleteFlag(templateId, companyId, 0)
+        return templateRepository.findAllByTemplateIdAndCompany_CompanyId(templateId, companyId)
                 .orElseThrow(() -> new AppException(
                         ErrorMessageConstant.TEMPLATE_NOT_FOUND,
                         HttpStatus.NOT_FOUND));
@@ -156,7 +156,7 @@ public TemplateResponseDto getTemplateById(Long templateId, Long companyId) {
 
         return TemplateResponseDto.builder()
                 .templateId(template.getTemplateId())
-                .name(template.getName())
+                .templateName(template.getTemplateName())
                 .partAttributes(partAttributes)
                 .build();
     }
@@ -169,10 +169,10 @@ public TemplateResponseDto updateTemplate(Long templateId, TemplateRequestDto dt
 
 
         Template template = getValidatedTemplate(templateId, companyId);
-    String newName = dto.getName().trim();
-    if (!template.getName().equalsIgnoreCase(newName)) {
+    String newName = dto.getTemplateName().trim();
+    if (!template.getTemplateName().equalsIgnoreCase(newName)) {
         checkIfTemplateNameExists(newName, template.getCompany());
-        template.setName(newName);
+        template.setTemplateName(newName);
     }
 
     List<PartAttribute> validAttributes = getValidPartAttributes(dto.getPartAttributes(),template.getCompany());
@@ -194,7 +194,7 @@ public TemplateResponseDto updateTemplate(Long templateId, TemplateRequestDto dt
     .toList();
     return TemplateResponseDto.builder()
             .templateId(updated.getTemplateId())
-            .name(updated.getName())
+            .templateName(updated.getTemplateName())
             .partAttributes(partAttributes)
             .build();
 }

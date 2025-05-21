@@ -7,7 +7,6 @@ import lombok.Data;
 @Data
 @Builder
 @AllArgsConstructor
-@Builder
 public class GeneralResponseDto {
     private String message;
     private int status;

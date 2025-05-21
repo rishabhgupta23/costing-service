@@ -17,7 +17,7 @@ import java.util.List;
 public class TemplateRequestDto {
 
     @NotBlank(message = "Template name must not be blank")
-    private String name;
+    private String templateName;
 
     @NotNull(message = "Part attributes must not be null")
     @NotEmpty(message = "Part attributes must not be empty")

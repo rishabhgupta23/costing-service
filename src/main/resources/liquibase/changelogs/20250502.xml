@@ -9,7 +9,7 @@
             <sql>
                 CREATE TABLE IF NOT EXISTS app.template (
                     template_id BIGSERIAL PRIMARY KEY,
-                    name VARCHAR(255) NOT NULL,
+                    template_name VARCHAR(255) NOT NULL,
                     company_id BIGINT NOT NULL,
                     delete_flag INTEGER DEFAULT 0,
                     created_by BIGINT,
@@ -20,7 +20,7 @@
                     CONSTRAINT fk_template_company FOREIGN KEY (company_id)
                         REFERENCES app.company(company_id) ON DELETE CASCADE,
         
-                    CONSTRAINT uq_template_name_company UNIQUE (name, company_id)
+                    CONSTRAINT uq_template_name_company UNIQUE (template_name, company_id)
                 );
             </sql>
             <rollback>
