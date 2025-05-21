@@ -17,7 +17,7 @@ public class ErrorMessageConstant {
     public static final String INVALID_PRICE_MODE = "Invalid price mode provided.";
     public static final String VENDOR_DOES_NOT_EXIST = "Vendor does not exist";
     public static final String COMPANY_DOES_NOT_EXIST = "Company does not exist";
-
+    public static final String PART_ATTRIBUTE_NOT_NULL = "Part attribute name must not be null or empty";
     public static final String JWT_TOKEN_EXPIRED = "JWT token has expired";
     public static final String UNEXPECTED_ERROR_OCCURED = "unexpected error occured";
     public static final String JWT_TOKEN_MISSING = "JWT token is missing";
@@ -41,11 +41,17 @@ public class ErrorMessageConstant {
     public static final String COST_FACTOR_DOES_NOT_EXIST = "Costfactor does not exist";
     public static final String SUPER_ADMIN_CREATION_ERROR = "Super Admins cannot be created or updated";
     public static final String ADMIN_CREATION_RESTRICTED = "Admins cannot be created or updated";
-    public static final String CATEGORY_ALREADY_EXISTS_TEMPLATE = "Category with name '%s' already exists";   
+    public static final String ATTRIBUTE_NOT_FOUND = "Part attribute not found.";
+    public static final String ATTRIBUTE_MARKED_DELETED = "Part attribute is marked as deleted and cannot be updated.";
+    public static final String ATTRIBUTE_ALREADY_EXISTS = "Attribute with the same name already exists.";
+    public static final String UPDATE_NOT_ALLOWED_SOFT_DELETED = "Update not allowed. A soft-deleted part attribute with the name '%s' already exists.";
+
+    public static final String CATEGORY_ALREADY_EXISTS_TEMPLATE = "Category with categoryName '%s' already exists";
+
     public static final String COST_FACTOR_ALREADY_EXISTS_TEMPLATE = "Cost factor with name '%s' already exists";
     public static final String COST_FACTOR_CREATED = "Cost Factor created successfully";
-    public static final String INVALID_COST_FACTOR= "Cost Factor can not be empty or null";
-    public static final String COST_FACTOR_SOFT_DELETED_EXISTS_TEMPLATE ="A deactivated cost factor with name '%s' already exists. To activate it, please create a cost factor with this name.";
+    public static final String INVALID_COST_FACTOR = "Cost Factor can not be empty or null";
+    public static final String COST_FACTOR_SOFT_DELETED_EXISTS_TEMPLATE = "A deactivated cost factor with name '%s' already exists. To activate it, please create a cost factor with this name.";
 
     private ErrorMessageConstant() {
 
