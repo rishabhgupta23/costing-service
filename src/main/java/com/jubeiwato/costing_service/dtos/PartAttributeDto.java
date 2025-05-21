@@ -12,12 +12,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class PartAttributeDto {
     private Long attributeId;
-    private String name;
+    private String attributeName;
 
     public static PartAttributeDto entityToDto(PartAttribute partAttribute) {
         return PartAttributeDto.builder()
                 .attributeId(partAttribute.getAttributeId())
-                .name(partAttribute.getName())
+                .attributeName(partAttribute.getAttributeName())
                 .build();
     }
 }

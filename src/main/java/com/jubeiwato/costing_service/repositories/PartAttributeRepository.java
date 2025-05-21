@@ -15,8 +15,9 @@ import java.util.Optional;
 @Repository
 public interface PartAttributeRepository extends JpaRepository<PartAttribute, Long> {
 
-    Optional<PartAttribute> findAllByAttributeIdAndCompany_CompanyIdAndDeleteFlag(Long attributeId, Long companyId,
-            Integer deleteFlag);
+        Optional<PartAttribute> findByAttributeNameAndCompany_CompanyIdAndDeleteFlag(String attributeName,
+                        Long companyId,
+                        Integer deleteFlag);
 
     Optional<PartAttribute> findByAttributeIdAndCompany_CompanyId(Long attributeId, Long companyId);
         List<PartAttribute> findByNameInIgnoreCaseAndCompany(List<String> names, Company company);
@@ -25,4 +26,6 @@ public interface PartAttributeRepository extends JpaRepository<PartAttribute, Lo
     boolean existsByNameAndCompany_CompanyIdAndDeleteFlag(String name, Long companyId, Integer deleteFlag);
 
     List<PartAttribute> findByAttributeIdInAndCompany(List<Long> distinctIds, Company companyId);
+        Optional<PartAttribute> findByAttributeNameAndCompany_CompanyId(String attributeName, Long companyId);
+
 }

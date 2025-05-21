@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+      
+
+        <changeSet id="20250427" author="Anusha">
+            <sql>
+                ALTER TABLE app.cost_factor 
+                ADD CONSTRAINT cost_factor_company_name_unique 
+                UNIQUE (factor_name, company_id);
+            </sql>
+        
+            <rollback>
+                ALTER TABLE app.cost_factor 
+                DROP CONSTRAINT IF EXISTS cost_factor_company_name_unique;
+            </rollback>
+        </changeSet>
+  
+
+</databaseChangeLog>

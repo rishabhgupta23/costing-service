@@ -2,6 +2,7 @@ package com.jubeiwato.costing_service.dtos;
 
 import com.jubeiwato.costing_service.entities.CostFactor;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

@@ -1,364 +1,353 @@
-// package com.services;
-
-// import static org.mockito.ArgumentMatchers.any;
-// import static org.mockito.Mockito.*;
-// import java.util.List;
-// import java.util.Optional;
-// import com.jubeiwato.costing_service.authentication.config.AppException;
-// import static org.junit.jupiter.api.Assertions.*;
-// import org.junit.jupiter.api.BeforeEach;
-// import org.junit.jupiter.api.Test;
-// import org.springframework.test.util.ReflectionTestUtils;
-// import org.springframework.http.HttpStatus;
-
-// import com.jubeiwato.costing_service.entities.Company;
-// import com.jubeiwato.costing_service.entities.PartAttribute;
-// import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
-// import com.jubeiwato.costing_service.dtos.PartAttributeDto;
-// import com.jubeiwato.costing_service.repositories.CompanyRepository;
-// import com.jubeiwato.costing_service.repositories.PartAttributeRepository;
-// import com.jubeiwato.costing_service.services.impl.PartAttributeServiceImpl;
-// import com.jubeiwato.costing_service.utils.ValidationUtil;
-// import com.jubeiwato.costing_service.constants.ErrorMessageConstant;
-// import com.jubeiwato.costing_service.constants.Sorting;
-// import org.springframework.data.domain.Pageable;
-// import org.springframework.beans.factory.annotation.Autowired;
-// import org.springframework.data.domain.Page;
-// import org.springframework.data.domain.PageImpl;
-// import org.springframework.data.jpa.domain.Specification;
-// import org.mockito.*;
-
-// public class PartAttributeServiceTest {
-
-//     @Mock
-//     private PartAttributeRepository partAttributeRepository;
-
-//     @Mock
-//     private CompanyRepository companyRepository;
-//     @InjectMocks
-//     private PartAttributeServiceImpl partAttributeService;
-//     @Autowired
-
-//     private PartAttributeDto partAttributeDto;
-//     private Company company;
-//     private Long companyId;
-//     private PartAttribute partAttribute;
-
-//     @BeforeEach
-//     void setUp() {
-//         MockitoAnnotations.openMocks(this);
-//         companyId = 1L;
-
-//         company = new Company();
-//         company.setCompanyId(1L);
-//         // Sample data for the tests
-//         partAttributeDto = new PartAttributeDto();
-//         partAttributeDto.setName("Test Attribute");
-
-//         partAttribute = new PartAttribute();
-//         partAttribute.setName("Test Attribute");
-//         partAttribute.setCompany(company);
-//         partAttribute.setAttributeId(1L);
-
-//         ReflectionTestUtils.setField(partAttributeService, "companyRepository", companyRepository);
-//         ReflectionTestUtils.setField(partAttributeService, "partAttributeRepository", partAttributeRepository);
-
-//     }
-
-//     @Test
-//     void testCreatePartAttribute_WithNullName_ShouldThrowException() {
-//         partAttributeDto.setName(null);
-
-//         AppException exception = assertThrows(AppException.class, () -> {
-//             partAttributeService.createPartAttribute(partAttributeDto, 1L);
-//         });
-
-//         assertEquals(ErrorMessageConstant.PARTATTRIBUTE_MUST_BE_NOTNULL, exception.getMessage());
-//         assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
-//     }
-
-//     @Test
-//     void testCreatePartAttribute_WithEmptyName_ShouldThrowException() {
-//         partAttributeDto.setName("  ");
-
-//         AppException exception = assertThrows(AppException.class, () -> {
-//             partAttributeService.createPartAttribute(partAttributeDto, 1L);
-//         });
-
-//         assertEquals(ErrorMessageConstant.PARTATTRIBUTE_MUST_BE_NOTNULL, exception.getMessage());
-//         assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
-//     }
-
-//     @Test
-//     void testCreatePartAttribute_WithInvalidCompany_ShouldThrowException() {
-//         when(companyRepository.findById(1L)).thenReturn(Optional.empty());
-
-//         AppException exception = assertThrows(AppException.class, () -> {
-//             partAttributeService.createPartAttribute(partAttributeDto, 1L);
-//         });
-
-//         assertEquals(ErrorMessageConstant.INVALID_COMPANY, exception.getMessage());
-//         assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
-//     }
-
-//     @Test
-//     void testCreatePartAttribute_WhenAttributeExists_ShouldThrowException() {
-//         // Arrange
-//         when(companyRepository.findById(companyId)).thenReturn(Optional.of(company));
-//         when(partAttributeRepository.existsByNameAndCompany_CompanyId(partAttributeDto.getName(), companyId))
-//                 .thenReturn(true);
-
-//         // Act & Assert
-//         AppException thrown = assertThrows(AppException.class, () -> {
-//             partAttributeService.createPartAttribute(partAttributeDto, companyId);
-//         });
-
-//         // Verify exception details
-//         assertEquals(ErrorMessageConstant.ATTRIBUTE_ALREADY_EXISTS, thrown.getMessage());
-//         assertEquals(HttpStatus.CONFLICT, thrown.getStatus());
-
-//         // Verify that save method was not called
-//         verify(partAttributeRepository, times(0)).save(any());
-//     }
-
-//     @Test
-//     void testUpdatePartAttribute_Success() {
-//         // Mock repository to return an existing partAttribute
-//         when(partAttributeRepository.findById(1L)).thenReturn(Optional.of(partAttribute));
-//         when(partAttributeRepository.save(any(PartAttribute.class))).thenReturn(partAttribute);
-
-//         // Call the update method
-//         PartAttribute updatedAttribute = partAttributeService.updatePartAttribute(1L, partAttributeDto, companyId);
-
-//         // Verify interactions
-//         verify(partAttributeRepository).findById(1L);
-//         verify(partAttributeRepository).save(any(PartAttribute.class));
-
-//         // Assert that the name was updated
-//         assertEquals("Test Attribute", updatedAttribute.getName());
-//     }
-
-//     @Test
-//     void testGetPartAttributeById_WhenNotFound_ShouldThrowAppException() {
-//         // Arrange
-//         Long attributeId = 1L;
-
-//         when(partAttributeRepository.findById(attributeId)).thenReturn(Optional.empty());
-
-//         AppException exception = assertThrows(AppException.class, () -> {
-//             partAttributeService.getPartAttributeById(attributeId);
-//         });
-
-//         assertEquals(ErrorMessageConstant.ATTRIBUTE_NOT_FOUND, exception.getMessage());
-//         assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
-
-//         verify(partAttributeRepository, times(1)).findById(attributeId);
-//     }
-
-//     @Test
-//     void testGetPartAttributeList_SortingDescending() {
-//         // Arrange
-//         Long companyId = 1L;
-//         String name = "testName";
-//         int pageNo = 0;
-//         int pageSize = 10;
-//         String sortColumn = "name";
-//         Sorting sortMode = Sorting.DESC;
-
-//         // Mock a Page of PartAttribute
-//         PartAttribute partAttribute = new PartAttribute();
-//         partAttribute.setName("Test Attribute");
-//         partAttribute.setCompany(new Company());
-
-//         List<PartAttribute> partAttributes = List.of(partAttribute);
-//         Page<PartAttribute> page = new PageImpl<>(partAttributes);
-
-//         when(partAttributeRepository.findAll(any(Specification.class), any(Pageable.class)))
-//                 .thenReturn(page);
-
-//         // Act
-//         ApiPageResponseDto<List<PartAttributeDto>> response = partAttributeService.getPartAttributeList(
-//                 companyId, name, pageNo, pageSize, sortColumn, sortMode);
-
-//         // Assert
-//         assertNotNull(response);
-//         assertEquals(1, response.getData().size());
-//         assertEquals("Test Attribute", response.getData().get(0).getName());
-
-//         verify(partAttributeRepository, times(1))
-//                 .findAll(any(Specification.class), any(Pageable.class));
-//     }
-
-//     @Test
-//     void testUpdatePartAttribute_InvalidName_ShouldThrowAppException() {
-//         // Test with an invalid (null or empty) name
-//         partAttributeDto.setName(null);
-
-//         // Mock repository to return an existing partAttribute
-//         when(partAttributeRepository.findById(1L)).thenReturn(Optional.of(partAttribute));
-
-//         // Call the update method and assert that the exception is thrown
-//         AppException exception = assertThrows(AppException.class,
-//                 () -> partAttributeService.updatePartAttribute(1L, partAttributeDto, companyId));
-
-//         // Verify the exception message
-//         assertEquals(ErrorMessageConstant.PARTATTRIBUTE_MUST_BE_NOTNULL, exception.getMessage());
-//         assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
-//     }
-
-//     @Test
-//     void testUpdatePartAttribute_InvalidCompany_ShouldThrowAppException() {
-//         // Create a different company ID
-//         Long invalidCompanyId = 2L;
-
-//         // Mock repository to return an existing partAttribute
-//         when(partAttributeRepository.findById(1L)).thenReturn(Optional.of(partAttribute));
-
-//         // Call the update method and assert that the exception is thrown
-//         AppException exception = assertThrows(AppException.class,
-//                 () -> partAttributeService.updatePartAttribute(1L, partAttributeDto, invalidCompanyId));
-
-//         // Verify the exception message
-//         assertEquals("Invalid company", exception.getMessage());
-//         assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
-//     }
-
-//     @Test
-//     void testUpdatePartAttribute_AttributeNotFound_ShouldThrowAppException() {
-//         // Mock repository to return an empty Optional (attribute not found)
-//         when(partAttributeRepository.findById(1L)).thenReturn(Optional.empty());
-
-//         // Call the update method and assert that the exception is thrown
-//         AppException exception = assertThrows(AppException.class,
-//                 () -> partAttributeService.updatePartAttribute(1L, partAttributeDto, companyId));
-
-//         // Verify the exception message
-//         assertEquals("Part attribute not found.", exception.getMessage());
-//         assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
-//     }
-
-//     @Test
-//     void testGetPartAttributeList_ValiidInput() {
-//         List<PartAttribute> partAttributes = List.of(partAttribute); // Mocked entity list
-//         Page<PartAttribute> page = new PageImpl<>(partAttributes); // ✅ Fix: Now 'page' is defined
-
-//         when(partAttributeRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(page);
-
-//         ApiPageResponseDto<List<PartAttributeDto>> result = partAttributeService.getPartAttributeList(
-//                 1L, "Test", 0, 10, "name", Sorting.ASC);
-
-//         assertNotNull(result);
-//         assertEquals(1, result.getData().size());
-//         assertEquals("Test Attribute", result.getData().get(0).getName());
-//     }
-
-//     @Test
-//     void testGetPartAttributeList_InvalidInput_ShouldThrowAppException() {
-//         try (MockedStatic<ValidationUtil> mockedValidationUtil = mockStatic(ValidationUtil.class)) {
-//             mockedValidationUtil.when(() -> ValidationUtil.isValidInput("InvalidName"))
-//                     .thenReturn(false); // Simulate invalid input
-
-//             AppException exception = assertThrows(AppException.class,
-//                     () -> partAttributeService.getPartAttributeList(1L, "InvalidName", 0, 10, "name", Sorting.ASC));
-
-//             assertEquals(ErrorMessageConstant.INVALID_INPUT, exception.getMessage());
-//             assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
-//         }
-//     }
-
-//     @Test
-//     void testDeletePartAttribute() {
-//         // Mock the method that validates and retrieves the PartAttribute
-//         when(partAttributeRepository.findById(1L)).thenReturn(Optional.of(partAttribute));
-
-//         // Call the service method to delete
-//         partAttributeService.deletePartAttribute(1L);
-
-//         // Verify that the delete method was called on the repository with the correct
-//         // argument
-//         verify(partAttributeRepository, times(1)).delete(partAttribute);
-//     }
-
-//     @Test
-//     void testCreatePartAttribute_Success() {
-//         // Arrange
-//         Company company = new Company();
-//         company.setCompanyId(companyId);
-//         when(companyRepository.findById(companyId)).thenReturn(Optional.of(company)); // Mock company fetch
-//         when(partAttributeRepository.existsByNameAndCompany_CompanyId(partAttributeDto.getName(), companyId))
-//                 .thenReturn(false); // No existing attribute with the same name
-
-//         PartAttribute savedPartAttribute = PartAttribute.builder()
-//                 .name(partAttributeDto.getName())
-//                 .company(company)
-//                 .build();
-
-//         when(partAttributeRepository.save(any(PartAttribute.class))).thenReturn(savedPartAttribute); // Mock save
-
-//         // Act
-//         PartAttribute result = partAttributeService.createPartAttribute(partAttributeDto, companyId);
-
-//         // Assert
-//         assertNotNull(result); // Make sure the result is not null
-//         assertEquals(partAttributeDto.getName(), result.getName()); // Validate name
-//         assertEquals(companyId, result.getCompany().getCompanyId()); // Validate company
-//         verify(partAttributeRepository, times(1)).save(any(PartAttribute.class)); // Ensure save is called
-//     }
-
-//     @Test
-//     void testGetPartAttributeById_WhenFound_ShouldReturnPartAttribute() {
-//         // Arrange
-//         Long attributeId = 1L;
-//         PartAttribute partAttribute = new PartAttribute();
-//         partAttribute.setAttributeId(attributeId);
-//         partAttribute.setName("Test Attribute");
-
-//         // Mock the getValidatedPartAttribute method (if it's a private method)
-//         when(partAttributeRepository.findById(attributeId)).thenReturn(Optional.of(partAttribute)); // Mock the
-//                                                                                                     // repository method
-
-//         // Act
-//         PartAttribute result = partAttributeService.getPartAttributeById(attributeId);
-
-//         // Assert
-//         assertNotNull(result);
-//         assertEquals(attributeId, result.getAttributeId()); // Validate the returned ID
-//         assertEquals("Test Attribute", result.getName()); // Validate the returned name
-//     }
-
-//     @Test
-//     void testGetPartAttributeById_WhenNotFound_ShouldThrowException() {
-//         // Arrange
-//         Long attributeId = 1L;
-
-//         // Mock repository to return empty
-//         when(partAttributeRepository.findById(attributeId)).thenReturn(Optional.empty());
-
-//         // Act & Assert
-//         AppException exception = assertThrows(AppException.class, () -> {
-//             partAttributeService.getPartAttributeById(attributeId);
-//         });
-
-//         assertEquals(ErrorMessageConstant.ATTRIBUTE_NOT_FOUND, exception.getMessage());
-//         assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
-//     }
-
-//     @Test
-//     void testDeletePartAttribute_WhenNotFound_ShouldThrowException() {
-//         // Mock the method to return empty, simulating the case where PartAttribute is
-//         // not found
-//         when(partAttributeRepository.findById(1L)).thenReturn(Optional.empty());
-
-//         // Verify that the exception is thrown when trying to delete a non-existent
-//         // PartAttribute
-//         AppException exception = assertThrows(AppException.class, () -> {
-//             partAttributeService.deletePartAttribute(1L);
-//         });
-
-//         // Check that the exception message and status are as expected
-//         assertEquals("Part attribute not found.", exception.getMessage()); // Adjust message based on your
-//                                                                            // implementation
-//         assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
-//     }
-
-// }
+package com.services;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.*;
+import java.util.List;
+import java.util.Optional;
+
+import com.jubeiwato.costing_service.authentication.config.AppException;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.http.HttpStatus;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
+import com.jubeiwato.costing_service.entities.Company;
+import com.jubeiwato.costing_service.entities.PartAttribute;
+import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
+import com.jubeiwato.costing_service.dtos.PartAttributeDto;
+import com.jubeiwato.costing_service.repositories.CompanyRepository;
+import com.jubeiwato.costing_service.repositories.PartAttributeRepository;
+import com.jubeiwato.costing_service.services.impl.PartAttributeServiceImpl;
+import com.jubeiwato.costing_service.constants.DeleteFlag;
+import com.jubeiwato.costing_service.constants.ErrorMessageConstant;
+import com.jubeiwato.costing_service.constants.Sorting;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.jpa.domain.Specification;
+import org.mockito.*;
+
+public class PartAttributeServiceTest {
+
+    @Mock
+    private PartAttributeRepository partAttributeRepository;
+
+    @Mock
+    private CompanyRepository companyRepository;
+    @InjectMocks
+    private PartAttributeServiceImpl partAttributeService;
+
+    private PartAttributeDto partAttributeDto;
+    private Company company;
+    private Long companyId = 1L;
+    private PartAttribute partAttribute;
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+        company = new Company();
+        company.setCompanyId(companyId);
+
+        // This is the existing PartAttribute in DB
+        partAttribute = new PartAttribute();
+        partAttribute.setAttributeId(1L);
+        partAttribute.setCompany(company);
+        partAttribute.setAttributeName("OldName");
+        partAttribute.setDeleteFlag(DeleteFlag.NEGATIVE.getValue());
+
+        // This is the DTO with new attribute data for update
+        partAttributeDto = new PartAttributeDto();
+        partAttributeDto.setAttributeName("Test Attribute");
+
+        // Inject mocks if not using @InjectMocks (optional if you already have
+        // @InjectMocks)
+        ReflectionTestUtils.setField(partAttributeService, "partAttributeRepository", partAttributeRepository);
+        ReflectionTestUtils.setField(partAttributeService, "companyRepository", companyRepository);
+    }
+
+    @Test
+    void testCreatePartAttribute_AttributeNameNull_ThrowsException() {
+        PartAttributeDto dto = new PartAttributeDto();
+        dto.setAttributeName(null);
+
+        AppException ex = assertThrows(AppException.class, () -> {
+            partAttributeService.createPartAttribute(dto, 1L);
+        });
+
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+        assertEquals(ErrorMessageConstant.PART_ATTRIBUTE_NOT_NULL, ex.getMessage());
+    }
+
+    @Test
+    void testCreatePartAttribute_CompanyNotFound_ThrowsException() {
+        PartAttributeDto dto = new PartAttributeDto();
+        dto.setAttributeName("Color");
+
+        when(companyRepository.findById(anyLong())).thenReturn(Optional.empty());
+
+        AppException ex = assertThrows(AppException.class, () -> {
+            partAttributeService.createPartAttribute(dto, 1L);
+        });
+
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+        assertEquals(ErrorMessageConstant.INVALID_COMPANY, ex.getMessage());
+    }
+
+    @Test
+    void testCreatePartAttribute_AttributeExistsAndNotDeleted_ThrowsException() {
+        partAttributeDto.setAttributeName("Color");
+
+        Company company = new Company();
+        company.setCompanyId(companyId);
+
+        PartAttribute existing = new PartAttribute();
+        existing.setDeleteFlag(DeleteFlag.NEGATIVE.getValue()); // Means active (not deleted)
+
+        when(companyRepository.findById(companyId)).thenReturn(Optional.of(company));
+        when(partAttributeRepository.findByAttributeNameAndCompany_CompanyId("Color", companyId))
+                .thenReturn(Optional.of(existing));
+
+        AppException ex = assertThrows(AppException.class, () -> {
+            partAttributeService.createPartAttribute(partAttributeDto, companyId);
+        });
+
+        assertEquals(HttpStatus.CONFLICT, ex.getStatus());
+        assertEquals(ErrorMessageConstant.ATTRIBUTE_ALREADY_EXISTS, ex.getMessage());
+
+        verify(companyRepository, times(1)).findById(companyId);
+        verify(partAttributeRepository, times(1)).findByAttributeNameAndCompany_CompanyId("Color", companyId);
+    }
+
+    @Test
+    void testCreatePartAttribute_AttributeExistsButDeleted_UpdatesAndReturns() {
+        PartAttributeDto dto = new PartAttributeDto();
+        dto.setAttributeName("Color");
+
+        Company company = new Company();
+        company.setCompanyId(1L);
+
+        PartAttribute existing = new PartAttribute();
+        existing.setDeleteFlag(DeleteFlag.POSITIVE.getValue()); // Deleted flag
+
+        when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
+        when(partAttributeRepository.findByAttributeNameAndCompany_CompanyId("Color", 1L))
+                .thenReturn(Optional.of(existing));
+
+        when(partAttributeRepository.save(existing)).thenReturn(existing);
+
+        PartAttribute result = partAttributeService.createPartAttribute(dto, 1L);
+
+        assertEquals(DeleteFlag.NEGATIVE.getValue(), result.getDeleteFlag());
+        verify(partAttributeRepository, times(1)).save(existing);
+    }
+
+    @Test
+    void testCreatePartAttribute_NewAttribute_CreatesAndReturns() {
+        PartAttributeDto dto = new PartAttributeDto();
+        dto.setAttributeName("Color");
+
+        Company company = new Company();
+        company.setCompanyId(1L);
+
+        when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
+        when(partAttributeRepository.findByAttributeNameAndCompany_CompanyId("Color", 1L))
+                .thenReturn(Optional.empty());
+
+        PartAttribute savedAttribute = new PartAttribute();
+        savedAttribute.setAttributeName("Color");
+        savedAttribute.setCompany(company);
+
+        when(partAttributeRepository.save(any(PartAttribute.class))).thenReturn(savedAttribute);
+
+        PartAttribute result = partAttributeService.createPartAttribute(dto, 1L);
+
+        assertEquals("Color", result.getAttributeName());
+        assertEquals(company, result.getCompany());
+        verify(partAttributeRepository, times(1)).save(any(PartAttribute.class));
+    }
+
+    @Test
+    void testGetPartAttributeList_Success() {
+        Long companyId = 1L;
+        String attributeName = "color";
+        int pageNo = 0;
+        int pageSize = 2;
+        String sortColumn = "attributeName";
+        Sorting sortMode = Sorting.ASC;
+
+        // Mocked PartAttribute entities
+        PartAttribute partAttr1 = new PartAttribute();
+        partAttr1.setAttributeName("Color");
+        partAttr1.setAttributeId(1L);
+        partAttr1.setCompany(company);
+
+        PartAttribute partAttr2 = new PartAttribute();
+        partAttr2.setAttributeName("Size");
+        partAttr2.setAttributeId(2L);
+        partAttr2.setCompany(company);
+
+        List<PartAttribute> partAttributes = List.of(partAttr1, partAttr2);
+
+        Page<PartAttribute> page = new PageImpl<>(partAttributes,
+                PageRequest.of(pageNo, pageSize, Sort.by(sortColumn)),
+                partAttributes.size());
+
+        // Mock repository call
+        when(partAttributeRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(page);
+
+        // Call method under test
+        ApiPageResponseDto<List<PartAttributeDto>> response = partAttributeService
+                .getPartAttributeList(companyId, attributeName, pageNo, pageSize, sortColumn, sortMode);
+
+        // Validate the response content
+        assertNotNull(response);
+        assertNotNull(response.getData());
+        assertEquals(2, response.getData().size());
+        assertEquals("Color", response.getData().get(0).getAttributeName());
+        assertEquals("Size", response.getData().get(1).getAttributeName());
+
+        // Validate paging info
+        assertEquals(1, response.getPageInfo().getTotalPages());
+        assertEquals(pageNo, response.getPageInfo().getPageNumber());
+        assertEquals(pageSize, response.getPageInfo().getPageSize());
+        assertEquals(2, response.getPageInfo().getTotalRecords());
+    }
+
+    @Test
+    void testGetPartAttributeList_ValidInput_ReturnsPage() {
+        PartAttribute partAttribute = new PartAttribute();
+        partAttribute.setAttributeName("Color");
+        List<PartAttribute> list = List.of(partAttribute);
+        Page<PartAttribute> page = new PageImpl<>(list);
+
+        when(partAttributeRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(page);
+
+        ApiPageResponseDto<List<PartAttributeDto>> response = partAttributeService.getPartAttributeList(
+                1L,
+                "Color",
+                0,
+                10,
+                "attributeName",
+                Sorting.ASC);
+
+        assertNotNull(response);
+        assertFalse(response.getData().isEmpty());
+        assertEquals("Color", response.getData().get(0).getAttributeName());
+    }
+
+    @Test
+    void testGetPartAttributeById_Valid() {
+        PartAttribute attribute = new PartAttribute();
+        attribute.setAttributeId(1L);
+        attribute.setCompany(company);
+
+        when(partAttributeRepository.findByAttributeIdAndCompany_CompanyId(1L, 1L)).thenReturn(Optional.of(attribute));
+
+        PartAttribute result = partAttributeService.getPartAttributeById(1L, 1L);
+
+        assertNotNull(result);
+        assertEquals(1L, result.getAttributeId());
+    }
+
+    @Test
+    void testUpdatePartAttribute_NameConflict_ThrowsException() {
+        Long attributeId = 1L;
+        Long companyId = 1L;
+        String newName = "Color";
+
+        PartAttribute existing = new PartAttribute();
+        existing.setAttributeId(attributeId);
+        existing.setAttributeName("Size");
+        existing.setDeleteFlag(DeleteFlag.NEGATIVE.getValue());
+        existing.setCompany(company);
+
+        PartAttributeDto dto = new PartAttributeDto();
+        dto.setAttributeName(newName);
+
+        when(partAttributeRepository.findByAttributeIdAndCompany_CompanyId(attributeId, companyId))
+                .thenReturn(Optional.of(existing));
+        when(partAttributeRepository.findByAttributeNameAndCompany_CompanyIdAndDeleteFlag(newName, companyId,
+                DeleteFlag.NEGATIVE.getValue()))
+                .thenReturn(Optional.of(new PartAttribute())); // Simulate conflict
+
+        AppException ex = assertThrows(AppException.class, () -> {
+            partAttributeService.updatePartAttribute(attributeId, dto, companyId);
+        });
+
+        assertEquals(HttpStatus.CONFLICT, ex.getStatus());
+        assertEquals(ErrorMessageConstant.ATTRIBUTE_ALREADY_EXISTS, ex.getMessage());
+    }
+
+    @Test
+    void testUpdatePartAttribute_SuccessfulUpdate() {
+        Long attributeId = 1L;
+        when(partAttributeRepository.findByAttributeIdAndCompany_CompanyId(attributeId, companyId))
+                .thenReturn(Optional.of(partAttribute));
+
+        when(partAttributeRepository.findByAttributeNameAndCompany_CompanyIdAndDeleteFlag("NewName", companyId,
+                DeleteFlag.NEGATIVE.getValue()))
+                .thenReturn(Optional.empty());
+
+        when(partAttributeRepository.findByAttributeNameAndCompany_CompanyIdAndDeleteFlag("NewName", companyId,
+                DeleteFlag.POSITIVE.getValue()))
+                .thenReturn(Optional.empty());
+
+        when(partAttributeRepository.save(any())).thenReturn(partAttribute);
+
+        PartAttribute result = partAttributeService.updatePartAttribute(attributeId, partAttributeDto, companyId);
+
+        assertNotNull(result);
+        assertEquals("Test Attribute", result.getAttributeName());
+    }
+
+    @Test
+    void testDeletePartAttribute_Success() {
+        Long attributeId = 1L;
+        // Mocking
+        when(partAttributeRepository.findByAttributeIdAndCompany_CompanyId(attributeId, companyId))
+                .thenReturn(Optional.of(partAttribute));
+
+        // Action
+        partAttributeService.deletePartAttribute(attributeId, companyId);
+
+        // Verification
+        assertEquals(DeleteFlag.POSITIVE.getValue(), partAttribute.getDeleteFlag());
+        verify(partAttributeRepository).save(partAttribute);
+    }
+
+    @Test
+    void testDeletePartAttribute_AlreadyDeleted_ThrowsException() {
+        // Set already deleted
+        partAttribute.setDeleteFlag(DeleteFlag.POSITIVE.getValue());
+
+        Long attributeId = 1L;
+        when(partAttributeRepository.findByAttributeIdAndCompany_CompanyId(attributeId, companyId))
+                .thenReturn(Optional.of(partAttribute));
+
+        AppException exception = assertThrows(AppException.class,
+                () -> partAttributeService.deletePartAttribute(attributeId, companyId));
+
+        assertEquals(ErrorMessageConstant.ATTRIBUTE_NOT_FOUND, exception.getMessage());
+        assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
+        verify(partAttributeRepository, never()).save(any());
+    }
+
+    @Test
+    void testDeletePartAttribute_NotFound_ThrowsException() {
+        Long attributeId = 1L;
+        when(partAttributeRepository.findByAttributeIdAndCompany_CompanyId(attributeId, companyId))
+                .thenReturn(Optional.empty());
+
+        AppException exception = assertThrows(AppException.class,
+                () -> partAttributeService.deletePartAttribute(attributeId, companyId));
+
+        assertEquals(ErrorMessageConstant.ATTRIBUTE_NOT_FOUND, exception.getMessage());
+        assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
+    }
+
+}

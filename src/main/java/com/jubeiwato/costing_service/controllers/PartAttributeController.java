@@ -36,16 +36,16 @@ public class PartAttributeController {
 
     @GetMapping
     public ResponseEntity<ApiPageResponseDto<List<PartAttributeDto>>> getPartAttributeList(
-            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String attributeName,
             @RequestParam(defaultValue = "0") int pageNo,
             @RequestParam(defaultValue = "10") int pageSize,
-            @RequestParam(defaultValue = "name") String sortColumn,
+            @RequestParam(defaultValue = "attributeName") String sortColumn,
             @RequestParam(defaultValue = "ASC") Sorting sortMode,
             @AuthenticationPrincipal User authenticatedUser) {
         Long companyId = authenticatedUser.getCompany().getCompanyId();
 
         ApiPageResponseDto<List<PartAttributeDto>> response = partAttributeService.getPartAttributeList(
-                companyId, name, pageNo, pageSize, sortColumn, sortMode);
+                companyId, attributeName, pageNo, pageSize, sortColumn, sortMode);
 
         return ResponseEntity.ok(response);
     }
@@ -78,6 +78,6 @@ public class PartAttributeController {
         partAttributeService.deletePartAttribute(attributeId, companyId);
         GeneralResponseDto response = new GeneralResponseDto("PART-ATTRIBUTE deleted successfully",
                 HttpStatus.OK.value());
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 }

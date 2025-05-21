@@ -8,7 +8,7 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "part_attribute", schema = "app", uniqueConstraints = @UniqueConstraint(columnNames = { "name",
+@Table(name = "part_attribute", schema = "app", uniqueConstraints = @UniqueConstraint(columnNames = { "attribute_name",
         "company_id" }))
 public class PartAttribute extends BaseEntity {
 
@@ -17,8 +17,8 @@ public class PartAttribute extends BaseEntity {
     @Column(name = "attribute_id")
     private Long attributeId;
 
-    @Column(nullable = false)
-    private String name;
+    @Column(name = "attribute_name", nullable = false)
+    private String attributeName;
 
     @ManyToOne
     @JoinColumn(name = "company_id", referencedColumnName = "company_id", nullable = false)

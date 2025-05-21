@@ -1,6 +1,7 @@
 package com.jubeiwato.costing_service.services.impl;
 
 import com.jubeiwato.costing_service.authentication.config.AppException;
+import com.jubeiwato.costing_service.constants.DeleteFlag;
 import com.jubeiwato.costing_service.constants.ErrorMessageConstant;
 import com.jubeiwato.costing_service.constants.Sorting;
 import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
@@ -25,6 +26,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -35,7 +37,8 @@ public class PartAttributeServiceImpl implements PartAttributeService {
     private final CompanyRepository companyRepository;
 
     private PartAttribute getValidatedPartAttribute(Long attributeId, Long companyId) {
-        return partAttributeRepository.findAllByAttributeIdAndCompany_CompanyIdAndDeleteFlag(attributeId, companyId, 0)
+        return partAttributeRepository
+                .findByAttributeIdAndCompany_CompanyId(attributeId, companyId)
                 .orElseThrow(() -> new AppException(
                         ErrorMessageConstant.ATTRIBUTE_NOT_FOUND,
                         HttpStatus.NOT_FOUND));
@@ -44,24 +47,31 @@ public class PartAttributeServiceImpl implements PartAttributeService {
     @Override
     public PartAttribute createPartAttribute(PartAttributeDto partAttributeDto, Long companyId) {
 
-        if (partAttributeDto.getName() == null || partAttributeDto.getName().trim().isEmpty()) {
-            throw new AppException(ErrorMessageConstant.PARTATTRIBUTE_MUST_BE_NOTNULL, HttpStatus.BAD_REQUEST);
+        if (partAttributeDto.getAttributeName() == null || partAttributeDto.getAttributeName().trim().isEmpty()) {
+            throw new AppException(ErrorMessageConstant.PART_ATTRIBUTE_NOT_NULL, HttpStatus.BAD_REQUEST);
         }
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new AppException(
                         ErrorMessageConstant.INVALID_COMPANY,
                         HttpStatus.BAD_REQUEST));
 
-        boolean exists = partAttributeRepository
-                .existsByNameAndCompany_CompanyIdAndDeleteFlag(partAttributeDto.getName(), companyId, 0);
+        Optional<PartAttribute> existing = partAttributeRepository
+                .findByAttributeNameAndCompany_CompanyId(partAttributeDto.getAttributeName(), companyId);
 
-        if (exists) {
-            throw new AppException(
-                    ErrorMessageConstant.ATTRIBUTE_ALREADY_EXISTS, HttpStatus.CONFLICT);
+        if (existing.isPresent()) {
+            PartAttribute existingAttribute = existing.get();
+            if (existingAttribute.getDeleteFlag().equals(DeleteFlag.NEGATIVE.getValue())) {
+
+                throw new AppException(ErrorMessageConstant.ATTRIBUTE_ALREADY_EXISTS, HttpStatus.CONFLICT);
+            } else {
+
+                existingAttribute.setDeleteFlag(DeleteFlag.NEGATIVE.getValue());
+                return partAttributeRepository.save(existingAttribute);
+            }
         }
 
         PartAttribute partAttribute = PartAttribute.builder()
-                .name(partAttributeDto.getName())
+                .attributeName(partAttributeDto.getAttributeName())
                 .company(company)
                 .build();
 
@@ -69,10 +79,11 @@ public class PartAttributeServiceImpl implements PartAttributeService {
     }
 
     @Override
-    public ApiPageResponseDto<List<PartAttributeDto>> getPartAttributeList(Long companyId, String name, int pageNo,
+    public ApiPageResponseDto<List<PartAttributeDto>> getPartAttributeList(Long companyId, String attributeName,
+            int pageNo,
             int pageSize, String sortColumn, Sorting sortMode) {
 
-        if (!ValidationUtil.isValidInput(name)) {
+        if (!ValidationUtil.isValidInput(attributeName)) {
             throw new AppException(ErrorMessageConstant.INVALID_INPUT, HttpStatus.BAD_REQUEST);
         }
 
@@ -80,7 +91,8 @@ public class PartAttributeServiceImpl implements PartAttributeService {
         Sort sort = Sort.by(direction, sortColumn);
         Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
 
-        Specification<PartAttribute> spec = PartAttributeSpecification.getFilteredPartAttributes(companyId, name);
+        Specification<PartAttribute> spec = PartAttributeSpecification.getFilteredPartAttributes(companyId,
+                attributeName);
 
         Page<PartAttribute> partAttributePage = partAttributeRepository.findAll(spec, pageable);
 
@@ -112,40 +124,54 @@ public class PartAttributeServiceImpl implements PartAttributeService {
 
         PartAttribute existing = getValidatedPartAttribute(attributeId, companyId);
 
-        if (existing.getDeleteFlag() == 1) {
+        if (existing.getDeleteFlag().equals(DeleteFlag.POSITIVE.getValue())) {
             throw new AppException(ErrorMessageConstant.ATTRIBUTE_MARKED_DELETED, HttpStatus.BAD_REQUEST);
         }
 
-        if (partAttributeDto.getName() == null || partAttributeDto.getName().trim().isEmpty()) {
-            throw new AppException(ErrorMessageConstant.PARTATTRIBUTE_MUST_BE_NOTNULL, HttpStatus.BAD_REQUEST);
+        if (partAttributeDto.getAttributeName() == null || partAttributeDto.getAttributeName().trim().isEmpty()) {
+            throw new AppException(ErrorMessageConstant.PART_ATTRIBUTE_NOT_NULL, HttpStatus.BAD_REQUEST);
         }
 
-        if (!existing.getCompany().getCompanyId().equals(companyId)) {
-            throw new AppException(ErrorMessageConstant.INVALID_COMPANY, HttpStatus.BAD_REQUEST);
-        }
+        String newName = partAttributeDto.getAttributeName();
 
-        existing.setName(partAttributeDto.getName());
+        if (!existing.getAttributeName().equalsIgnoreCase(newName)) {
+
+            // Check if active attribute with the new name exists
+            Optional<PartAttribute> activeAttribute = partAttributeRepository
+                    .findByAttributeNameAndCompany_CompanyIdAndDeleteFlag(newName, companyId,
+                            DeleteFlag.NEGATIVE.getValue());
+
+            if (activeAttribute.isPresent()) {
+                // Active attribute exists with that name - conflict
+                throw new AppException(ErrorMessageConstant.ATTRIBUTE_ALREADY_EXISTS, HttpStatus.CONFLICT);
+            }
+
+            Optional<PartAttribute> softDeletedAttribute = partAttributeRepository
+                    .findByAttributeNameAndCompany_CompanyIdAndDeleteFlag(newName, companyId,
+                            DeleteFlag.POSITIVE.getValue());
+
+            if (softDeletedAttribute.isPresent()) {
+                String errorMsg = String.format(ErrorMessageConstant.UPDATE_NOT_ALLOWED_SOFT_DELETED, newName);
+                throw new AppException(errorMsg, HttpStatus.BAD_REQUEST);
+            }
+
+            existing.setAttributeName(newName);
+        }
 
         return partAttributeRepository.save(existing);
     }
 
     @Override
-    public GeneralResponseDto deletePartAttribute(Long attributeId, Long companyId) {
+    public void deletePartAttribute(Long attributeId, Long companyId) {
 
-        PartAttribute existing = partAttributeRepository.findByAttributeIdAndCompany_CompanyId(attributeId, companyId)
-                .orElseThrow(() -> new AppException(
-                        ErrorMessageConstant.ATTRIBUTE_NOT_FOUND, HttpStatus.NOT_FOUND));
-        if (existing.getDeleteFlag() != null && existing.getDeleteFlag() == 1) {
+        PartAttribute existing = getValidatedPartAttribute(attributeId, companyId);
+
+        if (existing.getDeleteFlag() != null && existing.getDeleteFlag().equals(DeleteFlag.POSITIVE.getValue())) {
             throw new AppException(ErrorMessageConstant.ATTRIBUTE_NOT_FOUND, HttpStatus.NOT_FOUND);
         }
-
-        existing.setDeleteFlag(1);
+        existing.setDeleteFlag(DeleteFlag.POSITIVE.getValue());
         partAttributeRepository.save(existing);
 
-        return GeneralResponseDto.builder()
-                .message("Part attribute deleted successfully.")
-                .status(HttpStatus.OK.value())
-                .build();
     }
 
 }
