@@ -155,9 +155,6 @@ public class CostFactorServiceImpl implements CostFactorService {
 @Override
 public void deleteCostFactor(Long id, Long companyId) {
     CostFactor existing = getValidatedCostFactor(id, companyId);
-    if (Objects.equals(existing.getDeleteFlag(), DeleteFlag.POSITIVE.getValue())) {
-        return;
-    }
 
     existing.setDeleteFlag(DeleteFlag.POSITIVE.getValue());
     costFactorRepository.save(existing);

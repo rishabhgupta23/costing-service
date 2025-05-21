@@ -2,8 +2,12 @@ package com.services;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.*;
 
 import org.junit.jupiter.api.Test;
@@ -42,23 +46,27 @@ import com.jubeiwato.costing_service.services.impl.CostFactorServiceImpl;
         return Company.builder().companyId(COMPANY_ID).build();
     }
 
-    private CostFactor createCostFactor(String name, int deleteFlag) {
+    private CostFactor getCostFactorObject(String name, int deleteFlag) {
         CostFactor costFactor = CostFactor.builder()
             .factorId(1L)
             .factorName(name)
             .build();
-        costFactor.setDeleteFlag(deleteFlag);  // manually set inherited field
+        costFactor.setDeleteFlag(deleteFlag);
         return costFactor;
     }
 
     @Test
-    void testGetCostFactors_InvalidInput() {
-        assertThrows(Exception.class, () -> costFactorService.getCostFactors(0, 10, COMPANY_ID, " ", "name", Sorting.ASC));
+    void testGetCostFactors_InvalidFactorName_ThrowsAppException() {
+        AppException ex = assertThrows(AppException.class, () ->
+            costFactorService.getCostFactors(0, 10, COMPANY_ID, "*", "name", Sorting.ASC)
+        );
+        assertEquals(ErrorMessageConstant.INVALID_INPUT, ex.getMessage());
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
     }
 
     @Test
     void testGetCostFactors_Success() {
-        CostFactor costFactor = createCostFactor(FACTOR_NAME, DeleteFlag.NEGATIVE.getValue());
+        CostFactor costFactor = getCostFactorObject(FACTOR_NAME, DeleteFlag.NEGATIVE.getValue());
         Page<CostFactor> page = new PageImpl<>(List.of(costFactor));
 
         when(costFactorRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(page);
@@ -83,7 +91,7 @@ import com.jubeiwato.costing_service.services.impl.CostFactorServiceImpl;
     void testCreateCostFactor_AlreadyExistsActive() {
         when(companyRepository.findById(COMPANY_ID)).thenReturn(Optional.of(createCompany()));
         when(costFactorRepository.findByCompany_CompanyIdAndFactorNameIgnoreCase(COMPANY_ID, FACTOR_NAME))
-                .thenReturn(Optional.of(createCostFactor(FACTOR_NAME, DeleteFlag.NEGATIVE.getValue())));
+                .thenReturn(Optional.of(getCostFactorObject(FACTOR_NAME, DeleteFlag.NEGATIVE.getValue())));
 
         AppException ex = assertThrows(AppException.class, () -> costFactorService.createCostFactor(FACTOR_NAME, COMPANY_ID));
         assertTrue(ex.getMessage().contains("already exists"));
@@ -91,7 +99,7 @@ import com.jubeiwato.costing_service.services.impl.CostFactorServiceImpl;
 
     @Test
     void testCreateCostFactor_SoftDeleted_Restore() {
-        CostFactor softDeleted = createCostFactor(FACTOR_NAME, DeleteFlag.POSITIVE.getValue()); // Initially deleted
+        CostFactor softDeleted = getCostFactorObject(FACTOR_NAME, DeleteFlag.POSITIVE.getValue()); // Initially deleted
     
         when(companyRepository.findById(COMPANY_ID)).thenReturn(Optional.of(createCompany()));
         when(costFactorRepository.findByCompany_CompanyIdAndFactorNameIgnoreCase(COMPANY_ID, FACTOR_NAME))
@@ -116,8 +124,8 @@ import com.jubeiwato.costing_service.services.impl.CostFactorServiceImpl;
 //
     @Test
     void testUpdateCostFactor_ConflictExists() {
-        CostFactor existing = createCostFactor("Material", DeleteFlag.NEGATIVE.getValue());
-        CostFactor conflict = createCostFactor(FACTOR_NAME, DeleteFlag.NEGATIVE.getValue());
+        CostFactor existing = getCostFactorObject("Material", DeleteFlag.NEGATIVE.getValue());
+        CostFactor conflict = getCostFactorObject(FACTOR_NAME, DeleteFlag.NEGATIVE.getValue());
 
         when(costFactorRepository.findByFactorIdAndCompany_CompanyIdAndDeleteFlag(1L, COMPANY_ID, DeleteFlag.NEGATIVE.getValue()))
                 .thenReturn(Optional.of(existing));
@@ -130,7 +138,7 @@ import com.jubeiwato.costing_service.services.impl.CostFactorServiceImpl;
 
     @Test
     void testUpdateCostFactor_Success() {
-        CostFactor existing = createCostFactor("OldName", DeleteFlag.NEGATIVE.getValue());
+        CostFactor existing = getCostFactorObject("OldName", DeleteFlag.NEGATIVE.getValue());
 
         when(costFactorRepository.findByFactorIdAndCompany_CompanyIdAndDeleteFlag(1L, COMPANY_ID, DeleteFlag.NEGATIVE.getValue()))
                 .thenReturn(Optional.of(existing));
@@ -152,7 +160,7 @@ import com.jubeiwato.costing_service.services.impl.CostFactorServiceImpl;
 
     @Test
     void testDeleteCostFactor_Success() {
-        CostFactor existing = createCostFactor(FACTOR_NAME, DeleteFlag.NEGATIVE.getValue());
+        CostFactor existing = getCostFactorObject(FACTOR_NAME, DeleteFlag.NEGATIVE.getValue());
         when(costFactorRepository.findByFactorIdAndCompany_CompanyIdAndDeleteFlag(
                 1L, COMPANY_ID, DeleteFlag.NEGATIVE.getValue()))
             .thenReturn(Optional.of(existing));
@@ -167,7 +175,7 @@ import com.jubeiwato.costing_service.services.impl.CostFactorServiceImpl;
 
     @Test
     void testDeleteCostFactor_AlreadySoftDeleted() {
-        CostFactor softDeleted = createCostFactor(FACTOR_NAME, DeleteFlag.POSITIVE.getValue());
+        CostFactor softDeleted = getCostFactorObject(FACTOR_NAME, DeleteFlag.POSITIVE.getValue());
         when(costFactorRepository.findByFactorIdAndCompany_CompanyIdAndDeleteFlag(
                 1L, COMPANY_ID, DeleteFlag.NEGATIVE.getValue()))
             .thenReturn(Optional.of(softDeleted));
@@ -200,4 +208,108 @@ void testCreateCostFactor_NullName_ThrowsException() {
     assertEquals(ErrorMessageConstant.INVALID_COST_FACTOR, exception.getMessage());
     assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
 }
+
+@Test
+void testGetCostFactors_WithDescendingSorting() {
+    CostFactor costFactor = getCostFactorObject(FACTOR_NAME, DeleteFlag.NEGATIVE.getValue());
+    Page<CostFactor> page = new PageImpl<>(List.of(costFactor));
+
+    when(costFactorRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(page);
+
+    ApiPageResponseDto<List<CostFactorDto>> response =
+            costFactorService.getCostFactors(0, 10, COMPANY_ID, FACTOR_NAME, "name", Sorting.DESC);
+
+    assertNotNull(response);
+    assertEquals(1, response.getData().size());
+    assertEquals(FACTOR_NAME, response.getData().get(0).getName());
+}
+
+@Test
+void testUpdateCostFactor_SameNameIgnoreCase_DoesNothing() {
+    CostFactor existing = getCostFactorObject("Labor", DeleteFlag.NEGATIVE.getValue());
+
+    when(costFactorRepository.findByFactorIdAndCompany_CompanyIdAndDeleteFlag(1L, COMPANY_ID, DeleteFlag.NEGATIVE.getValue()))
+            .thenReturn(Optional.of(existing));
+
+    // Same name but different case
+    CostFactorDto updated = costFactorService.updateCostFactor(1L, "LABOR", COMPANY_ID);
+
+    // Should not throw, should not call findByCompany_CompanyIdAndFactorNameIgnoreCase
+    assertEquals("Labor", updated.getName());
+    verify(costFactorRepository).save(existing);
+    verify(costFactorRepository, never()).findByCompany_CompanyIdAndFactorNameIgnoreCase(anyLong(), anyString());
+}
+
+@Test
+void testUpdateCostFactor_NoChangeInName() {
+    CostFactor existing = getCostFactorObject("Labor", DeleteFlag.NEGATIVE.getValue());
+
+    when(costFactorRepository.findByFactorIdAndCompany_CompanyIdAndDeleteFlag(1L, COMPANY_ID, DeleteFlag.NEGATIVE.getValue()))
+            .thenReturn(Optional.of(existing));
+
+    CostFactorDto updated = costFactorService.updateCostFactor(1L, "  Labor  ", COMPANY_ID); // input with spaces
+
+    assertEquals("Labor", updated.getName());
+    verify(costFactorRepository).save(existing);
+    // No conflict check should happen
+    verify(costFactorRepository, times(0)).findByCompany_CompanyIdAndFactorNameIgnoreCase(anyLong(), anyString());
+}
+
+@Test
+void testUpdateCostFactor_SoftDeletedConflict() {
+    CostFactor existing = getCostFactorObject("OldName", DeleteFlag.NEGATIVE.getValue());
+    CostFactor conflict = getCostFactorObject(FACTOR_NAME, DeleteFlag.POSITIVE.getValue()); // Soft deleted
+
+    when(costFactorRepository.findByFactorIdAndCompany_CompanyIdAndDeleteFlag(1L, COMPANY_ID, DeleteFlag.NEGATIVE.getValue()))
+            .thenReturn(Optional.of(existing));
+    when(costFactorRepository.findByCompany_CompanyIdAndFactorNameIgnoreCase(COMPANY_ID, FACTOR_NAME))
+            .thenReturn(Optional.of(conflict));
+
+    AppException ex = assertThrows(AppException.class, () ->
+            costFactorService.updateCostFactor(1L, FACTOR_NAME, COMPANY_ID)
+    );
+
+    assertTrue(ex.getMessage().contains("deactivated cost factor"));
+    assertEquals(HttpStatus.CONFLICT, ex.getStatus());
+}
+
+@Test
+void testGetConflictingCostFactor_ValidName_ReturnsOptional() throws Exception {
+    Method method = CostFactorServiceImpl.class.getDeclaredMethod("getConflictingCostFactor", String.class, Long.class);
+    method.setAccessible(true);
+
+    CostFactor mockFactor = getCostFactorObject("Labor", DeleteFlag.NEGATIVE.getValue());
+    when(costFactorRepository.findByCompany_CompanyIdAndFactorNameIgnoreCase(COMPANY_ID, "Labor"))
+        .thenReturn(Optional.of(mockFactor));
+
+    Object result = method.invoke(costFactorService, "  Labor  ", COMPANY_ID);
+    assertTrue(result instanceof Optional);
+    Optional<?> optional = (Optional<?>) result;
+    assertTrue(optional.isPresent());
+    assertEquals("Labor", ((CostFactor) optional.get()).getFactorName());
+}
+
+@Test
+void testGetConflictingCostFactor_EmptyOrNull_ThrowsException() throws Exception {
+    Method method = CostFactorServiceImpl.class.getDeclaredMethod("getConflictingCostFactor", String.class, Long.class);
+    method.setAccessible(true); // Allow access to private method
+
+    // Test with null factorName
+    InvocationTargetException nullException = assertThrows(InvocationTargetException.class, () ->
+        method.invoke(costFactorService, null, COMPANY_ID)
+    );
+    Throwable nullCause = nullException.getCause();
+    assertTrue(nullCause instanceof AppException);
+    assertEquals(ErrorMessageConstant.INVALID_COST_FACTOR, nullCause.getMessage());
+
+    // Test with empty string
+    InvocationTargetException emptyException = assertThrows(InvocationTargetException.class, () ->
+        method.invoke(costFactorService, "   ", COMPANY_ID)
+    );
+    Throwable emptyCause = emptyException.getCause();
+    assertTrue(emptyCause instanceof AppException);
+    assertEquals(ErrorMessageConstant.INVALID_COST_FACTOR, emptyCause.getMessage());
+}
+
+
 }
