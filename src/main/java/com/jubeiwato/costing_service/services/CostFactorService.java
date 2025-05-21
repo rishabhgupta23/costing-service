@@ -4,7 +4,6 @@ import java.util.List;
 import com.jubeiwato.costing_service.constants.Sorting;
 import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
 import com.jubeiwato.costing_service.dtos.CostFactorDto;
-import com.jubeiwato.costing_service.dtos.GeneralResponseDto;
 
 public interface CostFactorService {
     public ApiPageResponseDto<List<CostFactorDto>> getCostFactors(int pageNo, int pageSize, Long companyId, String factorName,String sortColumn,Sorting sortMode);
@@ -13,7 +12,7 @@ public interface CostFactorService {
         
     CostFactorDto updateCostFactor(Long id, String factorName, Long companyId);
 
-    GeneralResponseDto deleteCostFactor( Long id, Long companyId);
+    void deleteCostFactor( Long id, Long companyId);
 
 
 }

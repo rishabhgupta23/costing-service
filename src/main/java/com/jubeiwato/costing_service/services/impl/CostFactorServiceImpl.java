@@ -17,7 +17,6 @@ import com.jubeiwato.costing_service.constants.ErrorMessageConstant;
 import com.jubeiwato.costing_service.constants.Sorting;
 import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
 import com.jubeiwato.costing_service.dtos.CostFactorDto;
-import com.jubeiwato.costing_service.dtos.GeneralResponseDto;
 import com.jubeiwato.costing_service.dtos.PageInfoDto;
 import com.jubeiwato.costing_service.entities.Company;
 import com.jubeiwato.costing_service.entities.CostFactor;
@@ -153,24 +152,15 @@ public class CostFactorServiceImpl implements CostFactorService {
     }    
 
 
-
 @Override
-public GeneralResponseDto deleteCostFactor(Long id, Long companyId) {
+public void deleteCostFactor(Long id, Long companyId) {
     CostFactor existing = getValidatedCostFactor(id, companyId);
     if (Objects.equals(existing.getDeleteFlag(), DeleteFlag.POSITIVE.getValue())) {
-        return GeneralResponseDto.builder()
-                .message("Cost factor is already deleted.")
-                .status(HttpStatus.OK.value())
-                .build();
+        return;
     }
 
     existing.setDeleteFlag(DeleteFlag.POSITIVE.getValue());
     costFactorRepository.save(existing);
-
-    return GeneralResponseDto.builder()
-            .message("Cost factor deleted successfully.")
-            .status(HttpStatus.OK.value())
-            .build();
 }
 
 
