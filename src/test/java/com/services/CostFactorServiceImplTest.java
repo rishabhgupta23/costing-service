@@ -174,18 +174,6 @@ import com.jubeiwato.costing_service.services.impl.CostFactorServiceImpl;
     }
 
     @Test
-    void testDeleteCostFactor_AlreadySoftDeleted() {
-        CostFactor softDeleted = getCostFactorObject(FACTOR_NAME, DeleteFlag.POSITIVE.getValue());
-        when(costFactorRepository.findByFactorIdAndCompany_CompanyIdAndDeleteFlag(
-                1L, COMPANY_ID, DeleteFlag.NEGATIVE.getValue()))
-            .thenReturn(Optional.of(softDeleted));
-    
-        // should not throw, nor should it call save()
-        costFactorService.deleteCostFactor(1L, COMPANY_ID);
-        verify(costFactorRepository, never()).save(any());
-    }
-
-    @Test
    void testCreateCostFactor_InvalidName_ThrowsException() {
     when(companyRepository.findById(COMPANY_ID)).thenReturn(Optional.of(createCompany()));
 

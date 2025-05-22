@@ -79,7 +79,7 @@ public class PartAttributeServiceTest {
         });
 
         assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
-        assertEquals(ErrorMessageConstant.PARTATTRIBUTE_MUST_BE_NOTNULL, ex.getMessage());
+        assertEquals(ErrorMessageConstant.PART_ATTRIBUTE_NOT_NULL, ex.getMessage());
     }
 
     @Test
