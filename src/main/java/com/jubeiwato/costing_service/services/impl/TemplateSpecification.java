@@ -1,30 +1,36 @@
 package com.jubeiwato.costing_service.services.impl;
 
+import com.jubeiwato.costing_service.entities.Template;
+
+import jakarta.persistence.criteria.*;
+import org.springframework.data.jpa.domain.Specification;
+
 import java.util.ArrayList;
 import java.util.List;
 
-import org.springframework.data.jpa.domain.Specification;
+public class TemplateSpecification implements Specification<Template> {
 
-import com.jubeiwato.costing_service.entities.Template;
+    private final Long companyId;
+    private final String templateName;
 
-import jakarta.persistence.criteria.Predicate;
+    public TemplateSpecification(Long companyId, String templateName) {
+        this.companyId = companyId;
+        this.templateName = templateName;
+    }
 
-public class TemplateSpecification {
-     public static Specification<Template> getfilteredTemplates(Long companyId, String templateName) {
-        return (root, query, criteriaBuilder) -> {
-            List<Predicate> predicates = new ArrayList<>();
+    @Override
+    public Predicate toPredicate(Root<Template> root, CriteriaQuery<?> query, CriteriaBuilder cb) {
+        List<Predicate> predicates = new ArrayList<>();
 
-            if (companyId != null) {
-                predicates.add(criteriaBuilder.equal(root.get("company").get("companyId"), companyId));
-            }
+        if (companyId != null) {
+            predicates.add(cb.equal(root.get("company").get("companyId"), companyId));
+        }
 
-            if (templateName != null && !templateName.isEmpty()) {
-                predicates.add(criteriaBuilder.like(
-                        criteriaBuilder.lower(root.get("templateName")),
-                        "%" + templateName.toLowerCase() + "%"));
-            }
+        if (templateName != null && !templateName.isEmpty()) {
+            predicates.add(cb.like(cb.lower(root.get("templateName")), "%" + templateName.toLowerCase() + "%"));
+        }
 
-            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
-        };
+        query.distinct(true);
+        return cb.and(predicates.toArray(new Predicate[0]));
     }
 }

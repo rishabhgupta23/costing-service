@@ -6,7 +6,6 @@ import com.jubeiwato.costing_service.constants.Sorting;
 import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
 import com.jubeiwato.costing_service.dtos.PageInfoDto;
 import com.jubeiwato.costing_service.dtos.PartAttributeDto;
-import com.jubeiwato.costing_service.dtos.TemplateDto;
 import com.jubeiwato.costing_service.dtos.TemplateRequestDto;
 import com.jubeiwato.costing_service.dtos.TemplateResponseDto;
 import com.jubeiwato.costing_service.entities.*;
@@ -39,7 +38,7 @@ public class TemplateServiceImpl implements TemplateService {
 
     private void validateTemplateInput(TemplateRequestDto dto) {
         if (dto.getTemplateName() == null || dto.getTemplateName().trim().isEmpty()) {
-            throw new AppException(ErrorMessageConstant.TEMPLATE_MUST_BE_NOTNULL, HttpStatus.BAD_REQUEST);
+            throw new AppException(ErrorMessageConstant.TEMPLATE_NULL, HttpStatus.BAD_REQUEST);
         }
         if (dto.getPartAttributes() == null || dto.getPartAttributes().isEmpty()) {
             throw new AppException(ErrorMessageConstant.ATTRIBUTE_NOT_SELECTED, HttpStatus.BAD_REQUEST);
@@ -76,7 +75,7 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
     private void checkIfTemplateNameExists(String name, Company company) {
-        boolean exists = templateRepository.existsBytemplateNameIgnoreCaseAndCompany(name.trim(), company);
+        boolean exists = templateRepository.existsByTemplateNameIgnoreCaseAndCompany(name.trim(), company);
         if (exists) {
                 throw new AppException(ErrorMessageConstant.TEMPLATE_ALREADY_EXISTS, HttpStatus.BAD_REQUEST);
         }
@@ -109,7 +108,7 @@ public class TemplateServiceImpl implements TemplateService {
     } 
 
     @Override
-    public ApiPageResponseDto<List<TemplateDto>> getAllTemplates(Long companyId, String name, int pageNo,
+    public ApiPageResponseDto<List<TemplateResponseDto>> getAllTemplates(Long companyId, String name, int pageNo,
     int pageSize, String sortColumn, Sorting sortMode) {
         if (!ValidationUtil.isValidInput(name)) {
                 throw new AppException(ErrorMessageConstant.INVALID_INPUT, HttpStatus.BAD_REQUEST);
@@ -118,13 +117,14 @@ public class TemplateServiceImpl implements TemplateService {
             Sort.Direction direction = (sortMode == Sorting.DESC) ? Sort.Direction.DESC : Sort.Direction.ASC;
             Sort sort = Sort.by(direction, sortColumn);
             Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
-            Specification<Template> spec = TemplateSpecification.getfilteredTemplates(companyId, name);
+                Specification<Template> spec = new TemplateSpecification(companyId, name);
+
 
             Page<Template> templatePage = templateRepository.findAll(spec, pageable);
 
-            List<TemplateDto> dtoList = templatePage.getContent()
+            List<TemplateResponseDto> dtoList = templatePage.getContent()
             .stream()
-            .map(TemplateDto::entityToDto)
+            .map(TemplateResponseDto::entityToDto)
             .toList();
 
     PageInfoDto pageInfo = PageInfoDto.builder()
@@ -134,13 +134,13 @@ public class TemplateServiceImpl implements TemplateService {
             .totalRecords(templatePage.getTotalElements())
             .build();
 
-    return ApiPageResponseDto.<List<TemplateDto>>builder()
+    return ApiPageResponseDto.<List<TemplateResponseDto>>builder()
             .data(dtoList)
             .pageInfo(pageInfo)
             .build();
 }
 private Template getValidatedTemplate(Long templateId, Long companyId) {
-        return templateRepository.findAllByTemplateIdAndCompany_CompanyId(templateId, companyId)
+        return templateRepository.findByTemplateIdAndCompany_CompanyId(templateId, companyId)
                 .orElseThrow(() -> new AppException(
                         ErrorMessageConstant.TEMPLATE_NOT_FOUND,
                         HttpStatus.NOT_FOUND));
@@ -189,8 +189,8 @@ public TemplateResponseDto updateTemplate(Long templateId, TemplateRequestDto dt
 
     Template updated = templateRepository.save(template);
 
-    List<PartAttributeDto> partAttributes = templatePartAttributeRepository.findByTemplate(template).stream()
-    .map(rel -> PartAttributeDto.entityToDto(rel.getPartAttribute()))
+    List<PartAttributeDto> partAttributes = validAttributes.stream()
+    .map(PartAttributeDto::entityToDto)
     .toList();
     return TemplateResponseDto.builder()
             .templateId(updated.getTemplateId())

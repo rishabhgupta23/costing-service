@@ -13,7 +13,7 @@ import com.jubeiwato.costing_service.entities.Template;
 
 public interface TemplateRepository extends JpaRepository<Template, Long>{
      List<Template> findByCompany(Company company);
-     boolean existsBytemplateNameIgnoreCaseAndCompany(String templateName, Company compayId);
+     boolean existsByTemplateNameIgnoreCaseAndCompany(String templateName, Company compayId);
          Page<Template> findAll(Specification<Template> spec, Pageable pageable);
-    Optional<Template> findAllByTemplateIdAndCompany_CompanyId(Long templateId, Long companyId);
+    Optional<Template> findByTemplateIdAndCompany_CompanyId(Long templateId, Long companyId);
 }

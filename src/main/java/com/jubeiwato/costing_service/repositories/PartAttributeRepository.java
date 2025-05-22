@@ -20,10 +20,8 @@ public interface PartAttributeRepository extends JpaRepository<PartAttribute, Lo
                         Integer deleteFlag);
 
     Optional<PartAttribute> findByAttributeIdAndCompany_CompanyId(Long attributeId, Long companyId);
-        List<PartAttribute> findByAttributeNameInIgnoreCaseAndCompany(List<String> attributeNames, Company company);
     Page<PartAttribute> findAll(Specification<PartAttribute> spec, Pageable pageable);
 
-    boolean existsByAttributeNameAndCompany_CompanyIdAndDeleteFlag(String attributeName, Long companyId, Integer deleteFlag);
 
     List<PartAttribute> findByAttributeIdInAndCompany(List<Long> distinctIds, Company companyId);
         Optional<PartAttribute> findByAttributeNameAndCompany_CompanyId(String attributeName, Long companyId);

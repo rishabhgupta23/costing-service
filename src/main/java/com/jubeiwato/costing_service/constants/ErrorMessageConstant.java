@@ -44,7 +44,7 @@ public class ErrorMessageConstant {
     public static final String ATTRIBUTE_NOT_FOUND = "Part attribute not found.";
     public static final String ATTRIBUTE_MARKED_DELETED = "Part attribute is marked as deleted and cannot be updated.";
     public static final String ATTRIBUTE_ALREADY_EXISTS = "Attribute with the same name already exists.";
-    public static final String TEMPLATE_MUST_BE_NOTNULL ="Template name must not be null or empty";
+    public static final String TEMPLATE_NULL ="Template name must not be null or empty";
     public static final String UPDATE_NOT_ALLOWED_SOFT_DELETED = "Update not allowed. A soft-deleted part attribute with the name '%s' already exists.";
 
     public static final String CATEGORY_ALREADY_EXISTS_TEMPLATE = "Category with categoryName '%s' already exists";

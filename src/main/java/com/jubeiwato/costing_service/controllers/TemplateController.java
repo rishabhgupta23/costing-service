@@ -1,6 +1,5 @@
 package com.jubeiwato.costing_service.controllers;
 
-import com.jubeiwato.costing_service.dtos.TemplateDto;
 import com.jubeiwato.costing_service.dtos.TemplateRequestDto;
 import com.jubeiwato.costing_service.dtos.TemplateResponseDto;
 import com.jubeiwato.costing_service.constants.Sorting;
@@ -38,14 +37,14 @@ public class TemplateController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiPageResponseDto<List<TemplateDto>>> getAllTemplates( @RequestParam(required = false) String templateName,
+    public ResponseEntity<ApiPageResponseDto<List<TemplateResponseDto>>> getAllTemplates( @RequestParam(required = false) String templateName,
             @RequestParam(defaultValue = "0") int pageNo,
             @RequestParam(defaultValue = "10") int pageSize,
             @RequestParam(defaultValue = "templateName") String sortColumn,
             @RequestParam(defaultValue = "ASC") Sorting sortMode,
             @AuthenticationPrincipal User authenticatedUser) {
         Long companyId = authenticatedUser.getCompany().getCompanyId();
-                ApiPageResponseDto<List<TemplateDto>> response = templateService.getAllTemplates(
+                ApiPageResponseDto<List<TemplateResponseDto>> response = templateService.getAllTemplates(
                 companyId, templateName, pageNo, pageSize, sortColumn, sortMode);
         return ResponseEntity.ok(response);
     }

@@ -23,7 +23,7 @@ import lombok.NoArgsConstructor;
     name = "template",
     schema = "app",
     uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"templateName", "company_id"})
+        @UniqueConstraint(columnNames = {"templat_name", "company_id"})
     }
 )
 public class Template extends BaseEntity {
@@ -33,7 +33,7 @@ public class Template extends BaseEntity {
     @Column(name = "template_id")
     private Long templateId;
 
-    @Column(name = "templateName", nullable = false, unique = true)
+    @Column(name = "template_name", nullable = false, unique = true)
     private String templateName;
 
     @ManyToOne
