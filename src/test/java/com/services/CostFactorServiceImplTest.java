@@ -1,35 +1,34 @@
 package com.services;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.*;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.*;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.*;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.HttpStatus;
 
 import com.jubeiwato.costing_service.authentication.config.AppException;
+import com.jubeiwato.costing_service.constants.DeleteFlag;
 import com.jubeiwato.costing_service.constants.ErrorMessageConstant;
-import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
-import com.jubeiwato.costing_service.dtos.CostFactorDto;
-import com.jubeiwato.costing_service.dtos.GeneralResponseDto;
-import com.jubeiwato.costing_service.entities.Company;
-import com.jubeiwato.costing_service.entities.CostFactor;
-import com.jubeiwato.costing_service.repositories.CompanyRepository;
-import com.jubeiwato.costing_service.repositories.CostFactorRepository;
+import com.jubeiwato.costing_service.constants.Sorting;
+import com.jubeiwato.costing_service.dtos.*;
+import com.jubeiwato.costing_service.entities.*;
+import com.jubeiwato.costing_service.repositories.*;
 import com.jubeiwato.costing_service.services.impl.CostFactorServiceImpl;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
-
-class CostFactorServiceImplTest {
+@ExtendWith(MockitoExtension.class)
+ class CostFactorServiceImplTest {
 
     @Mock
     private CostFactorRepository costFactorRepository;
@@ -41,146 +40,264 @@ class CostFactorServiceImplTest {
     private CostFactorServiceImpl costFactorService;
 
     private static final Long COMPANY_ID = 1L;
-    private static final Long FACTOR_ID = 1L;
+    private static final String FACTOR_NAME = "Labor";
 
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
+    private Company createCompany() {
+        return Company.builder().companyId(COMPANY_ID).build();
     }
 
-    private Company mockCompany(Long companyId) {
-        Company company = Company.builder().companyId(companyId).build();
-        when(companyRepository.findById(companyId)).thenReturn(Optional.of(company));
-        return company;
+    private CostFactor getCostFactorObject(String name, int deleteFlag) {
+        CostFactor costFactor = CostFactor.builder()
+            .factorId(1L)
+            .factorName(name)
+            .build();
+        costFactor.setDeleteFlag(deleteFlag);
+        return costFactor;
     }
 
-    private CostFactor mockCostFactor(Long factorId, String name, Long companyId) {
-        return CostFactor.builder()
-                .factorId(factorId)
-                .factorName(name)
-                .company(Company.builder().companyId(companyId).build())
-                .build();
-    }
-
-    private CostFactorDto buildCostFactorDto(String name) {
-        return CostFactorDto.builder().name(name).build();
+    @Test
+    void testGetCostFactors_InvalidFactorName_ThrowsAppException() {
+        AppException ex = assertThrows(AppException.class, () ->
+            costFactorService.getCostFactors(0, 10, COMPANY_ID, "*", "name", Sorting.ASC)
+        );
+        assertEquals(ErrorMessageConstant.INVALID_INPUT, ex.getMessage());
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
     }
 
     @Test
     void testGetCostFactors_Success() {
-        CostFactor costFactor = mockCostFactor(FACTOR_ID, "Test Factor", COMPANY_ID);
-        Page<CostFactor> page = new PageImpl<>(Collections.singletonList(costFactor));
-        when(costFactorRepository.findByCompany_CompanyIdAndDeleteFlag(eq(COMPANY_ID), eq(0), any(Pageable.class)))
-                .thenReturn(page);
+        CostFactor costFactor = getCostFactorObject(FACTOR_NAME, DeleteFlag.NEGATIVE.getValue());
+        Page<CostFactor> page = new PageImpl<>(List.of(costFactor));
 
-        ApiPageResponseDto<List<CostFactorDto>> response = costFactorService.getCostFactors(0, 10, COMPANY_ID);
+        when(costFactorRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(page);
 
-        assertThat(response.getData()).hasSize(1);
-        assertThat(response.getData().get(0).getName()).isEqualTo("Test Factor");
-    }
+        ApiPageResponseDto<List<CostFactorDto>> response = costFactorService.getCostFactors(0, 10, COMPANY_ID, FACTOR_NAME, "name", Sorting.ASC);
 
-    @Test
-    void testCreateCostFactor_Success() {
-        mockCompany(COMPANY_ID);
-        CostFactorDto dto = buildCostFactorDto("New Factor");
-
-        when(costFactorRepository.existsByCompany_CompanyIdAndFactorNameAndDeleteFlag(eq(COMPANY_ID), eq("New Factor"), eq(0)))
-                .thenReturn(false);
-
-        costFactorService.createCostFactor(dto, COMPANY_ID);
-
-        verify(costFactorRepository).save(any(CostFactor.class));
+        assertNotNull(response);
+        assertEquals(1, response.getData().size());
+        assertEquals(FACTOR_NAME, response.getData().get(0).getName());
     }
 
     @Test
     void testCreateCostFactor_CompanyNotFound() {
         when(companyRepository.findById(COMPANY_ID)).thenReturn(Optional.empty());
-        CostFactorDto dto = buildCostFactorDto("New Factor");
 
-        AppException exception = assertThrows(AppException.class, () -> costFactorService.createCostFactor(dto, COMPANY_ID));
- 
-        assertThat(exception.getMessage()).isEqualTo(ErrorMessageConstant.INVALID_COMPANY);
+        AppException exception = assertThrows(AppException.class, () -> costFactorService.createCostFactor(FACTOR_NAME, COMPANY_ID));
+
+        assertEquals(ErrorMessageConstant.INVALID_COMPANY, exception.getMessage());
     }
 
     @Test
-    void testCreateCostFactor_NameAlreadyExists() {
-        mockCompany(COMPANY_ID);
-        CostFactorDto dto = buildCostFactorDto("Duplicate Factor");
+    void testCreateCostFactor_AlreadyExistsActive() {
+        when(companyRepository.findById(COMPANY_ID)).thenReturn(Optional.of(createCompany()));
+        when(costFactorRepository.findByCompany_CompanyIdAndFactorNameIgnoreCase(COMPANY_ID, FACTOR_NAME))
+                .thenReturn(Optional.of(getCostFactorObject(FACTOR_NAME, DeleteFlag.NEGATIVE.getValue())));
 
-        when(costFactorRepository.existsByCompany_CompanyIdAndFactorNameAndDeleteFlag(eq(COMPANY_ID), eq("Duplicate Factor"), eq(0)))
-                .thenReturn(true);
+        AppException ex = assertThrows(AppException.class, () -> costFactorService.createCostFactor(FACTOR_NAME, COMPANY_ID));
+        assertTrue(ex.getMessage().contains("already exists"));
+    }
 
-        AppException exception = assertThrows(AppException.class, () -> costFactorService.createCostFactor(dto, COMPANY_ID));
+    @Test
+    void testCreateCostFactor_SoftDeleted_Restore() {
+        CostFactor softDeleted = getCostFactorObject(FACTOR_NAME, DeleteFlag.POSITIVE.getValue()); // Initially deleted
+    
+        when(companyRepository.findById(COMPANY_ID)).thenReturn(Optional.of(createCompany()));
+        when(costFactorRepository.findByCompany_CompanyIdAndFactorNameIgnoreCase(COMPANY_ID, FACTOR_NAME))
+            .thenReturn(Optional.of(softDeleted));
+    
+        costFactorService.createCostFactor(FACTOR_NAME, COMPANY_ID);
+    
+        assertEquals(DeleteFlag.NEGATIVE.getValue(), softDeleted.getDeleteFlag(), "Expected cost factor to be restored (deleteFlag=0)");
+    
+        verify(costFactorRepository).save(softDeleted);
+    }
+    
 
-        assertThat(exception.getMessage()).contains("already exists");
+    @Test
+    void testCreateCostFactor_New() {
+        when(companyRepository.findById(COMPANY_ID)).thenReturn(Optional.of(createCompany()));
+        when(costFactorRepository.findByCompany_CompanyIdAndFactorNameIgnoreCase(COMPANY_ID, FACTOR_NAME)).thenReturn(Optional.empty());
+
+        costFactorService.createCostFactor(FACTOR_NAME, COMPANY_ID);
+        verify(costFactorRepository).save(any(CostFactor.class));
+    }
+//
+    @Test
+    void testUpdateCostFactor_ConflictExists() {
+        CostFactor existing = getCostFactorObject("Material", DeleteFlag.NEGATIVE.getValue());
+        CostFactor conflict = getCostFactorObject(FACTOR_NAME, DeleteFlag.NEGATIVE.getValue());
+
+        when(costFactorRepository.findByFactorIdAndCompany_CompanyIdAndDeleteFlag(1L, COMPANY_ID, DeleteFlag.NEGATIVE.getValue()))
+                .thenReturn(Optional.of(existing));
+        when(costFactorRepository.findByCompany_CompanyIdAndFactorNameIgnoreCase(COMPANY_ID, FACTOR_NAME))
+                .thenReturn(Optional.of(conflict));
+
+        AppException ex = assertThrows(AppException.class, () -> costFactorService.updateCostFactor(1L, FACTOR_NAME, COMPANY_ID));
+        assertTrue(ex.getMessage().contains("already exists"));
     }
 
     @Test
     void testUpdateCostFactor_Success() {
-        CostFactor existing = mockCostFactor(FACTOR_ID, "Old Name", COMPANY_ID);
-        CostFactorDto dto = buildCostFactorDto("New Name");
+        CostFactor existing = getCostFactorObject("OldName", DeleteFlag.NEGATIVE.getValue());
 
-        when(costFactorRepository.findByFactorIdAndCompany_CompanyIdAndDeleteFlag(eq(FACTOR_ID), eq(COMPANY_ID), eq(0)))
+        when(costFactorRepository.findByFactorIdAndCompany_CompanyIdAndDeleteFlag(1L, COMPANY_ID, DeleteFlag.NEGATIVE.getValue()))
                 .thenReturn(Optional.of(existing));
-        when(costFactorRepository.existsByCompany_CompanyIdAndFactorNameAndDeleteFlag(eq(COMPANY_ID), eq("New Name"), eq(0)))
-                .thenReturn(false);
+        when(costFactorRepository.findByCompany_CompanyIdAndFactorNameIgnoreCase(COMPANY_ID, "NewName"))
+                .thenReturn(Optional.empty());
 
-        CostFactorDto updated = costFactorService.updateCostFactor(FACTOR_ID, dto, COMPANY_ID);
+        CostFactorDto updated = costFactorService.updateCostFactor(1L, "NewName", COMPANY_ID);
 
-        assertThat(updated.getName()).isEqualTo("New Name");
-        verify(costFactorRepository).save(existing);
-    }
-
-    @Test
-    void testUpdateCostFactor_DuplicateName() {
-        CostFactor existing = mockCostFactor(FACTOR_ID, "Old Name", COMPANY_ID);
-        CostFactorDto dto = buildCostFactorDto("Duplicate Name");
-
-        when(costFactorRepository.findByFactorIdAndCompany_CompanyIdAndDeleteFlag(eq(FACTOR_ID), eq(COMPANY_ID), eq(0)))
-                .thenReturn(Optional.of(existing));
-        when(costFactorRepository.existsByCompany_CompanyIdAndFactorNameAndDeleteFlag(eq(COMPANY_ID), eq("Duplicate Name"), eq(0)))
-                .thenReturn(true);
-
-        AppException exception = assertThrows(AppException.class, () -> costFactorService.updateCostFactor(FACTOR_ID, dto, COMPANY_ID));
-
-        assertThat(exception.getMessage()).contains("already exists");
-    }
-
-    @Test
-    void testDeleteCostFactor_Success() {
-        CostFactor existing = mockCostFactor(FACTOR_ID, "Existing", COMPANY_ID);
-        existing.setDeleteFlag(0);
-
-        when(costFactorRepository.findByFactorIdAndCompany_CompanyId(eq(FACTOR_ID), eq(COMPANY_ID)))
-                .thenReturn(Optional.of(existing));
-
-        GeneralResponseDto response = costFactorService.deleteCostFactor(FACTOR_ID, COMPANY_ID);
-
-        assertThat(response.getMessage()).isEqualTo("Cost factor deleted successfully.");
-        assertThat(response.getStatus()).isEqualTo(200);
+        assertEquals("NewName", updated.getName());
         verify(costFactorRepository).save(existing);
     }
 
     @Test
     void testDeleteCostFactor_AlreadyDeleted() {
-        CostFactor existing = mockCostFactor(FACTOR_ID, "Deleted", COMPANY_ID);
-        existing.setDeleteFlag(1);
-
-        when(costFactorRepository.findByFactorIdAndCompany_CompanyId(eq(FACTOR_ID), eq(COMPANY_ID)))
-                .thenReturn(Optional.of(existing));
-
-        AppException exception = assertThrows(AppException.class, () -> costFactorService.deleteCostFactor(FACTOR_ID, COMPANY_ID));
-
-        assertThat(exception.getMessage()).isEqualTo(ErrorMessageConstant.COST_FACTOR_DOES_NOT_EXIST);
+        when(costFactorRepository.findByFactorIdAndCompany_CompanyIdAndDeleteFlag(1L, COMPANY_ID, DeleteFlag.NEGATIVE.getValue()))
+                .thenThrow(new AppException(ErrorMessageConstant.COST_FACTOR_DOES_NOT_EXIST, HttpStatus.NOT_FOUND));
+        assertThrows(AppException.class, () -> costFactorService.deleteCostFactor(1L, COMPANY_ID));
     }
 
     @Test
-    void testDeleteCostFactor_NotFound() {
-        when(costFactorRepository.findByFactorIdAndCompany_CompanyId(eq(FACTOR_ID), eq(COMPANY_ID)))
-                .thenReturn(Optional.empty());
-
-        AppException exception = assertThrows(AppException.class, () -> costFactorService.deleteCostFactor(FACTOR_ID, COMPANY_ID));
-
-        assertThat(exception.getMessage()).isEqualTo(ErrorMessageConstant.COST_FACTOR_DOES_NOT_EXIST);
+    void testDeleteCostFactor_Success() {
+        CostFactor existing = getCostFactorObject(FACTOR_NAME, DeleteFlag.NEGATIVE.getValue());
+        when(costFactorRepository.findByFactorIdAndCompany_CompanyIdAndDeleteFlag(
+                1L, COMPANY_ID, DeleteFlag.NEGATIVE.getValue()))
+            .thenReturn(Optional.of(existing));
+    
+        // now that the service returns void, we just invoke:
+        costFactorService.deleteCostFactor(1L, COMPANY_ID);
+    
+        // verify that we marked it deleted
+        assertEquals(DeleteFlag.POSITIVE.getValue(), existing.getDeleteFlag());
+        verify(costFactorRepository).save(existing);
     }
+
+    @Test
+   void testCreateCostFactor_InvalidName_ThrowsException() {
+    when(companyRepository.findById(COMPANY_ID)).thenReturn(Optional.of(createCompany()));
+
+    AppException exception = assertThrows(AppException.class, () ->
+        costFactorService.createCostFactor("   ", COMPANY_ID) // Only spaces = empty after trim
+    );
+
+    assertEquals(ErrorMessageConstant.INVALID_COST_FACTOR, exception.getMessage());
+    assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
+ }
+
+@Test
+void testCreateCostFactor_NullName_ThrowsException() {
+    when(companyRepository.findById(COMPANY_ID)).thenReturn(Optional.of(createCompany()));
+
+    AppException exception = assertThrows(AppException.class, () ->
+        costFactorService.createCostFactor(null, COMPANY_ID)
+    );
+
+    assertEquals(ErrorMessageConstant.INVALID_COST_FACTOR, exception.getMessage());
+    assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
+}
+
+@Test
+void testGetCostFactors_WithDescendingSorting() {
+    CostFactor costFactor = getCostFactorObject(FACTOR_NAME, DeleteFlag.NEGATIVE.getValue());
+    Page<CostFactor> page = new PageImpl<>(List.of(costFactor));
+
+    when(costFactorRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(page);
+
+    ApiPageResponseDto<List<CostFactorDto>> response =
+            costFactorService.getCostFactors(0, 10, COMPANY_ID, FACTOR_NAME, "name", Sorting.DESC);
+
+    assertNotNull(response);
+    assertEquals(1, response.getData().size());
+    assertEquals(FACTOR_NAME, response.getData().get(0).getName());
+}
+
+@Test
+void testUpdateCostFactor_SameNameIgnoreCase_DoesNothing() {
+    CostFactor existing = getCostFactorObject("Labor", DeleteFlag.NEGATIVE.getValue());
+
+    when(costFactorRepository.findByFactorIdAndCompany_CompanyIdAndDeleteFlag(1L, COMPANY_ID, DeleteFlag.NEGATIVE.getValue()))
+            .thenReturn(Optional.of(existing));
+
+    // Same name but different case
+    CostFactorDto updated = costFactorService.updateCostFactor(1L, "LABOR", COMPANY_ID);
+
+    // Should not throw, should not call findByCompany_CompanyIdAndFactorNameIgnoreCase
+    assertEquals("Labor", updated.getName());
+    verify(costFactorRepository).save(existing);
+    verify(costFactorRepository, never()).findByCompany_CompanyIdAndFactorNameIgnoreCase(anyLong(), anyString());
+}
+
+@Test
+void testUpdateCostFactor_NoChangeInName() {
+    CostFactor existing = getCostFactorObject("Labor", DeleteFlag.NEGATIVE.getValue());
+
+    when(costFactorRepository.findByFactorIdAndCompany_CompanyIdAndDeleteFlag(1L, COMPANY_ID, DeleteFlag.NEGATIVE.getValue()))
+            .thenReturn(Optional.of(existing));
+
+    CostFactorDto updated = costFactorService.updateCostFactor(1L, "  Labor  ", COMPANY_ID); // input with spaces
+
+    assertEquals("Labor", updated.getName());
+    verify(costFactorRepository).save(existing);
+    // No conflict check should happen
+    verify(costFactorRepository, times(0)).findByCompany_CompanyIdAndFactorNameIgnoreCase(anyLong(), anyString());
+}
+
+@Test
+void testUpdateCostFactor_SoftDeletedConflict() {
+    CostFactor existing = getCostFactorObject("OldName", DeleteFlag.NEGATIVE.getValue());
+    CostFactor conflict = getCostFactorObject(FACTOR_NAME, DeleteFlag.POSITIVE.getValue()); // Soft deleted
+
+    when(costFactorRepository.findByFactorIdAndCompany_CompanyIdAndDeleteFlag(1L, COMPANY_ID, DeleteFlag.NEGATIVE.getValue()))
+            .thenReturn(Optional.of(existing));
+    when(costFactorRepository.findByCompany_CompanyIdAndFactorNameIgnoreCase(COMPANY_ID, FACTOR_NAME))
+            .thenReturn(Optional.of(conflict));
+
+    AppException ex = assertThrows(AppException.class, () ->
+            costFactorService.updateCostFactor(1L, FACTOR_NAME, COMPANY_ID)
+    );
+
+    assertTrue(ex.getMessage().contains("deactivated cost factor"));
+    assertEquals(HttpStatus.CONFLICT, ex.getStatus());
+}
+
+@Test
+void testGetConflictingCostFactor_ValidName_ReturnsOptional() throws Exception {
+    Method method = CostFactorServiceImpl.class.getDeclaredMethod("getConflictingCostFactor", String.class, Long.class);
+    method.setAccessible(true);
+
+    CostFactor mockFactor = getCostFactorObject("Labor", DeleteFlag.NEGATIVE.getValue());
+    when(costFactorRepository.findByCompany_CompanyIdAndFactorNameIgnoreCase(COMPANY_ID, "Labor"))
+        .thenReturn(Optional.of(mockFactor));
+
+    Object result = method.invoke(costFactorService, "  Labor  ", COMPANY_ID);
+    assertTrue(result instanceof Optional);
+    Optional<?> optional = (Optional<?>) result;
+    assertTrue(optional.isPresent());
+    assertEquals("Labor", ((CostFactor) optional.get()).getFactorName());
+}
+
+@Test
+void testGetConflictingCostFactor_EmptyOrNull_ThrowsException() throws Exception {
+    Method method = CostFactorServiceImpl.class.getDeclaredMethod("getConflictingCostFactor", String.class, Long.class);
+    method.setAccessible(true); // Allow access to private method
+
+    // Test with null factorName
+    InvocationTargetException nullException = assertThrows(InvocationTargetException.class, () ->
+        method.invoke(costFactorService, null, COMPANY_ID)
+    );
+    Throwable nullCause = nullException.getCause();
+    assertTrue(nullCause instanceof AppException);
+    assertEquals(ErrorMessageConstant.INVALID_COST_FACTOR, nullCause.getMessage());
+
+    // Test with empty string
+    InvocationTargetException emptyException = assertThrows(InvocationTargetException.class, () ->
+        method.invoke(costFactorService, "   ", COMPANY_ID)
+    );
+    Throwable emptyCause = emptyException.getCause();
+    assertTrue(emptyCause instanceof AppException);
+    assertEquals(ErrorMessageConstant.INVALID_COST_FACTOR, emptyCause.getMessage());
+}
+
+
 }
