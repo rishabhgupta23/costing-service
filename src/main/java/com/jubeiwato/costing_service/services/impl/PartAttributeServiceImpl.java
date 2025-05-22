@@ -13,6 +13,7 @@ import com.jubeiwato.costing_service.entities.PartAttribute;
 import com.jubeiwato.costing_service.repositories.CompanyRepository;
 import com.jubeiwato.costing_service.repositories.PartAttributeRepository;
 import com.jubeiwato.costing_service.services.PartAttributeService;
+import com.jubeiwato.costing_service.services.PartAttributeSpecification;
 import com.jubeiwato.costing_service.utils.ValidationUtil;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Pageable;
@@ -91,8 +92,7 @@ public class PartAttributeServiceImpl implements PartAttributeService {
         Sort sort = Sort.by(direction, sortColumn);
         Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
 
-        Specification<PartAttribute> spec = PartAttributeSpecification.getFilteredPartAttributes(companyId,
-                attributeName);
+        Specification<PartAttribute> spec = new PartAttributeSpecification(companyId, attributeName, 0);
 
         Page<PartAttribute> partAttributePage = partAttributeRepository.findAll(spec, pageable);
 
