@@ -16,7 +16,7 @@ public interface PartService {
 
     public ApiPageResponseDto<List<CostFactorDto>> getCostFactors(int pageNo, int pageSize, Long companyId);
 
-    public void createPart(PartRequestDto request,Long companyId);
+    public PartDto createPart(PartRequestDto request,Long companyId);
 
 
     public PartDto getPartById(Long partId, Long companyId);
@@ -29,4 +29,6 @@ public interface PartService {
     byte[] downloadPartsToExcel(Long companyId) throws IOException;
 
     FileResponseDto downloadBomPartListToExcel(Long parentPartId,Long companyId) throws IOException;
+
+    String uploadPartImage(Long partId, String base64Image, Long companyId);
 }

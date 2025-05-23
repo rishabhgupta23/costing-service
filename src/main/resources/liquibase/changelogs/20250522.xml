@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+      
+
+        <changeSet id="20250522" author="Anusha
+        ">
+            <sql>
+                CREATE TABLE app.part_file (
+                    file_id BIGSERIAL PRIMARY KEY,
+                    part_id BIGINT NOT NULL,
+                    file_url VARCHAR(255) NOT NULL,
+                    CONSTRAINT fk_part_file_part FOREIGN KEY (part_id)
+                        REFERENCES app.part(part_id)
+                );
+            </sql>
+            <rollback>
+                <sql>
+                    DROP TABLE app.part_file CASCADE;
+                </sql>
+            </rollback>
+        </changeSet>
+
+</databaseChangeLog>

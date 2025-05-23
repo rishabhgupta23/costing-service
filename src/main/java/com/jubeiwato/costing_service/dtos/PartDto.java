@@ -23,7 +23,7 @@ public class PartDto {
     private String unit;
 
 
-    public static PartDto enitityToDto(Part entity) {
+    public static PartDto entityToDto(Part entity) {
         return PartDto.builder()
         .partId(entity.getPartId())
         .partName(entity.getPartName())

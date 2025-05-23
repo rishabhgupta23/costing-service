@@ -42,6 +42,9 @@ public class ErrorMessageConstant {
     public static final String SUPER_ADMIN_CREATION_ERROR = "Super Admins cannot be creted or updated";
     public static final String ADMIN_CREATION_RESTRICTED = "Admins cannot be created or updated";
     public static final String CATEGORY_ALREADY_EXISTS_TEMPLATE = "Category with categoryName '%s' already exists";
+    public static final String IMAGE_SIZE_EXCEEDS_LIMIT = "Image exceeds maximum allowed size of 5MB";
+    public static final String IMAGE_UPLOAD_FAILED = "Failed to upload image to S3";
+
     private ErrorMessageConstant() {
 
     }

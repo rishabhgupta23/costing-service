@@ -93,11 +93,10 @@ public class PartController {
 
     @PostMapping 
     @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "') or hasRole('" + MAINTAINER + "')")
-    public ResponseEntity<GeneralResponseDto> createPart(@RequestBody PartRequestDto request, @AuthenticationPrincipal User authenticatedUser) {
+    public ResponseEntity<PartDto> createPart(@RequestBody PartRequestDto request, @AuthenticationPrincipal User authenticatedUser) {
         Long companyId = authenticatedUser.getCompany().getCompanyId();
-        partService.createPart(request, companyId);
-        GeneralResponseDto response = new GeneralResponseDto("Successful", HttpStatus.CREATED.value());
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        PartDto createdPart = partService.createPart(request, companyId);
+        return new ResponseEntity<>(createdPart, HttpStatus.OK);
     }
 
     @DeleteMapping("/{partId}")
@@ -142,4 +141,22 @@ public class PartController {
         CostHistoryResponseDto response = partService.getPartCostsByPartAndVendor(partId, vendorId,companyId );
         return ResponseEntity.ok(response);
     }
+
+   @PostMapping("/upload-image")
+    @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "') or hasRole('" + MAINTAINER + "')")
+    public ResponseEntity<GeneralResponseDto> uploadPartImage(
+        @RequestParam Long partId,
+        @RequestBody String base64Image,
+        @AuthenticationPrincipal User user) {
+    String result = partService.uploadPartImage(partId, base64Image, user.getCompany().getCompanyId());
+
+    if (result.startsWith("Image uploaded successfully")) {
+        GeneralResponseDto response = new GeneralResponseDto(result, HttpStatus.OK.value());
+        return ResponseEntity.ok(response);
+    } else {
+        GeneralResponseDto response = new GeneralResponseDto(result, HttpStatus.INTERNAL_SERVER_ERROR.value());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    }
+ }
+
 }       
