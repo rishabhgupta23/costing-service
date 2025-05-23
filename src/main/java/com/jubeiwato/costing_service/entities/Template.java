@@ -20,24 +20,24 @@ import lombok.NoArgsConstructor;
 @Builder
 @Entity
 @Table(
-    name = "cost_factor",
+    name = "template",
     schema = "app",
-    uniqueConstraints = @UniqueConstraint(
-        name = "cost_factor_company_name_unique",
-        columnNames = {"factor_name", "company_id"}
-    )
+    uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"template_name", "company_id"})
+    }
 )
-public class CostFactor extends BaseEntity {
+public class Template extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "factor_id")
-    private long factorId;
+    @Column(name = "template_id")
+    private Long templateId;
 
-    @Column(name = "factor_name")
-    private String factorName;
+    @Column(name = "template_name", nullable = false, unique = true)
+    private String templateName;
 
     @ManyToOne
     @JoinColumn(name = "company_id", referencedColumnName = "company_id", nullable = false)
     private Company company;
+
 }

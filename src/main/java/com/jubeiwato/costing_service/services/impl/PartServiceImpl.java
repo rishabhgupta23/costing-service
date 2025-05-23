@@ -283,31 +283,6 @@ private PartCostCostFactor createPartCostCostFactor(Long costFactorId, Double va
         .build();
 }
 
-    @Override
-    public ApiPageResponseDto<List<CostFactorDto>> getCostFactors(int pageNo, int pageSize, Long companyId) {
-        Pageable pageable = PageRequest.of(pageNo, pageSize);
-        Page<CostFactor> costFactorPage = costFactorRepository.findByCompany_CompanyId(companyId, pageable);
-
-        List<CostFactorDto> costFactorDtos = costFactorPage.getContent()
-                .stream()
-                .map(costFactor -> CostFactorDto.builder()
-                        .id(costFactor.getFactorId())
-                        .name(costFactor.getFactorName())
-                        .build())
-                .toList();
-
-        PageInfoDto pageInfo = PageInfoDto.builder()
-                .totalPages(costFactorPage.getTotalPages())
-                .pageNumber(pageNo)
-                .pageSize(pageSize)
-                .totalRecords(costFactorPage.getTotalElements())
-                .build();
-
-        return ApiPageResponseDto.<List<CostFactorDto>>builder()
-                .data(costFactorDtos)
-                .pageInfo(pageInfo)
-                .build();
-    }
 
     @Override
     public ApiPageResponseDto<PartDataDto> getParts(PartDto filter,long companyId, int pageNo, int pageSize, String sortBy, Sorting sortMode) {

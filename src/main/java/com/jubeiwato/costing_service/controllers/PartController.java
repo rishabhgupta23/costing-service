@@ -69,12 +69,6 @@ public class PartController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/cost-factors")
-    public ResponseEntity<ApiPageResponseDto<List<CostFactorDto>>> getCostFactors(@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNo,@RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int pageSize, @AuthenticationPrincipal User authenticatedUser) {
-       Long companyId = authenticatedUser.getCompany().getCompanyId();
-       ApiPageResponseDto<List<CostFactorDto>> response = partService.getCostFactors(pageNo, pageSize,companyId);
-       return new ResponseEntity<>(response, HttpStatus.OK);
-}
 
     @GetMapping("/{partId}")
     public ResponseEntity<PartDto> getPartById(@PathVariable Long partId, @AuthenticationPrincipal User authenticatedUser) {

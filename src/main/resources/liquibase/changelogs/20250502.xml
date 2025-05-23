@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+      
+        <changeSet id="20250501-1" author="Anusha">
+            <sql>
+                CREATE TABLE IF NOT EXISTS app.template (
+                    template_id BIGSERIAL PRIMARY KEY,
+                    template_name VARCHAR(255) NOT NULL,
+                    company_id BIGINT NOT NULL,
+                    delete_flag INTEGER DEFAULT 0,
+                    created_by BIGINT,
+                    created_date_time TIMESTAMPTZ(6),
+                    updated_by BIGINT,
+                    updated_date_time TIMESTAMPTZ(6),
+        
+                    CONSTRAINT fk_template_company FOREIGN KEY (company_id)
+                        REFERENCES app.company(company_id) ON DELETE CASCADE,
+        
+                    CONSTRAINT uq_template_name_company UNIQUE (template_name, company_id)
+                );
+            </sql>
+            <rollback>
+                <sql>
+                    DROP TABLE IF EXISTS app.template CASCADE;
+                </sql>
+            </rollback>
+        </changeSet>
+
+        <changeSet id="20250501-2" author="Anusha">
+            <sql>
+                CREATE TABLE IF NOT EXISTS app.template_part_attribute (
+                    id BIGSERIAL PRIMARY KEY,
+                    template_id BIGINT NOT NULL,
+                    attribute_id BIGINT NOT NULL,
+                    delete_flag INTEGER DEFAULT 0,
+                    created_by BIGINT,
+                    created_date_time TIMESTAMPTZ(6),
+                    updated_by BIGINT,
+                    updated_date_time TIMESTAMPTZ(6),
+                    
+                    CONSTRAINT fk_template FOREIGN KEY (template_id)
+                        REFERENCES app.template(template_id) ON DELETE CASCADE,
+                    
+                    CONSTRAINT fk_part_attribute FOREIGN KEY (attribute_id)
+                        REFERENCES app.part_attribute(attribute_id) ON DELETE CASCADE
+                );
+            </sql>
+            <rollback>
+                <sql>
+                    DROP TABLE IF EXISTS app.template_part_attribute CASCADE;
+                </sql>
+            </rollback>
+        </changeSet>
+
+</databaseChangeLog>

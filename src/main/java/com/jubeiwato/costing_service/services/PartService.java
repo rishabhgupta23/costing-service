@@ -14,8 +14,6 @@ public interface PartService {
 
     public ApiPageResponseDto<List<PartUnitDto>> getPartUnits(int pageNo, int pageSize);
 
-    public ApiPageResponseDto<List<CostFactorDto>> getCostFactors(int pageNo, int pageSize, Long companyId);
-
     public PartDto createPart(PartRequestDto request,Long companyId);
 
 
