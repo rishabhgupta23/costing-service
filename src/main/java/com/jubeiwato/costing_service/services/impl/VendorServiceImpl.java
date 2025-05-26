@@ -113,6 +113,10 @@ Specification<Vendor> spec = new VendorSpecification(companyId, name, address, e
     @Override
     public VendorDto updateVendorById(Long id, String name, String emailId, String contactNumber, String address,Long companyId) {
                 Vendor vendor = getAndValidateVendor(id, companyId);
+                boolean exists = vendorRepository.existsByCompanyCompanyIdAndNameAndVendorIdNot(companyId, name, id);
+                if (exists) {
+                        throw new AppException(ErrorMessageConstant.VENDOR_ALREADY_EXISTS, HttpStatus.NOT_FOUND);
+                }
         vendor.setName(name);
         vendor.setEmailId(emailId);
         vendor.setContactNumber(contactNumber);

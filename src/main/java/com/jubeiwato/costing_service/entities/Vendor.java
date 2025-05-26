@@ -8,6 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,7 +19,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "vendor", schema = "app")
+@Table(name = "vendor", schema = "app", uniqueConstraints = @UniqueConstraint(columnNames = { "company_id", "name" }))
 public class Vendor extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

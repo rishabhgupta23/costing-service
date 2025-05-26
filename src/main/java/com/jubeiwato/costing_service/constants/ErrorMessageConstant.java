@@ -51,7 +51,7 @@ public class ErrorMessageConstant {
     public static final String TEMPLATE_NOT_FOUND = "Template not found";
     public static final String TEMPLATE_ALREADY_EXISTS = "Template name already exists for the company.";
     public static final String ATTRIBUTE_NOT_SELECTED = "Cannot create empty template, selecting part attribute is mandatory.";
-
+    public static final String VENDOR_ALREADY_EXISTS = "Cannot update: Vendor with the same name already exists in this company.";
 
     public static final String COST_FACTOR_ALREADY_EXISTS_TEMPLATE = "Cost factor with name '%s' already exists";
     public static final String COST_FACTOR_CREATED = "Cost Factor created successfully";

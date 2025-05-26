@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="202506526" author="Vidisha">
+     <sql>
+        
+        ALTER TABLE app.vendor DROP CONSTRAINT IF EXISTS vendor_name_key;
+
+        
+        ALTER TABLE app.vendor ADD CONSTRAINT vendor_company_name_key UNIQUE (company_id, name);
+    </sql>
+
+    <rollback>
+        ALTER TABLE app.vendor DROP CONSTRAINT IF EXISTS vendor_company_name_key;
+        ALTER TABLE app.vendor ADD CONSTRAINT vendor_name_key UNIQUE (name);
+    </rollback>
+</changeSet>
+</databaseChangeLog>
