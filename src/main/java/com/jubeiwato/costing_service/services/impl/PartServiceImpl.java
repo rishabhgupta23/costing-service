@@ -8,7 +8,7 @@ import com.jubeiwato.costing_service.constants.Sorting;
 import com.jubeiwato.costing_service.dtos.*;
 import com.jubeiwato.costing_service.services.FileGeneratorService;
 import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -61,8 +61,6 @@ public class PartServiceImpl implements PartService {
     private FileGeneratorService excelService;
     private CompanyRepository companyRepository;
     private final PartFileRepository partFileRepository;
-    @Value("${aws.bucketName}")
-    private String bucketName;
     private final S3Service s3Service;
 
     public PartServiceImpl(PartRepository partRepository, CategoryRepository categoryRepository, VendorRepository vendorRepository
@@ -596,5 +594,19 @@ public CostHistoryResponseDto getPartCostsByPartAndVendor(Long partId, Long vend
       }
   }
 
+  @Override
+  public Resource downloadFileFromS3(String fileUrl) {
+      return s3Service.downloadFileFromS3(fileUrl);
+  }  
+  
+  @Override
+public List<String> getPartFileUrls(Long partId, Long companyId) {
+  Part part = getValidatedPart(partId, companyId); // Ensures the part belongs to the user's company
+  List<PartFile> files = partFileRepository.findByPart(part);
+  return files.stream()
+          .map(PartFile::getFileUrl)
+          .collect(Collectors.toList());
+}
+    
 }
     

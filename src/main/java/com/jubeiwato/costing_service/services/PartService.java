@@ -1,6 +1,7 @@
 package com.jubeiwato.costing_service.services;
 
 import java.util.List;
+import org.springframework.core.io.Resource;
 
 import com.jubeiwato.costing_service.constants.Sorting;
 import com.jubeiwato.costing_service.dtos.*;
@@ -24,9 +25,14 @@ public interface PartService {
     void deletePartById(Long partId, Long companyId);
 
     public CostHistoryResponseDto getPartCostsByPartAndVendor(Long partId, Long vendorId, Long companyId );
+
     byte[] downloadPartsToExcel(Long companyId) throws IOException;
 
     FileResponseDto downloadBomPartListToExcel(Long parentPartId,Long companyId) throws IOException;
 
     String uploadPartImage(Long partId, String base64Image, Long companyId);
+
+    public Resource downloadFileFromS3(String fileUrl);
+    
+    List<String> getPartFileUrls(Long partId, Long companyId);
 }

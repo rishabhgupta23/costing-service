@@ -8,7 +8,10 @@ import java.util.List;
 import com.jubeiwato.costing_service.constants.*;
 import com.jubeiwato.costing_service.dtos.*;
 import com.jubeiwato.costing_service.entities.User;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -152,5 +155,34 @@ public class PartController {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }
  }
+
+ @GetMapping("/download-image")
+    public ResponseEntity<Resource> downloadFile(@RequestParam String fileUrl) {
+        try {
+            Resource file = partService.downloadFileFromS3(fileUrl);
+
+            // Extract filename from URL
+            String fileName = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+                    .body(file);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
+       }
+    }
+
+    @GetMapping("/part-files")
+public ResponseEntity<List<String>> getPartFileUrls(
+        @RequestParam Long partId,
+        @AuthenticationPrincipal User authenticatedUser
+) {
+    Long companyId = authenticatedUser.getCompany().getCompanyId(); 
+    List<String> urls = partService.getPartFileUrls(partId, companyId);
+    return ResponseEntity.ok(urls);
+}
+    
 
 }       

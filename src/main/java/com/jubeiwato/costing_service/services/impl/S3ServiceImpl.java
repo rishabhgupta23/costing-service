@@ -1,8 +1,11 @@
 package com.jubeiwato.costing_service.services.impl;
 
+import java.io.InputStream;
 import java.util.Base64;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -13,6 +16,7 @@ import com.jubeiwato.costing_service.services.S3Service;
 import lombok.RequiredArgsConstructor;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 @Service
@@ -51,5 +55,20 @@ public class S3ServiceImpl implements S3Service {
             throw new AppException(ErrorMessageConstant.IMAGE_UPLOAD_FAILED + ": " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+     @Override
+    public Resource downloadFileFromS3(String fileUrl) {
+        // Extract key from full URL
+        String key = fileUrl.substring(fileUrl.indexOf("parts/"));
+
+        GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                .bucket(bucketName)
+                .key(key)
+                .build();
+
+        InputStream inputStream = s3Client.getObject(getObjectRequest);
+        return new InputStreamResource(inputStream);
+    }
+
 }
 
