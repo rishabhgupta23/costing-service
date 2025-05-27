@@ -15,7 +15,7 @@
                     file_url VARCHAR(255) NOT NULL,
         
                     CONSTRAINT fk_part_file_part FOREIGN KEY (part_id)
-                        REFERENCES app.part(part_id),
+                        REFERENCES app.part(part_id) ON DELETE CASCADE,
                         
                     CONSTRAINT fk_part_file_company FOREIGN KEY (company_id)
                         REFERENCES app.company(company_id) ON DELETE CASCADE,

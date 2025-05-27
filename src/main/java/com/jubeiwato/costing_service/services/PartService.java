@@ -32,7 +32,7 @@ public interface PartService {
 
     String uploadPartImage(Long partId, String base64Image, Long companyId);
 
-    public Resource downloadFileFromS3(String fileUrl);
+    public Resource downloadFileFromS3(String fileUrl, Long companyId);
     
     List<String> getPartFileUrls(Long partId, Long companyId);
 }

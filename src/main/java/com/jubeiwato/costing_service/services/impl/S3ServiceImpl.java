@@ -57,9 +57,9 @@ public class S3ServiceImpl implements S3Service {
     }
 
      @Override
-    public Resource downloadFileFromS3(String fileUrl) {
+    public Resource downloadFileFromS3(String fileUrl) {        
         // Extract key from full URL
-        String key = fileUrl.substring(fileUrl.indexOf("parts/"));
+        String key = fileUrl.substring(fileUrl.indexOf(".com/") + 5);
 
         GetObjectRequest getObjectRequest = GetObjectRequest.builder()
                 .bucket(bucketName)

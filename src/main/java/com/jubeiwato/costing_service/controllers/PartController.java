@@ -133,8 +133,8 @@ public class PartController {
     @GetMapping("/cost-history")
     public ResponseEntity<CostHistoryResponseDto> getPartCostsByPartAndVendor(
             @RequestParam Long partId,
-            @RequestParam Long vendorId, @AuthenticationPrincipal User authenticatedUser) {
-            Long companyId = authenticatedUser.getCompany().getCompanyId();
+            @RequestParam Long vendorId, @AuthenticationPrincipal User user) {
+            Long companyId = user.getCompany().getCompanyId();
         CostHistoryResponseDto response = partService.getPartCostsByPartAndVendor(partId, vendorId,companyId );
         return ResponseEntity.ok(response);
     }
@@ -145,7 +145,9 @@ public class PartController {
         @RequestParam Long partId,
         @RequestBody String base64Image,
         @AuthenticationPrincipal User user) {
-    String result = partService.uploadPartImage(partId, base64Image, user.getCompany().getCompanyId());
+    
+    Long companyId = user.getCompany().getCompanyId();
+    String result = partService.uploadPartImage(partId, base64Image,companyId);
 
     if (result.startsWith("Image uploaded successfully")) {
         GeneralResponseDto response = new GeneralResponseDto(result, HttpStatus.OK.value());
@@ -157,9 +159,11 @@ public class PartController {
  }
 
  @GetMapping("/download-image")
-    public ResponseEntity<Resource> downloadFile(@RequestParam String fileUrl) {
+    public ResponseEntity<Resource> downloadFile(@RequestParam String fileUrl, @AuthenticationPrincipal User user) {
+
+        Long companyId = user.getCompany().getCompanyId();
         try {
-            Resource file = partService.downloadFileFromS3(fileUrl);
+            Resource file = partService.downloadFileFromS3(fileUrl,companyId);
 
             // Extract filename from URL
             String fileName = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);

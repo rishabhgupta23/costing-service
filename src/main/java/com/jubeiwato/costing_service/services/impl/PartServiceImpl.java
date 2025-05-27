@@ -284,14 +284,14 @@ private PartCostCostFactor createPartCostCostFactor(Long costFactorId, Double va
 
     @Override
     public ApiPageResponseDto<PartDataDto> getParts(PartDto filter,long companyId, int pageNo, int pageSize, String sortBy, Sorting sortMode) {
-        Sort sort = (sortMode == Sorting.DESC)
+     Sort sort = (sortMode == Sorting.DESC)
                 ? Sort.by(sortBy).descending()
                 : Sort.by(sortBy).ascending();
-        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
-
+    Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
+       
 
         // Apply Specification
-                if (!ValidationUtil.isValidInput(filter.getPartName()) ||
+             if (!ValidationUtil.isValidInput(filter.getPartName()) ||
                 !ValidationUtil.isValidInput(filter.getPartNumber()) ||
                 !ValidationUtil.isValidInput(filter.getCategoryName()) ||
                 !ValidationUtil.isValidInput(filter.getUnit())) {
@@ -366,9 +366,9 @@ private PartCostCostFactor createPartCostCostFactor(Long costFactorId, Double va
                 .unit(part.getUnit())
                 .categoryName(part.getCategory().getName())
                 .type(part.getType().toString())
-                .bom(bomDtoList)
-                .vendorCostList(createVendorCostList(partCostList))
-                .build();
+            .bom(bomDtoList)
+            .vendorCostList(createVendorCostList(partCostList))
+            .build();
         return  responseDto;
     }
 
@@ -575,14 +575,18 @@ public CostHistoryResponseDto getPartCostsByPartAndVendor(Long partId, Long vend
 
           int imageCount = partFileRepository.countByPart(part);
                if (imageCount >= 3) {
-                return "Cannot upload more than 3 images for a part";
+                throw new AppException(ErrorMessageConstant.IMAGE_QUANTITY_EXCEEDS_LIMIT, HttpStatus.BAD_REQUEST);
             }
 
   
           String fileUrl = s3Service.uploadPartImageToS3(partId, base64Image, companyId);
-  
+           
+          Company company = companyRepository.findById(companyId)
+          .orElseThrow(() -> new AppException(ErrorMessageConstant.INVALID_COMPANY, HttpStatus.BAD_REQUEST));
+
           PartFile partFile = PartFile.builder()
                   .part(part)
+                  .company(company)
                   .fileUrl(fileUrl)
                   .build();
   
@@ -595,7 +599,14 @@ public CostHistoryResponseDto getPartCostsByPartAndVendor(Long partId, Long vend
   }
 
   @Override
-  public Resource downloadFileFromS3(String fileUrl) {
+  public Resource downloadFileFromS3(String fileUrl, Long companyId) {
+     
+    Optional<PartFile> partFileOpt = partFileRepository.findByFileUrlAndPart_Company_CompanyId(fileUrl, companyId);
+
+    if (partFileOpt.isEmpty()) {
+        throw new AppException(ErrorMessageConstant.FILE_NOT_FOUND_OR_UNAUTHORIZED, HttpStatus.NOT_FOUND);
+    }
+    
       return s3Service.downloadFileFromS3(fileUrl);
   }  
   

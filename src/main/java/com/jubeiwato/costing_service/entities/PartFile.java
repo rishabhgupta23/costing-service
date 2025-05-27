@@ -16,10 +16,12 @@ public class PartFile {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "file_id")
     private Long fileId;
-
+    
+    @ManyToOne
     @JoinColumn(name = "part_id", referencedColumnName = "part_id", nullable = false)
     private Part part;
-
+    
+    @ManyToOne
     @JoinColumn(name = "company_id", referencedColumnName = "company_id", nullable = false)    
     private Company company;
 

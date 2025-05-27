@@ -59,6 +59,8 @@ public class ErrorMessageConstant {
     public static final String COST_FACTOR_CREATED = "Cost Factor created successfully";
     public static final String INVALID_COST_FACTOR = "Cost Factor can not be empty or null";
     public static final String COST_FACTOR_SOFT_DELETED_EXISTS_TEMPLATE = "A deactivated cost factor with name '%s' already exists. To activate it, please create a cost factor with this name.";
+    public static final String FILE_NOT_FOUND_OR_UNAUTHORIZED = "File not found or unauthorized access.";
+    public static final String IMAGE_QUANTITY_EXCEEDS_LIMIT = "Cannot upload more than 3 images for a part";
 
     private ErrorMessageConstant() {
 
