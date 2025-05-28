@@ -42,17 +42,17 @@ public class CategoryController {
 
     @GetMapping
 public ResponseEntity<ApiPageResponseDto<List<CategoryDto>>> getCategoryList(
-        @RequestParam(required = false) String name,
+        @RequestParam(required = false) String categoryName,
         @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNo,
         @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int pageSize,
-        @RequestParam(defaultValue = "name") String sortColumn,
+        @RequestParam(defaultValue = "categoryName") String sortColumn,
         @RequestParam(defaultValue = "ASC") Sorting sortMode,
         @AuthenticationPrincipal User authenticatedUser
 ) {
     Long companyId = authenticatedUser.getCompany().getCompanyId();
 
     ApiPageResponseDto<List<CategoryDto>> response = categoryService.getCategoryList(
-            companyId, name, pageNo, pageSize, sortColumn, sortMode);
+            companyId, categoryName, pageNo, pageSize, sortColumn, sortMode);
 
     return ResponseEntity.ok(response);
 }
@@ -61,7 +61,7 @@ public ResponseEntity<ApiPageResponseDto<List<CategoryDto>>> getCategoryList(
     @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "') or hasRole('" + MAINTAINER + "')")
     public ResponseEntity<GeneralResponseDto> createCategory(@Valid @RequestBody CategoryDto request, @AuthenticationPrincipal User authenticatedUser) {
         Long companyId = authenticatedUser.getCompany().getCompanyId();
-        this.categoryService.createCategory(request.getName(),companyId);
+        this.categoryService.createCategory(request.getCategoryName(),companyId);
         GeneralResponseDto response = new GeneralResponseDto("Successful", HttpStatus.CREATED.value());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
         

@@ -23,12 +23,12 @@ public class PartDto {
     private String unit;
 
 
-    public static PartDto enitityToDto(Part entity) {
+    public static PartDto entityToDto(Part entity) {
         return PartDto.builder()
         .partId(entity.getPartId())
         .partName(entity.getPartName())
         .partNumber(entity.getPartNumber())
-        .categoryName(entity.getCategory() != null ? entity.getCategory().getName() : null)
+        .categoryName(entity.getCategory() != null ? entity.getCategory().getCategoryName() : null)
         .type(entity.getType().name())
         .unit(entity.getUnit())
         .build();

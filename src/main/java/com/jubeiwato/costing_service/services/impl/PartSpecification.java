@@ -1,8 +1,10 @@
 package com.jubeiwato.costing_service.services.impl;
 
+import com.jubeiwato.costing_service.entities.Category;
 import com.jubeiwato.costing_service.entities.Part;
 
 import jakarta.persistence.criteria.*;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.util.ArrayList;
@@ -38,7 +40,7 @@ public class PartSpecification implements Specification<Part> {
             predicates.add(cb.like(cb.lower(root.get("partNumber")), "%" + partNumber.toLowerCase() + "%"));
         }
         if (categoryName != null && !categoryName.isEmpty()) {
-            predicates.add(cb.like(cb.lower(root.get("category").get("name")), "%" + categoryName.toLowerCase() + "%"));
+            predicates.add(cb.like(cb.lower(root.get("category").get("categoryName")), "%" + categoryName.toLowerCase() + "%"));
         }
         if (type != null && !type.isEmpty()) {
             predicates.add(cb.like(cb.lower(root.get("type")), "%" + type.toLowerCase() + "%"));
@@ -51,4 +53,18 @@ public class PartSpecification implements Specification<Part> {
         return cb.and(predicates.toArray((new Predicate[predicates.size()])));
     }
 
+    public static Specification<Part> orderByCategoryName(Sort.Direction direction) {
+        return (root, query, builder) -> {
+            Fetch<Part, Category> categoryFetch = root.fetch("category", JoinType.LEFT);
+
+            Join<Part, Category> categoryJoin = (Join<Part, Category>) categoryFetch;
+
+            query.orderBy(direction.isAscending()
+                    ? builder.asc(categoryJoin.get("categoryName"))
+                    : builder.desc(categoryJoin.get("categoryName")));
+
+            return builder.conjunction(); 
+        };
+    }
+    
 }
