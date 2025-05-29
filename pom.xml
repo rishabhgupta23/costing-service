@@ -113,6 +113,12 @@
 			<version>2.31.43</version>
 			<scope>compile</scope>
 		</dependency>
+		
+       <dependency>
+           <groupId>org.apache.tika</groupId>
+           <artifactId>tika-core</artifactId>
+           <version>3.1.0</version>
+       </dependency>
 
 	</dependencies>
 

@@ -139,24 +139,24 @@ public class PartController {
         return ResponseEntity.ok(response);
     }
 
-   @PostMapping("/upload-image")
+    @PostMapping("/upload-image")
     @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "') or hasRole('" + MAINTAINER + "')")
     public ResponseEntity<GeneralResponseDto> uploadPartImage(
         @RequestParam Long partId,
-        @RequestBody String base64Image,
+        @RequestBody PartImageUploadDto partImageUploadDto,
         @AuthenticationPrincipal User user) {
     
-    Long companyId = user.getCompany().getCompanyId();
-    String result = partService.uploadPartImage(partId, base64Image,companyId);
-
-    if (result.startsWith("Image uploaded successfully")) {
+        Long companyId = user.getCompany().getCompanyId();
+        String result = partService.uploadPartImage(partId, partImageUploadDto, companyId);
+    
+        if (result.startsWith("Image uploaded successfully")) {
         GeneralResponseDto response = new GeneralResponseDto(result, HttpStatus.OK.value());
         return ResponseEntity.ok(response);
-    } else {
+        } else {
         GeneralResponseDto response = new GeneralResponseDto(result, HttpStatus.INTERNAL_SERVER_ERROR.value());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
- }
 
  @GetMapping("/download-image")
     public ResponseEntity<Resource> downloadFile(@RequestParam String fileUrl, @AuthenticationPrincipal User user) {
@@ -187,6 +187,6 @@ public ResponseEntity<List<String>> getPartFileUrls(
     List<String> urls = partService.getPartFileUrls(partId, companyId);
     return ResponseEntity.ok(urls);
 }
-    
+
 
 }       

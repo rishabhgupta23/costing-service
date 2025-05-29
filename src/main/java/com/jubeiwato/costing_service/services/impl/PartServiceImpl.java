@@ -569,21 +569,21 @@ public CostHistoryResponseDto getPartCostsByPartAndVendor(Long partId, Long vend
   }  
   
   @Override
-  public String uploadPartImage(Long partId, String base64Image, Long companyId) {
+  public String uploadPartImage(Long partId, PartImageUploadDto partImageUploadDto, Long companyId) {
       try {
           Part part = getValidatedPart(partId, companyId);
-
-          int imageCount = partFileRepository.countByPart(part);
-               if (imageCount >= 3) {
-                throw new AppException(ErrorMessageConstant.IMAGE_QUANTITY_EXCEEDS_LIMIT, HttpStatus.BAD_REQUEST);
-            }
-
   
-          String fileUrl = s3Service.uploadPartImageToS3(partId, base64Image, companyId);
-           
+          int imageCount = partFileRepository.countByPart(part);
+          if (imageCount >= 3) {
+              throw new AppException(ErrorMessageConstant.IMAGE_QUANTITY_EXCEEDS_LIMIT, HttpStatus.BAD_REQUEST);
+          }
+  
+  
+          String fileUrl = s3Service.uploadPartImageToS3(partId, partImageUploadDto, companyId);
+  
           Company company = companyRepository.findById(companyId)
-          .orElseThrow(() -> new AppException(ErrorMessageConstant.INVALID_COMPANY, HttpStatus.BAD_REQUEST));
-
+                  .orElseThrow(() -> new AppException(ErrorMessageConstant.INVALID_COMPANY, HttpStatus.BAD_REQUEST));
+  
           PartFile partFile = PartFile.builder()
                   .part(part)
                   .company(company)

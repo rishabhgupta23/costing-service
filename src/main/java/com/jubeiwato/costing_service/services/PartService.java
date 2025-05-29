@@ -30,7 +30,7 @@ public interface PartService {
 
     FileResponseDto downloadBomPartListToExcel(Long parentPartId,Long companyId) throws IOException;
 
-    String uploadPartImage(Long partId, String base64Image, Long companyId);
+    String uploadPartImage(Long partId, PartImageUploadDto imageUploadDto, Long companyId);
 
     public Resource downloadFileFromS3(String fileUrl, Long companyId);
     
