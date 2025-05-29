@@ -47,6 +47,13 @@ public class VendorServiceImpl implements VendorService {
                 this.excelService = excelService;
         }
 
+        private void validateDuplicateVendor(Long companyId, String name) {
+                boolean exists = vendorRepository.existsByCompanyCompanyIdAndName(companyId, name);
+                if (exists) {
+                        throw new AppException(ErrorMessageConstant.VENDOR_ALREADY_EXISTS, HttpStatus.BAD_REQUEST);
+                }
+        }
+
         private Vendor getAndValidateVendor(Long id, Long companyId) {
                 return vendorRepository.findByVendorIdAndCompany_CompanyId(id, companyId)
                                 .orElseThrow(() -> new AppException(ErrorMessageConstant.VENDOR_DOES_NOT_EXIST,HttpStatus.NOT_FOUND));
@@ -55,8 +62,17 @@ public class VendorServiceImpl implements VendorService {
 
         @Override
         public void createVendor(Long companyId, String name, String emailId, String contactNumber, String address) {
+
+                if (name == null || name.trim().isEmpty()) {
+                        throw new AppException(ErrorMessageConstant.VENDOR_NAME_NOT_NULL, HttpStatus.BAD_REQUEST);
+                }
+
+                if (!ValidationUtil.isValidInput(name)) {
+                        throw new AppException(ErrorMessageConstant.INVALID_INPUT, HttpStatus.BAD_REQUEST);
+                }
                 Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new AppException("Company not found", HttpStatus.BAD_REQUEST));
+                validateDuplicateVendor(companyId, name);
         Vendor vendor = Vendor.builder()
 
         .company(company)
@@ -74,7 +90,7 @@ public class VendorServiceImpl implements VendorService {
                 Sort.Direction direction = (sortMode == Sorting.DESC) ? Sort.Direction.DESC : Sort.Direction.ASC;
 
         Sort sort = Sort.by(direction, sortColumn);
-        Pageable pageable = PageRequest.of(pageNo, pageSize, sort); 
+        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
        if (!ValidationUtil.isValidInput(name) ||
     !ValidationUtil.isValidInput(address) ||
     !ValidationUtil.isValidInput(emailId) ||
@@ -122,8 +138,7 @@ Specification<Vendor> spec = new VendorSpecification(companyId, name, address, e
         vendor.setContactNumber(contactNumber);
         vendor.setAddress(address);
 
-        return VendorDto.entityToDto(this.vendorRepository.save(vendor));
-    }
+        return VendorDto.entityToDto(this.vendorRepository.save(vendor)); }
 
     @Transactional
     @Override
@@ -150,9 +165,9 @@ Specification<Vendor> spec = new VendorSpecification(companyId, name, address, e
             .build();
 
             return ApiPageResponseDto.<List<PartDto>>builder()
-            .data(partDtos)
-            .pageInfo(pageInfo)
-            .build();
+                                .data(partDtos)
+                                .pageInfo(pageInfo)
+                                .build();
 
     }
 
@@ -160,19 +175,19 @@ Specification<Vendor> spec = new VendorSpecification(companyId, name, address, e
         public byte[] downloadVendorExcel(Long companyId) throws IOException {
 
                 List<Vendor> vendors = vendorRepository.findByCompanyCompanyId(companyId);
-               String[] headers = { "Name", "Email", "Contact Number", "Address" };
+                String[] headers = { "Name", "Email", "Contact Number", "Address" };
 
-        List<String[]> data = vendors.stream()
+                List<String[]> data = vendors.stream()
 
-                .map(vendor -> new String[]{
-                        vendor.getName(),
-                        vendor.getEmailId(),
-                        vendor.getContactNumber(),
-                        vendor.getAddress()
-                })
-                .toList();
+                                .map(vendor -> new String[] {
+                                                vendor.getName(),
+                                                vendor.getEmailId(),
+                                                vendor.getContactNumber(),
+                                                vendor.getAddress()
+                                })
+                                .toList();
 
-        return excelService.generateSpreadsheet(data, headers);
-    }
+                return excelService.generateSpreadsheet(data, headers);
+        }
 
 }
