@@ -1,5 +1,7 @@
 package com.jubeiwato.costing_service.repositories;
 
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -20,4 +22,7 @@ public interface PartRepository extends JpaRepository<Part, Long>, JpaSpecificat
    List<Part> findByCompany_CompanyId(Long companyId, Sort sort);
    boolean existsByCompany_CompanyIdAndPartNumber(Long companyId, String partNumber);
    List<Part> findByPartIdInAndCompany_CompanyId(Set<Long> partIds, Long companyId);
+   @EntityGraph(attributePaths = {"category"})
+   @Override
+   Page<Part> findAll(Specification<Part> spec, Pageable pageable);
 }

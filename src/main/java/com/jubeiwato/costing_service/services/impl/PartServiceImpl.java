@@ -284,18 +284,14 @@ private PartCostCostFactor createPartCostCostFactor(Long costFactorId, Double va
             throw new AppException(ErrorMessageConstant.INVALID_INPUT, HttpStatus.BAD_REQUEST);
         }
         Specification<Part> spec = new PartSpecification(companyId,filter.getPartName(), filter.getPartNumber(), filter.getCategoryName(), filter.getType(), filter.getUnit());
-        Pageable pageable;
 
         if ("categoryName".equalsIgnoreCase(sortBy)) {
-            // Add custom ordering using Criteria API
-            spec = spec.and(PartSpecification.orderByCategoryName(Sort.Direction.fromString(sortMode.name())));
-            pageable = PageRequest.of(pageNo, pageSize); 
-        } else {
-            Sort sort = (sortMode == Sorting.DESC)
-                    ? Sort.by(Sort.Order.desc(sortBy))
-                    : Sort.by(Sort.Order.asc(sortBy));
-            pageable = PageRequest.of(pageNo, pageSize, sort);
+            sortBy = "category.categoryName";
         }
+        Sort sort = (sortMode == Sorting.DESC)
+                ? Sort.by(Sort.Order.desc(sortBy))
+                : Sort.by(Sort.Order.asc(sortBy));
+        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
     
         Page<Part> partPage = partRepository.findAll(spec, pageable);
 

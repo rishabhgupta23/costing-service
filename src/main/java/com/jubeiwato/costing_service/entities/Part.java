@@ -36,7 +36,7 @@ public class Part extends BaseEntity{
         @Column(name = "part_number")
         private String partNumber;   
 
-        @ManyToOne(fetch = FetchType.EAGER)
+        @ManyToOne
         @JoinColumn(name = "category_id", referencedColumnName = "category_id", nullable = true)
         private Category category;
         
