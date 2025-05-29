@@ -154,7 +154,7 @@ Specification<Vendor> spec = new VendorSpecification(companyId, name, address, e
         Page<Part> partVendorList = partRepository.getVendorParts(vendorId, pageable);
 
         List<PartDto> partDtos = partVendorList.getContent().stream()
-            .map(PartDto::enitityToDto)
+            .map(PartDto::entityToDto)
             .toList();
 
         PageInfoDto pageInfo = PageInfoDto.builder()

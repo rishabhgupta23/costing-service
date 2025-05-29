@@ -5,6 +5,7 @@ import com.jubeiwato.costing_service.authentication.service.JwtService;
 import com.jubeiwato.costing_service.dtos.LoginResponse;
 import com.jubeiwato.costing_service.dtos.LoginUserDto;
 import com.jubeiwato.costing_service.dtos.RegisterUserDto;
+import com.jubeiwato.costing_service.dtos.UserDto;
 import com.jubeiwato.costing_service.entities.User;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -28,10 +29,10 @@ public class AuthenticationController {
 
     @PostMapping("/signup")
         @PreAuthorize("hasRole('" + SUPER_ADMIN + "')")
-    public ResponseEntity<User> register(@RequestBody RegisterUserDto registerUserDto) {
+    public ResponseEntity<UserDto> register(@RequestBody RegisterUserDto registerUserDto) {
         User registeredUser = authenticationService.signup(registerUserDto);
-        registeredUser.setPassword(null);
-        return ResponseEntity.ok(registeredUser);
+    UserDto userDto = UserDto.entityToDto(registeredUser);
+    return ResponseEntity.ok(userDto);
     }
 
     @PostMapping("/login")

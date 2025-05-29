@@ -75,7 +75,7 @@ import com.jubeiwato.costing_service.services.impl.CostFactorServiceImpl;
 
         assertNotNull(response);
         assertEquals(1, response.getData().size());
-        assertEquals(FACTOR_NAME, response.getData().get(0).getName());
+        assertEquals(FACTOR_NAME, response.getData().get(0).getFactorName());
     }
 
     @Test
@@ -147,7 +147,7 @@ import com.jubeiwato.costing_service.services.impl.CostFactorServiceImpl;
 
         CostFactorDto updated = costFactorService.updateCostFactor(1L, "NewName", COMPANY_ID);
 
-        assertEquals("NewName", updated.getName());
+        assertEquals("NewName", updated.getFactorName());
         verify(costFactorRepository).save(existing);
     }
 
@@ -209,7 +209,7 @@ void testGetCostFactors_WithDescendingSorting() {
 
     assertNotNull(response);
     assertEquals(1, response.getData().size());
-    assertEquals(FACTOR_NAME, response.getData().get(0).getName());
+    assertEquals(FACTOR_NAME, response.getData().get(0).getFactorName());
 }
 
 @Test
@@ -223,7 +223,7 @@ void testUpdateCostFactor_SameNameIgnoreCase_DoesNothing() {
     CostFactorDto updated = costFactorService.updateCostFactor(1L, "LABOR", COMPANY_ID);
 
     // Should not throw, should not call findByCompany_CompanyIdAndFactorNameIgnoreCase
-    assertEquals("Labor", updated.getName());
+    assertEquals("Labor", updated.getFactorName());
     verify(costFactorRepository).save(existing);
     verify(costFactorRepository, never()).findByCompany_CompanyIdAndFactorNameIgnoreCase(anyLong(), anyString());
 }
@@ -237,7 +237,7 @@ void testUpdateCostFactor_NoChangeInName() {
 
     CostFactorDto updated = costFactorService.updateCostFactor(1L, "  Labor  ", COMPANY_ID); // input with spaces
 
-    assertEquals("Labor", updated.getName());
+    assertEquals("Labor", updated.getFactorName());
     verify(costFactorRepository).save(existing);
     // No conflict check should happen
     verify(costFactorRepository, times(0)).findByCompany_CompanyIdAndFactorNameIgnoreCase(anyLong(), anyString());
