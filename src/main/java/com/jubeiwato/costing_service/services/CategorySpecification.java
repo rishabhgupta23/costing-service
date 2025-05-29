@@ -10,11 +10,11 @@ import java.util.List;
 public class CategorySpecification implements Specification<Category> {
 
     private final Long companyId;
-    private final String name;
+    private final String categoryName;
 
-    public CategorySpecification(Long companyId, String name) {
+    public CategorySpecification(Long companyId, String categoryName) {
         this.companyId = companyId;
-        this.name = name;
+        this.categoryName = categoryName;
     }
 
     @Override
@@ -25,8 +25,8 @@ public class CategorySpecification implements Specification<Category> {
         predicates.add(cb.equal(root.get("company").get("companyId"), companyId));
         }
         
-        if (name != null && !name.trim().isEmpty()) {
-            predicates.add(cb.like(cb.lower(root.get("name")), "%" + name.toLowerCase() + "%"));
+        if (categoryName != null && !categoryName.trim().isEmpty()) {
+            predicates.add(cb.like(cb.lower(root.get("categoryName")), "%" + categoryName.toLowerCase() + "%"));
         }
 
         query.distinct(true);

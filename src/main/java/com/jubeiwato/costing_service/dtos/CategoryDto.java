@@ -14,11 +14,11 @@ import jakarta.validation.constraints.NotBlank;
 public class CategoryDto {
     private Long categoryId;
     @NotBlank(message = "Category name cannot be empty or null")
-    private String name;
+    private String categoryName;
     public static CategoryDto entityToDto(Category category) {
         return CategoryDto.builder()
                 .categoryId(category.getCategoryId())
-                .name(category.getName())
+                .categoryName(category.getCategoryName())
                 .build();
     }
 }

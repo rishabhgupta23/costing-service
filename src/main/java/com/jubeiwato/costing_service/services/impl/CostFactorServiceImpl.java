@@ -68,7 +68,7 @@ public class CostFactorServiceImpl implements CostFactorService {
                 .stream()
                 .map(costFactor -> CostFactorDto.builder()
                         .id(costFactor.getFactorId())
-                        .name(costFactor.getFactorName())
+                        .factorName(costFactor.getFactorName())
                         .build())
                 .toList();
 
@@ -147,7 +147,7 @@ public class CostFactorServiceImpl implements CostFactorService {
     
         return CostFactorDto.builder()
                 .id(existing.getFactorId())
-                .name(existing.getFactorName())
+                .factorName(existing.getFactorName())
                 .build();
     }    
 
