@@ -14,7 +14,6 @@ import com.jubeiwato.costing_service.constants.ErrorMessageConstant;
 import com.jubeiwato.costing_service.dtos.PartImageUploadDto;
 import com.jubeiwato.costing_service.services.S3Service;
 import org.apache.tika.Tika;
-import org.apache.tika.mime.MimeTypes;
 
 import lombok.RequiredArgsConstructor;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -59,9 +58,7 @@ public class S3ServiceImpl implements S3Service {
             throw new AppException("Unsupported file type: " + detectedMimeType, HttpStatus.BAD_REQUEST);
         }
 
-        // Optionally, use the correct file extension based on MIME
-        String fileExtension = MimeTypes.getDefaultMimeTypes().forName(detectedMimeType).getExtension();
-        String key = companyId + "/parts/" + partId + "/" + partImageUploadDto.getFileName()+ fileExtension ;
+        String key = companyId + "/parts/" + partId + "/" + partImageUploadDto.getFileName() ;
 
         PutObjectRequest putRequest = PutObjectRequest.builder()
                 .bucket(bucketName)
