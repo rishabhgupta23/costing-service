@@ -1,19 +1,24 @@
 package com.jubeiwato.costing_service.services.impl;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.Base64;
+import org.apache.tika.metadata.Metadata;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.xml.sax.helpers.DefaultHandler;
+import org.apache.tika.parser.ParseContext;
 
 import com.jubeiwato.costing_service.authentication.config.AppException;
 import com.jubeiwato.costing_service.constants.ErrorMessageConstant;
 import com.jubeiwato.costing_service.dtos.PartImageUploadDto;
 import com.jubeiwato.costing_service.services.S3Service;
-import org.apache.tika.Tika;
+import org.apache.tika.mime.MimeTypes;
+import org.apache.tika.parser.AutoDetectParser;
 
 import lombok.RequiredArgsConstructor;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -41,24 +46,47 @@ public class S3ServiceImpl implements S3Service {
         "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     );
 
-    @Override
-    public String uploadPartImageToS3(Long partId, PartImageUploadDto partImageUploadDto, Long companyId) {
-        try {
-            byte[] imageBytes = Base64.getDecoder().decode(partImageUploadDto.getFileData());
+@Override
+public String uploadPartImageToS3(Long partId, PartImageUploadDto partImageUploadDto, Long companyId) {
+    try {
+        byte[] imageBytes = Base64.getDecoder().decode(partImageUploadDto.getFileData());
 
-            if (imageBytes.length > maxImageSizeBytes) {
-                throw new AppException(ErrorMessageConstant.IMAGE_SIZE_EXCEEDS_LIMIT, HttpStatus.BAD_REQUEST);
-            }
+        if (imageBytes.length > maxImageSizeBytes) {
+            throw new AppException(ErrorMessageConstant.IMAGE_SIZE_EXCEEDS_LIMIT, HttpStatus.BAD_REQUEST);
+        }
 
-                    // Use Apache Tika to detect MIME type
-        Tika tika = new Tika();
-        String detectedMimeType = tika.detect(imageBytes);
+        // Use Tika AutoDetectParser for more accurate MIME type
+        Metadata metadata = new Metadata();
+        AutoDetectParser parser = new AutoDetectParser();
+        ParseContext context = new ParseContext();
+
+        try (InputStream inputStream = new ByteArrayInputStream(imageBytes)) {
+            parser.parse(inputStream, new DefaultHandler(), metadata, context);
+        } catch (Exception parseEx) {
+            throw new AppException("Failed to parse file content: " + parseEx.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+
+        String detectedMimeType = metadata.get(Metadata.CONTENT_TYPE);
 
         if (!ALLOWED_FILE_TYPES.contains(detectedMimeType)) {
             throw new AppException("Unsupported file type: " + detectedMimeType, HttpStatus.BAD_REQUEST);
         }
 
-        String key = companyId + "/parts/" + partId + "/" + partImageUploadDto.getFileName() ;
+        // Get file extension from MIME type
+        String extension = "";
+        try {
+            extension = MimeTypes.getDefaultMimeTypes().forName(detectedMimeType).getExtension();
+        } catch (Exception e) {
+            // fallback or ignore
+        }
+
+        // Add extension if missing from original file name
+        String fileName = partImageUploadDto.getFileName();
+        if (!fileName.contains(".") && !extension.isEmpty()) {
+            fileName += extension;
+        }
+
+        String key = companyId + "/parts/" + partId + "/" + fileName;
 
         PutObjectRequest putRequest = PutObjectRequest.builder()
                 .bucket(bucketName)
@@ -66,13 +94,13 @@ public class S3ServiceImpl implements S3Service {
                 .contentType(detectedMimeType)
                 .build();
 
-            s3Client.putObject(putRequest, RequestBody.fromBytes(imageBytes));
+        s3Client.putObject(putRequest, RequestBody.fromBytes(imageBytes));
 
-            return "https://" + bucketName + ".s3.amazonaws.com/" + key;
-        } catch (Exception e) {
-            throw new AppException(ErrorMessageConstant.IMAGE_UPLOAD_FAILED + ": " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        return "https://" + bucketName + ".s3.amazonaws.com/" + key;
+    } catch (Exception e) {
+        throw new AppException(ErrorMessageConstant.IMAGE_UPLOAD_FAILED + ": " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
+}
 
      @Override
     public Resource downloadFileFromS3(String fileUrl) {        
