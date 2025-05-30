@@ -1,5 +1,6 @@
 package com.jubeiwato.costing_service.services;
 
+import com.jubeiwato.costing_service.constants.Sorting;
 import com.jubeiwato.costing_service.entities.User;
 import jakarta.persistence.criteria.*;
 import org.springframework.data.jpa.domain.Specification;
@@ -25,10 +26,8 @@ public class UserSpecification implements Specification<User> {
     public Predicate toPredicate(Root<User> root, CriteriaQuery<?> query, CriteriaBuilder cb) {
         List<Predicate> predicates = new ArrayList<>();
 
-        // Company condition
         predicates.add(cb.equal(root.get("company").get("companyId"), companyId));
 
-        // Filters
         if (displayName != null && !displayName.trim().isEmpty()) {
             predicates.add(cb.like(cb.lower(root.get("displayName")), "%" + displayName.toLowerCase() + "%"));
         }
@@ -42,4 +41,20 @@ public class UserSpecification implements Specification<User> {
         query.distinct(true);
         return cb.and(predicates.toArray(new Predicate[0]));
     }
+
+public static Specification<User> orderByRoleName(Sorting sortMode) {
+    return (root, query, builder) -> {
+        Fetch<Object, Object> userRoleFetch = root.fetch("userRole", JoinType.LEFT);
+        Join<Object, Object> userRoleJoin = (Join<Object, Object>) userRoleFetch;
+        if (userRoleJoin != null) {
+        query.orderBy(sortMode == Sorting.DESC
+                ? builder.desc(userRoleJoin.get("roleName"))
+                : builder.asc(userRoleJoin.get("roleName")));
+        
+        }
+        return builder.conjunction();
+    };
+        
+}
+
 }

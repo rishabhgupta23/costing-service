@@ -88,6 +88,10 @@ public class UserServiceImpl implements UserService {
     public void createUser(CreateUserDto user, Long companyId, String currentUserRole) {
 
         validateUserInput(user);
+
+            if (userRepository.findByEmailId(user.getEmailId()).isPresent()) {
+        throw new AppException(ErrorMessageConstant.USER_ALREADY_EXISTS, HttpStatus.CONFLICT);
+    }
 UserRole role = userRoleRepository.findById(user.getRoleId())
             .orElseThrow(() -> new AppException(ErrorMessageConstant.ROLE_NOT_FOUND, HttpStatus.NOT_FOUND));
 
@@ -102,6 +106,7 @@ UserRole role = userRoleRepository.findById(user.getRoleId())
             throw new AppException("Maximum user limit (" + company.getMaxUsers() + ") reached for this company",
                     HttpStatus.BAD_REQUEST);
         }
+        
 
     User userEntity = User.builder()
         .emailId(user.getEmailId())
@@ -144,18 +149,21 @@ public ApiPageResponseDto<List<UserRoleDto>> getUserRoles(int pageNo, int pageSi
         if (companyId == null) {
             throw new AppException(ErrorMessageConstant.COMPANY_ID_REQUIRED, HttpStatus.BAD_REQUEST);
         }
-        if ("roleName".equals(sortColumn)) {
-            sortColumn = "userRole.roleName"; 
-        }
-        Sort.Direction direction = (sortMode == Sorting.DESC) ? Sort.Direction.DESC : Sort.Direction.ASC;
-        Sort sort = Sort.by(direction, sortColumn);
-        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
                 if (!ValidationUtil.isValidInput(displayName) || 
         !ValidationUtil.isValidInput(emailId) || 
         !ValidationUtil.isValidInput(roleName)){
         throw new AppException(ErrorMessageConstant.INVALID_INPUT, HttpStatus.BAD_REQUEST);
     }
+        Sort sort = Sort.unsorted();
         Specification<User> spec = new UserSpecification(companyId, displayName, emailId, roleName);
+        
+    if (!"roleName".equals(sortColumn)) {
+        Sort.Direction direction = (sortMode == Sorting.DESC) ? Sort.Direction.DESC : Sort.Direction.ASC;
+        sort = Sort.by(direction, sortColumn);
+    } else {
+        spec = spec.and(UserSpecification.orderByRoleName(sortMode));
+    }
+    Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
         Page<User> userPage = userRepository.findAll(spec, pageable);
         List<UserDto> userDtos = userPage.getContent()
                 .stream()
