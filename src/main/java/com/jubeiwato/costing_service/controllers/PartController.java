@@ -18,6 +18,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import static com.jubeiwato.costing_service.constants.UserRoleConstants.*;
 import com.jubeiwato.costing_service.services.PartService;
+import jakarta.validation.Valid;
 import java.io.IOException;
 
 
@@ -143,7 +144,7 @@ public class PartController {
     @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "') or hasRole('" + MAINTAINER + "')")
     public ResponseEntity<GeneralResponseDto> uploadPartImage(
         @RequestParam Long partId,
-        @RequestBody PartImageUploadDto partImageUploadDto,
+        @RequestBody @Valid PartImageUploadDto partImageUploadDto,
         @AuthenticationPrincipal User user) {
     
         Long companyId = user.getCompany().getCompanyId();

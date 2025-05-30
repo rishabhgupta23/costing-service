@@ -61,6 +61,8 @@ public class ErrorMessageConstant {
     public static final String COST_FACTOR_SOFT_DELETED_EXISTS_TEMPLATE = "A deactivated cost factor with name '%s' already exists. To activate it, please create a cost factor with this name.";
     public static final String FILE_NOT_FOUND_OR_UNAUTHORIZED = "File not found or unauthorized access.";
     public static final String IMAGE_QUANTITY_EXCEEDS_LIMIT = "Cannot upload more than 3 images for a part";
+    public static final String FILE_PARSE_FAILED = "Failed to parse file content: %s";
+    public static final String UNSUPPORTED_FILE_TYPE = "Unsupported file type: %s";
 
     private ErrorMessageConstant() {
 

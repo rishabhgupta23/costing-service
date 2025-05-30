@@ -20,7 +20,7 @@ public ResponseEntity<ErrorResponseDto> handleValidationException(MethodArgument
     String errorMessages = ex.getBindingResult().getFieldErrors()
             .stream()
             .map(FieldError::getDefaultMessage)
-            .collect(Collectors.joining("; "));
+            .collect(Collectors.joining(", "));
 
     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
             .body(ErrorResponseDto.of(errorMessages, HttpStatus.BAD_REQUEST));

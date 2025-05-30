@@ -43,64 +43,89 @@ public class S3ServiceImpl implements S3Service {
         "image/png", "image/jpeg", "image/jpg", "image/gif",
         "application/pdf", "text/csv", "application/vnd.ms-powerpoint", "text/plain",
         "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation"
     );
 
-@Override
-public String uploadPartImageToS3(Long partId, PartImageUploadDto partImageUploadDto, Long companyId) {
-    try {
-        byte[] imageBytes = Base64.getDecoder().decode(partImageUploadDto.getFileData());
-
+    @Override
+    public String uploadPartImageToS3(Long partId, PartImageUploadDto partImageUploadDto, Long companyId) {
+        try {
+            byte[] imageBytes = decodeAndValidateImage(partImageUploadDto.getFileData());
+    
+            String detectedMimeType = detectMimeType(imageBytes);
+    
+            validateFileType(detectedMimeType);
+    
+            String fileName = generateFileName(partImageUploadDto.getFileName(), detectedMimeType);
+            String key = companyId + "/parts/" + partId + "/" + fileName;
+    
+            uploadToS3(imageBytes, key, detectedMimeType);
+    
+            return "https://" + bucketName + ".s3.amazonaws.com/" + key;
+    
+        } catch (Exception e) {
+            throw new AppException(ErrorMessageConstant.IMAGE_UPLOAD_FAILED + ": " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    private byte[] decodeAndValidateImage(String base64ImageData) {
+        byte[] imageBytes = Base64.getDecoder().decode(base64ImageData);
+    
         if (imageBytes.length > maxImageSizeBytes) {
             throw new AppException(ErrorMessageConstant.IMAGE_SIZE_EXCEEDS_LIMIT, HttpStatus.BAD_REQUEST);
         }
-
-        // Use Tika AutoDetectParser for more accurate MIME type
-        Metadata metadata = new Metadata();
-        AutoDetectParser parser = new AutoDetectParser();
-        ParseContext context = new ParseContext();
-
+    
+        return imageBytes;
+    }
+    
+    private String detectMimeType(byte[] imageBytes) {
         try (InputStream inputStream = new ByteArrayInputStream(imageBytes)) {
+            Metadata metadata = new Metadata();
+            AutoDetectParser parser = new AutoDetectParser();
+            ParseContext context = new ParseContext();
+    
             parser.parse(inputStream, new DefaultHandler(), metadata, context);
+    
+            return metadata.get(Metadata.CONTENT_TYPE);
         } catch (Exception parseEx) {
-            throw new AppException("Failed to parse file content: " + parseEx.getMessage(), HttpStatus.BAD_REQUEST);
+            throw new AppException(
+                    ErrorMessageConstant.getFormattedMessage(ErrorMessageConstant.FILE_PARSE_FAILED, parseEx.getMessage()),
+                    HttpStatus.BAD_REQUEST);
         }
-
-        String detectedMimeType = metadata.get(Metadata.CONTENT_TYPE);
-
-        if (!ALLOWED_FILE_TYPES.contains(detectedMimeType)) {
-            throw new AppException("Unsupported file type: " + detectedMimeType, HttpStatus.BAD_REQUEST);
+    }
+    
+    private void validateFileType(String mimeType) {
+        String normalizedMimeType = mimeType.split(";")[0].trim();
+    
+        if (!ALLOWED_FILE_TYPES.contains(normalizedMimeType)) {
+            throw new AppException(
+                    ErrorMessageConstant.getFormattedMessage(ErrorMessageConstant.UNSUPPORTED_FILE_TYPE, mimeType),
+                    HttpStatus.BAD_REQUEST);
         }
-
-        // Get file extension from MIME type
+    }
+    
+    private String generateFileName(String originalFileName, String mimeType) {
         String extension = "";
         try {
-            extension = MimeTypes.getDefaultMimeTypes().forName(detectedMimeType).getExtension();
-        } catch (Exception e) {
-            // fallback or ignore
+            extension = MimeTypes.getDefaultMimeTypes().forName(mimeType).getExtension();
+        } catch (Exception ignored) {
         }
-
-        // Add extension if missing from original file name
-        String fileName = partImageUploadDto.getFileName();
-        if (!fileName.contains(".") && !extension.isEmpty()) {
-            fileName += extension;
+    
+        if (!originalFileName.contains(".") && !extension.isEmpty()) {
+            originalFileName += extension;
         }
-
-        String key = companyId + "/parts/" + partId + "/" + fileName;
-
+    
+        return originalFileName;
+    }
+    
+    private void uploadToS3(byte[] imageBytes, String key, String mimeType) {
         PutObjectRequest putRequest = PutObjectRequest.builder()
                 .bucket(bucketName)
                 .key(key)
-                .contentType(detectedMimeType)
+                .contentType(mimeType)
                 .build();
-
+    
         s3Client.putObject(putRequest, RequestBody.fromBytes(imageBytes));
-
-        return "https://" + bucketName + ".s3.amazonaws.com/" + key;
-    } catch (Exception e) {
-        throw new AppException(ErrorMessageConstant.IMAGE_UPLOAD_FAILED + ": " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
-}
 
      @Override
     public Resource downloadFileFromS3(String fileUrl) {        
