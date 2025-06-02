@@ -25,14 +25,18 @@ import com.jubeiwato.costing_service.entities.Bom;
 import com.jubeiwato.costing_service.entities.Company;
 import com.jubeiwato.costing_service.entities.CostFactor;
 import com.jubeiwato.costing_service.entities.Part;
+import com.jubeiwato.costing_service.entities.PartAttribute;
 import com.jubeiwato.costing_service.entities.PartCost;
 import com.jubeiwato.costing_service.entities.PartCostCostFactor;
+import com.jubeiwato.costing_service.entities.PartPartAttribute;
 import com.jubeiwato.costing_service.entities.Vendor;
 import com.jubeiwato.costing_service.repositories.BomRepository;
 import com.jubeiwato.costing_service.repositories.CategoryRepository;
 import com.jubeiwato.costing_service.repositories.CompanyRepository;
 import com.jubeiwato.costing_service.repositories.CostFactorRepository;
+import com.jubeiwato.costing_service.repositories.PartAttributeRepository;
 import com.jubeiwato.costing_service.repositories.PartCostRepository;
+import com.jubeiwato.costing_service.repositories.PartPartAttributeRepository;
 import com.jubeiwato.costing_service.repositories.PartRepository;
 import com.jubeiwato.costing_service.repositories.VendorRepository;
 import com.jubeiwato.costing_service.repositories.PartUnitRepository;
@@ -56,8 +60,10 @@ public class PartServiceImpl implements PartService {
     private PartUnitRepository partUnitRepository;
     private FileGeneratorService excelService;
     private CompanyRepository companyRepository;
+        private PartPartAttributeRepository partPartAttributeRepository;
+        private PartAttributeRepository partAttributeRepository;
     public PartServiceImpl(PartRepository partRepository, CategoryRepository categoryRepository, VendorRepository vendorRepository
-            , CostFactorRepository costFactorRepository, PartCostRepository partCostRepository, BomRepository bomRepository,PartUnitRepository partUnitRepository, FileGeneratorService excelService, CompanyRepository companyRepository) {
+            , CostFactorRepository costFactorRepository, PartCostRepository partCostRepository,PartAttributeRepository partAttributeRepository, PartPartAttributeRepository partPartAttributeRepository ,BomRepository bomRepository,PartUnitRepository partUnitRepository, FileGeneratorService excelService, CompanyRepository companyRepository) {
         this.partRepository = partRepository;
         this.categoryRepository = categoryRepository;
         this.vendorRepository = vendorRepository;
@@ -67,6 +73,8 @@ public class PartServiceImpl implements PartService {
         this.partUnitRepository=partUnitRepository;
         this.excelService=excelService;
         this.companyRepository=companyRepository;
+        this.partPartAttributeRepository=partPartAttributeRepository;
+        this.partAttributeRepository=partAttributeRepository;
     }
 
     private Part getValidatedPart(Long partId, Long companyId) {
@@ -122,6 +130,36 @@ public class PartServiceImpl implements PartService {
             if (request.getType().equalsIgnoreCase(PartType.MASTER.name()) && request.getBom() != null && !request.getBom().isEmpty()) {
             validateAndSaveBom(request, companyId, part);
         }
+
+if (request.getAttributeValueList() != null && !request.getAttributeValueList().isEmpty()) {
+
+    Set<Long> attributeIdSet = new HashSet<>();
+
+    List<PartPartAttribute> partAttributes = request.getAttributeValueList().stream().map(attrValDto -> {
+        Long attributeId = attrValDto.getAttributeId();
+
+        if (attributeId == null) {
+            throw new AppException(ErrorMessageConstant.ATTRIBUTE_NULL, HttpStatus.BAD_REQUEST);
+        }
+
+        if (!attributeIdSet.add(attributeId)) {
+            throw new AppException(ErrorMessageConstant.ATTRIBUTE_ALREADY_EXISTS, HttpStatus.BAD_REQUEST);
+        }
+
+        PartAttribute attribute = partAttributeRepository.findById(attributeId)
+                .orElseThrow(() -> new AppException(ErrorMessageConstant.ATTRIBUTE_MARKED_DELETED, HttpStatus.NOT_FOUND));
+
+        PartPartAttribute ppa = new PartPartAttribute();
+        ppa.setPart(part);
+        ppa.setAttribute(attribute);
+        ppa.setAttributeValue(attrValDto.getValue());
+
+        return ppa;
+    }).toList();
+
+    partPartAttributeRepository.saveAll(partAttributes);
+}
+
         }
 
         private void validateCreatePartRequest(PartRequestDto request, Long companyId, Map<Long, Vendor> vendorMap, Map<Long, CostFactor> costFactorMap) {
@@ -343,21 +381,31 @@ private PartCostCostFactor createPartCostCostFactor(Long costFactorId, Double va
         //Fetch Bom
         List<Bom> bomDetails = bomRepository.findByParentPart(part);
 
+        List<PartPartAttribute> attributeValues = partPartAttributeRepository.findByPart(part);
+
         //Map everything and return
-        return createPartResponseDto(part, partCostList, bomDetails);
+        return createPartResponseDto(part, partCostList, bomDetails, attributeValues);
     }
 
-    PartResponseDto createPartResponseDto(Part part, List<PartCost> partCostList, List<Bom> bom) {
+    PartResponseDto createPartResponseDto(Part part, List<PartCost> partCostList, List<Bom> bom, List<PartPartAttribute> attributes) {
         List<BomResponseDto> bomDtoList = bom.stream().map(BomResponseDto::entityToDto).toList();
+    List<AttributeValueDto> attributeDtoList = attributes.stream()
+        .map(attr -> AttributeValueDto.builder()
+            .attributeId(attr.getAttribute().getAttributeId())
+            .attributeName(attr.getAttribute().getAttributeName())
+            .value(attr.getAttributeValue())
+            .build())
+        .toList();
         PartResponseDto responseDto = PartResponseDto.superBuilder()
                 .partId(part.getPartId())
                 .partName(part.getPartName())
                 .partNumber(part.getPartNumber())
                 .unit(part.getUnit())
-                .categoryName(part.getCategory().getName())
+                .categoryName("")
                 .type(part.getType().toString())
                 .bom(bomDtoList)
                 .vendorCostList(createVendorCostList(partCostList))
+                .attributes(attributeDtoList)
                 .build();
         return  responseDto;
     }
@@ -450,8 +498,31 @@ public PartDto updatePartById(Long partId, @Valid PartRequestDto request,Long co
       bomRepository.saveAll(newBom);
     }
 
+partPartAttributeRepository.deleteByPartId(existingPart.getPartId());
 
-    return createPartResponseDto(existingPart, partCostRepository.findByPartId(existingPart.getPartId()), bomRepository.findByParentPart(existingPart));
+if (request.getAttributeValueList() != null && !request.getAttributeValueList().isEmpty()) {
+    Set<Long> attributeIdSet = new HashSet<>();
+    List<PartPartAttribute> partAttributes = request.getAttributeValueList().stream().map(attrValDto -> {
+        Long attributeId = attrValDto.getAttributeId();
+        if (attributeId == null) {
+            throw new AppException("Attribute ID cannot be null", HttpStatus.BAD_REQUEST);
+        }
+        if (!attributeIdSet.add(attributeId)) {
+            throw new AppException("Duplicate attribute found with ID: " + attributeId, HttpStatus.BAD_REQUEST);
+        }
+        PartAttribute attribute = partAttributeRepository.findById(attributeId)
+                .orElseThrow(() -> new AppException("Attribute not found with ID: " + attributeId, HttpStatus.NOT_FOUND));
+
+        PartPartAttribute ppa = new PartPartAttribute();
+        ppa.setPart(existingPart);
+        ppa.setAttribute(attribute);
+        ppa.setAttributeValue(attrValDto.getValue());
+
+        return ppa;
+    }).toList();
+    partPartAttributeRepository.saveAll(partAttributes);
+}
+    return createPartResponseDto(existingPart, partCostRepository.findByPartId(existingPart.getPartId()), bomRepository.findByParentPart(existingPart),partPartAttributeRepository.findByPart(existingPart));
 }
 
     @Override
