@@ -20,7 +20,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @Entity
 @Table(name = "part_category", schema = "app",  uniqueConstraints = 
-    @UniqueConstraint(columnNames = {"company_id", "name"}))
+    @UniqueConstraint(columnNames = {"company_id", "category_name)"}))
 public class Category extends BaseEntity {
 
     @Id
@@ -28,8 +28,8 @@ public class Category extends BaseEntity {
     @Column(name = "category_id")
     private Long categoryId;
 
-    @Column(nullable = false)
-    private String name;
+    @Column(name = "category_name",nullable = false)
+    private String categoryName;
 
     @ManyToOne
     @JoinColumn(name = "company_id",referencedColumnName = "company_id", nullable = false)

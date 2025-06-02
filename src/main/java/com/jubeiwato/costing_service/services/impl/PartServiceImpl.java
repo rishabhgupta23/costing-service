@@ -312,10 +312,6 @@ private PartCostCostFactor createPartCostCostFactor(Long costFactorId, Double va
 
     @Override
     public ApiPageResponseDto<PartDataDto> getParts(PartDto filter,long companyId, int pageNo, int pageSize, String sortBy, Sorting sortMode) {
-        Sort sort = (sortMode == Sorting.DESC)
-                ? Sort.by(sortBy).descending()
-                : Sort.by(sortBy).ascending();
-        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
 
 
         // Apply Specification
@@ -326,6 +322,15 @@ private PartCostCostFactor createPartCostCostFactor(Long costFactorId, Double va
             throw new AppException(ErrorMessageConstant.INVALID_INPUT, HttpStatus.BAD_REQUEST);
         }
         Specification<Part> spec = new PartSpecification(companyId,filter.getPartName(), filter.getPartNumber(), filter.getCategoryName(), filter.getType(), filter.getUnit());
+
+        if ("categoryName".equalsIgnoreCase(sortBy)) {
+            sortBy = "category.categoryName";
+        }
+        Sort sort = (sortMode == Sorting.DESC)
+                ? Sort.by(Sort.Order.desc(sortBy))
+                : Sort.by(Sort.Order.asc(sortBy));
+        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
+    
         Page<Part> partPage = partRepository.findAll(spec, pageable);
 
         // Extract Max Vendor Count
@@ -343,7 +348,7 @@ private PartCostCostFactor createPartCostCostFactor(Long costFactorId, Double va
                             .partId(part.getPartId())
                             .partName(part.getPartName())
                             .partNumber(part.getPartNumber())
-                            .categoryName(part.getCategory() != null ? part.getCategory().getName() : null)
+                            .categoryName(part.getCategory() != null ? part.getCategory().getCategoryName() : null)
                             .type(part.getType() != null ? part.getType().name() : null)
                             .unit(part.getUnit())
                             .vendorNames(new ArrayList<>(vendorNames))
@@ -396,18 +401,20 @@ private PartCostCostFactor createPartCostCostFactor(Long costFactorId, Double va
             .value(attr.getAttributeValue())
             .build())
         .toList();
-        PartResponseDto responseDto = PartResponseDto.superBuilder()
-                .partId(part.getPartId())
-                .partName(part.getPartName())
-                .partNumber(part.getPartNumber())
-                .unit(part.getUnit())
-                .categoryName("")
-                .type(part.getType().toString())
+        PartDto partDto = PartDto.entityToDto(part); 
+
+        return PartResponseDto.superBuilder()
+                .partId(partDto.getPartId())
+                .partName(partDto.getPartName())
+                .partNumber(partDto.getPartNumber())
+                .unit(partDto.getUnit())
+                .categoryName(partDto.getCategoryName())
+                .type(partDto.getType())                
                 .bom(bomDtoList)
                 .vendorCostList(createVendorCostList(partCostList))
                 .attributes(attributeDtoList)
                 .build();
-        return  responseDto;
+                
     }
 
     public List<VendorCostDto> createVendorCostList(List<PartCost> partCostList) {
@@ -581,7 +588,7 @@ public CostHistoryResponseDto getPartCostsByPartAndVendor(Long partId, Long vend
                         part.getPartName(),
                         part.getUnit(),
                         part.getType().toString(),
-                        part.getCategory() != null ? part.getCategory().getName() : "",
+                        part.getCategory() != null ? part.getCategory().getCategoryName() : "",
                         String.join(", ", vendorNames)
                 };
             })

@@ -7,6 +7,6 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import com.jubeiwato.costing_service.entities.Category;
 
 public interface CategoryRepository extends JpaRepository<Category, Long>, JpaSpecificationExecutor<Category> {
-    boolean existsByCompany_CompanyIdAndName(Long companyId, String name);
+    boolean existsByCompany_CompanyIdAndCategoryName(Long companyId, String categoryName);
     Optional<Category> findByCategoryIdAndCompany_CompanyId(Long categoryId, Long companyId);
 }

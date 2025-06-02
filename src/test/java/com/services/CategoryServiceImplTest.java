@@ -47,14 +47,14 @@ class CategoryServiceImplTest {
     private Category mockCategory(Long categoryId, String name, Long companyId) {
         return Category.builder()
                 .categoryId(categoryId)
-                .name(name)
+                .categoryName(name)
                 .company(Company.builder().companyId(companyId).build())
                 .build();
     }
 
     private CategoryDto buildDto(String name) {
         CategoryDto dto = new CategoryDto();
-        dto.setName(name);
+        dto.setCategoryName(name);
         return dto;
     }
 
@@ -128,7 +128,7 @@ class CategoryServiceImplTest {
 
         CategoryDto result = categoryService.updateCategoryById(categoryId, buildDto(newName), companyId);
 
-        assertEquals(newName, result.getName());
+        assertEquals(newName, result.getCategoryName());
         verify(categoryRepository).save(any(Category.class));
     }
 
@@ -165,7 +165,7 @@ class CategoryServiceImplTest {
         Long companyId = 1L;
         String dupName = "hello";
         mockCompany(companyId);
-        when(categoryRepository.existsByCompany_CompanyIdAndName(companyId, dupName)).thenReturn(true);
+        when(categoryRepository.existsByCompany_CompanyIdAndCategoryName(companyId, dupName)).thenReturn(true);
 
         AppException ex = assertThrows(AppException.class, () ->
                 categoryService.createCategory(dupName, companyId));
@@ -182,8 +182,8 @@ class CategoryServiceImplTest {
         when(categoryRepository.save(existing)).thenReturn(existing);
         CategoryDto result = categoryService.updateCategoryById(categoryId, buildDto(sameName), companyId);
 
-        verify(categoryRepository, never()).existsByCompany_CompanyIdAndName(anyLong(), anyString());
-        assertEquals(sameName, result.getName());
+        verify(categoryRepository, never()).existsByCompany_CompanyIdAndCategoryName(anyLong(), anyString());
+        assertEquals(sameName, result.getCategoryName());
     }
 
     // 3) updateCategoryById → new name different but duplicate → throw CONFLICT
@@ -193,7 +193,7 @@ class CategoryServiceImplTest {
         Category existing = mockCategory(categoryId, "old", companyId);
         when(categoryRepository.findByCategoryIdAndCompany_CompanyId(categoryId, companyId))
                 .thenReturn(Optional.of(existing));
-        when(categoryRepository.existsByCompany_CompanyIdAndName(companyId, "new"))
+        when(categoryRepository.existsByCompany_CompanyIdAndCategoryName(companyId, "new"))
                 .thenReturn(true);
 
         AppException ex = assertThrows(AppException.class, () ->
