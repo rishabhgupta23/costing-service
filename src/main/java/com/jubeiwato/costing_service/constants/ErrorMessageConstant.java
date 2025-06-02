@@ -58,6 +58,11 @@ public class ErrorMessageConstant {
     public static final String INVALID_COST_FACTOR = "Cost Factor can not be empty or null";
     public static final String COST_FACTOR_SOFT_DELETED_EXISTS_TEMPLATE = "A deactivated cost factor with name '%s' already exists. To activate it, please create a cost factor with this name.";
 
+
+    private ErrorMessageConstant() {
+
+    }
+    
     /**
      * Generic method to format error messages dynamically.
      * 
