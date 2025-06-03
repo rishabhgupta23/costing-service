@@ -8,10 +8,7 @@ import java.util.List;
 import com.jubeiwato.costing_service.constants.*;
 import com.jubeiwato.costing_service.dtos.*;
 import com.jubeiwato.costing_service.entities.User;
-import org.springframework.core.io.Resource;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -140,7 +137,7 @@ public class PartController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/upload-image")
+    @PostMapping("/file/upload")
     @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "') or hasRole('" + MAINTAINER + "')")
     public ResponseEntity<GeneralResponseDto> uploadPartImage(
         @RequestParam Long partId,
@@ -150,36 +147,18 @@ public class PartController {
         Long companyId = user.getCompany().getCompanyId();
         String result = partService.uploadPartImage(partId, partImageUploadDto, companyId);
     
-        if (result.startsWith("Image uploaded successfully")) {
         GeneralResponseDto response = new GeneralResponseDto(result, HttpStatus.OK.value());
         return ResponseEntity.ok(response);
-        } else {
-        GeneralResponseDto response = new GeneralResponseDto(result, HttpStatus.INTERNAL_SERVER_ERROR.value());
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-        }
     }
 
- @GetMapping("/download-image")
-    public ResponseEntity<Resource> downloadFile(@RequestParam String fileUrl, @AuthenticationPrincipal User user) {
-
+    @GetMapping("/image/download")
+    public ResponseEntity<FileResponseDto> downloadFile(@RequestParam String s3FileKey, @AuthenticationPrincipal User user) {
         Long companyId = user.getCompany().getCompanyId();
-        try {
-            Resource file = partService.downloadFileFromS3(fileUrl,companyId);
+        FileResponseDto fileResponse = partService.downloadFileFromS3(s3FileKey, companyId);
+        return ResponseEntity.ok(fileResponse);
+    } 
 
-            // Extract filename from URL
-            String fileName = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
-
-            return ResponseEntity.ok()
-                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
-                    .body(file);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.internalServerError().build();
-       }
-    }
-
-    @GetMapping("/part-files")
+    @GetMapping("/files")
 public ResponseEntity<List<String>> getPartFileUrls(
         @RequestParam Long partId,
         @AuthenticationPrincipal User authenticatedUser

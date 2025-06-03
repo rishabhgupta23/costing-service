@@ -8,23 +8,21 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "part_file", schema = "app",
-       uniqueConstraints = @UniqueConstraint(columnNames = {"part_id", "company_id", "file_url"}))
+@Table(
+    name = "part_file", schema = "app",
+    uniqueConstraints = @UniqueConstraint(columnNames = {"part_id", "s3_file_key"})
+)
 public class PartFile {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "file_id")
-    private Long fileId;
-    
+    @Column(name = "part_file_id")
+    private Long partfileId;
+
     @ManyToOne
     @JoinColumn(name = "part_id", referencedColumnName = "part_id", nullable = false)
     private Part part;
-    
-    @ManyToOne
-    @JoinColumn(name = "company_id", referencedColumnName = "company_id", nullable = false)    
-    private Company company;
 
-    @Column(name = "file_url", nullable = false)
-    private String fileUrl;
+    @Column(name = "s3_file_key", nullable = false)
+    private String s3FileKey;
 }

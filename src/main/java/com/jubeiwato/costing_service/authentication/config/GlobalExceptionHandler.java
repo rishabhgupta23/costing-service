@@ -1,5 +1,6 @@
 package com.jubeiwato.costing_service.authentication.config;
 import java.util.stream.Collectors;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
@@ -43,5 +44,11 @@ public ResponseEntity<ErrorResponseDto> handleValidationException(MethodArgument
         ex.printStackTrace();
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ErrorResponseDto.of(ErrorMessageConstant.UNEXPECTED_ERROR_OCCURED, HttpStatus.INTERNAL_SERVER_ERROR));
+    }
+
+        @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponseDto> handleUniqueConstraintViolation(DataIntegrityViolationException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ErrorResponseDto.of(ErrorMessageConstant.DUPLICATE_FILE, HttpStatus.CONFLICT));
     }
 }

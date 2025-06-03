@@ -576,54 +576,51 @@ public CostHistoryResponseDto getPartCostsByPartAndVendor(Long partId, Long vend
   
   @Override
   public String uploadPartImage(Long partId, PartImageUploadDto partImageUploadDto, Long companyId) {
-      try {
-          Part part = getValidatedPart(partId, companyId);
+      Part part = getValidatedPart(partId, companyId);
   
-          int imageCount = partFileRepository.countByPart(part);
-          if (imageCount >= 3) {
-              throw new AppException(ErrorMessageConstant.IMAGE_QUANTITY_EXCEEDS_LIMIT, HttpStatus.BAD_REQUEST);
-          }
-  
-  
-          String fileUrl = s3Service.uploadPartImageToS3(partId, partImageUploadDto, companyId);
-  
-          Company company = companyRepository.findById(companyId)
-                  .orElseThrow(() -> new AppException(ErrorMessageConstant.INVALID_COMPANY, HttpStatus.BAD_REQUEST));
-  
-          PartFile partFile = PartFile.builder()
-                  .part(part)
-                  .company(company)
-                  .fileUrl(fileUrl)
-                  .build();
-  
-          partFileRepository.save(partFile);
-  
-          return "Image uploaded successfully";
-      } catch (Exception e) {
-          return "Image upload failed: " + e.getMessage();
+      int imageCount = partFileRepository.countByPart(part);
+      if (imageCount >= 3) {
+          throw new AppException(ErrorMessageConstant.FILES_QUANTITY_EXCEEDS_LIMIT, HttpStatus.BAD_REQUEST);
       }
+  
+      String s3Key = s3Service.uploadFile(partId, partImageUploadDto, companyId);
+  
+      PartFile partFile = PartFile.builder()
+              .part(part)
+              .s3FileKey(s3Key)
+              .build();
+  
+      partFileRepository.save(partFile);
+  
+      return "Image uploaded successfully";
   }
 
   @Override
-  public Resource downloadFileFromS3(String fileUrl, Long companyId) {
-     
-    Optional<PartFile> partFileOpt = partFileRepository.findByFileUrlAndPart_Company_CompanyId(fileUrl, companyId);
-
-    if (partFileOpt.isEmpty()) {
+  public FileResponseDto downloadFileFromS3(String s3FileKey, Long companyId) {
+    Optional<PartFile> partFileOpt = partFileRepository.findByS3FileKey(s3FileKey);
+    if (partFileOpt.isEmpty() || !partFileOpt.get().getPart().getCompany().getCompanyId().equals(companyId)) {
         throw new AppException(ErrorMessageConstant.FILE_NOT_FOUND_OR_UNAUTHORIZED, HttpStatus.NOT_FOUND);
     }
-    
-      return s3Service.downloadFileFromS3(fileUrl);
-  }  
+  
+      byte[] fileBytes = s3Service.downloadFile(s3FileKey);
+      String base64File = Base64.getEncoder().encodeToString(fileBytes);
+  
+      String fileName = s3FileKey.substring(s3FileKey.lastIndexOf("/") + 1);
+  
+      return FileResponseDto.builder()
+              .fileData(base64File)
+              .fileName(fileName)
+              .build();
+   }
   
   @Override
 public List<String> getPartFileUrls(Long partId, Long companyId) {
-  Part part = getValidatedPart(partId, companyId); // Ensures the part belongs to the user's company
+  Part part = getValidatedPart(partId, companyId); 
   List<PartFile> files = partFileRepository.findByPart(part);
   return files.stream()
-          .map(PartFile::getFileUrl)
+          .map(PartFile::getS3FileKey)
           .collect(Collectors.toList());
-}
+    }
     
 }
     
