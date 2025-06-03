@@ -576,7 +576,8 @@ public CostHistoryResponseDto getPartCostsByPartAndVendor(Long partId, Long vend
   
   @Override
   public String uploadPartImage(Long partId, PartImageUploadDto partImageUploadDto, Long companyId) {
-      Part part = getValidatedPart(partId, companyId);
+    try { 
+    Part part = getValidatedPart(partId, companyId);
   
       int imageCount = partFileRepository.countByPart(part);
       if (imageCount >= 3) {
@@ -593,7 +594,13 @@ public CostHistoryResponseDto getPartCostsByPartAndVendor(Long partId, Long vend
       partFileRepository.save(partFile);
   
       return "Image uploaded successfully";
-  }
+    } catch (AppException ex) {
+        throw ex;
+    } catch (Exception e) {
+        e.printStackTrace();
+        throw new AppException(ErrorMessageConstant.FILE_UPLOAD_FAILED, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+}
 
   @Override
   public FileResponseDto downloadFileFromS3(String s3FileKey, Long companyId) {

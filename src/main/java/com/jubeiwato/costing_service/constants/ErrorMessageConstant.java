@@ -65,6 +65,8 @@ public class ErrorMessageConstant {
     public static final String FILE_PARSE_FAILED = "Failed to parse file content: %s";
     public static final String UNSUPPORTED_FILE_TYPE = "Unsupported file type: %s";
     public static final String DUPLICATE_FILE = "Duplicate entry: This file already exists for the specified part.";
+    public static final String FILE_READ_FAILED = "Failed to read file from S3";
+    public static final String FILE_UPLOAD_FAILED= "File upload failed";
 
     private ErrorMessageConstant() {
 

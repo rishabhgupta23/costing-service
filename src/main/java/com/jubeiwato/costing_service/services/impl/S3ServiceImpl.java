@@ -125,10 +125,10 @@ public class S3ServiceImpl implements S3Service {
     
         } catch (IOException e) {
             e.printStackTrace();
-            throw new AppException("Failed to read file from S3", HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new AppException(ErrorMessageConstant.FILE_READ_FAILED, HttpStatus.INTERNAL_SERVER_ERROR);
         } catch (Exception e) {
             e.printStackTrace();
-            throw new AppException("Unexpected error occurred while downloading file", HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new AppException(ErrorMessageConstant.UNEXPECTED_ERROR_OCCURED, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }
