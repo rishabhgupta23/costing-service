@@ -46,6 +46,7 @@ public class ErrorMessageConstant {
     public static final String ATTRIBUTE_ALREADY_EXISTS = "Attribute with the same name already exists.";
     public static final String TEMPLATE_NULL ="Template name must not be null or empty";
     public static final String UPDATE_NOT_ALLOWED_SOFT_DELETED = "Update not allowed. A soft-deleted part attribute with the name '%s' already exists.";
+    public static final String VENDOR_NAME_NOT_NULL = "Vendor name must not be null or empty";
 
     public static final String CATEGORY_ALREADY_EXISTS_TEMPLATE = "Category with categoryName '%s' already exists";
     public static final String IMAGE_SIZE_EXCEEDS_LIMIT = "File exceeds maximum allowed size of 5MB";
@@ -53,7 +54,7 @@ public class ErrorMessageConstant {
     public static final String TEMPLATE_NOT_FOUND = "Template not found";
     public static final String TEMPLATE_ALREADY_EXISTS = "Template name already exists for the company.";
     public static final String ATTRIBUTE_NOT_SELECTED = "Cannot create empty template, selecting part attribute is mandatory.";
-
+    public static final String VENDOR_ALREADY_EXISTS = " Vendor with the same name already exists in this company.";
 
     public static final String COST_FACTOR_ALREADY_EXISTS_TEMPLATE = "Cost factor with name '%s' already exists";
     public static final String COST_FACTOR_CREATED = "Cost Factor created successfully";
