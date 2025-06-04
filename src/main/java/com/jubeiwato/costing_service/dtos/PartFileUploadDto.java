@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class PartImageUploadDto {
+public class PartFileUploadDto {
 
     @NotBlank(message = "File name must not be blank")
     private String fileName; 

@@ -49,7 +49,7 @@ public class ErrorMessageConstant {
     public static final String VENDOR_NAME_NOT_NULL = "Vendor name must not be null or empty";
 
     public static final String CATEGORY_ALREADY_EXISTS_TEMPLATE = "Category with categoryName '%s' already exists";
-    public static final String IMAGE_SIZE_EXCEEDS_LIMIT = "File exceeds maximum allowed size of 5MB";
+    public static final String FILE_SIZE_EXCEEDS_LIMIT = "File exceeds maximum allowed size of 5MB";
     public static final String IMAGE_UPLOAD_FAILED = "Failed to upload image to S3";
     public static final String TEMPLATE_NOT_FOUND = "Template not found";
     public static final String TEMPLATE_ALREADY_EXISTS = "Template name already exists for the company.";
@@ -67,6 +67,7 @@ public class ErrorMessageConstant {
     public static final String DUPLICATE_FILE = "Duplicate entry: This file already exists for the specified part.";
     public static final String FILE_READ_FAILED = "Failed to read file from S3";
     public static final String FILE_UPLOAD_FAILED= "File upload failed";
+    public static final String FILE_ALREADY_EXISTS= "This File already exists for this part";
 
     private ErrorMessageConstant() {
 

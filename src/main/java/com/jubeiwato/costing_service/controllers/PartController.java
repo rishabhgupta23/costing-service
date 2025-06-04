@@ -122,7 +122,7 @@ public class PartController {
     }
 
     @GetMapping("/bom/{parentPartId}/download")
-    public ResponseEntity<FileResponseDto> exportBomPartListToExcel(@PathVariable Long parentPartId,@AuthenticationPrincipal User authenticatedUser) throws IOException {   
+    public ResponseEntity<FileResponseDto> exportBomPartListToExcel(@PathVariable Long parentPartId,@AuthenticationPrincipal User authenticatedUser) throws Exception {   
     Long companyId = authenticatedUser.getCompany().getCompanyId(); 
     FileResponseDto responseDto = partService.downloadBomPartListToExcel(parentPartId,companyId);
     return ResponseEntity.ok().body(responseDto);
@@ -139,19 +139,19 @@ public class PartController {
 
     @PostMapping("/file/upload")
     @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "') or hasRole('" + MAINTAINER + "')")
-    public ResponseEntity<GeneralResponseDto> uploadPartImage(
+    public ResponseEntity<GeneralResponseDto> uploadPartFile(
         @RequestParam Long partId,
-        @RequestBody @Valid PartImageUploadDto partImageUploadDto,
-        @AuthenticationPrincipal User user) {
+        @RequestBody @Valid PartFileUploadDto partFileUploadDto,
+        @AuthenticationPrincipal User user) throws Exception{
     
         Long companyId = user.getCompany().getCompanyId();
-        String result = partService.uploadPartImage(partId, partImageUploadDto, companyId);
+        String result = partService.uploadPartFile(partId, partFileUploadDto, companyId);
     
         GeneralResponseDto response = new GeneralResponseDto(result, HttpStatus.OK.value());
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/image/download")
+    @GetMapping("/file/download")
     public ResponseEntity<FileResponseDto> downloadFile(@RequestParam String s3FileKey, @AuthenticationPrincipal User user) {
         Long companyId = user.getCompany().getCompanyId();
         FileResponseDto fileResponse = partService.downloadFileFromS3(s3FileKey, companyId);

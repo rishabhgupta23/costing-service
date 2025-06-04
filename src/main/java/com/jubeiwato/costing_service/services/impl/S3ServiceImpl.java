@@ -14,7 +14,7 @@ import org.apache.tika.parser.ParseContext;
 
 import com.jubeiwato.costing_service.authentication.config.AppException;
 import com.jubeiwato.costing_service.constants.ErrorMessageConstant;
-import com.jubeiwato.costing_service.dtos.PartImageUploadDto;
+import com.jubeiwato.costing_service.dtos.PartFileUploadDto;
 import com.jubeiwato.costing_service.services.S3Service;
 import org.apache.tika.parser.AutoDetectParser;
 
@@ -32,8 +32,8 @@ public class S3ServiceImpl implements S3Service {
     @Value("${aws.bucketName}")
     private String bucketName;
 
-    @Value("${app.maxImageSizeBytes}")
-    private long maxImageSizeBytes;
+    @Value("${app.maxFileSizeBytes}")
+    private long maxFileSizeBytes;
 
     private final S3Client s3Client;
 
@@ -46,15 +46,15 @@ public class S3ServiceImpl implements S3Service {
     );
 
     @Override
-    public String uploadFile(Long partId, PartImageUploadDto partImageUploadDto, Long companyId) {
+    public String uploadFile(Long partId, PartFileUploadDto partFileUploadDto, Long companyId)  throws Exception{
         try {
-            byte[] imageBytes = decodeAndValidateImage(partImageUploadDto.getFileData());
+            byte[] imageBytes = decodeAndValidateFile(partFileUploadDto.getFileData());
     
             String detectedMimeType = detectMimeType(imageBytes);
     
             validateFileType(detectedMimeType);
     
-            String fileName = partImageUploadDto.getFileName();
+            String fileName = partFileUploadDto.getFileName();
             String key = companyId + "/parts/" + partId + "/" + fileName;
     
             uploadToS3(imageBytes, key, detectedMimeType);
@@ -65,11 +65,11 @@ public class S3ServiceImpl implements S3Service {
             throw new AppException(ErrorMessageConstant.IMAGE_UPLOAD_FAILED + ": " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-    private byte[] decodeAndValidateImage(String base64ImageData) {
-        byte[] imageBytes = Base64.getDecoder().decode(base64ImageData);
+    private byte[] decodeAndValidateFile(String base64FileData) {
+        byte[] imageBytes = Base64.getDecoder().decode(base64FileData);
     
-        if (imageBytes.length > maxImageSizeBytes) {
-            throw new AppException(ErrorMessageConstant.IMAGE_SIZE_EXCEEDS_LIMIT, HttpStatus.BAD_REQUEST);
+        if (imageBytes.length > maxFileSizeBytes) {
+            throw new AppException(ErrorMessageConstant.FILE_SIZE_EXCEEDS_LIMIT, HttpStatus.BAD_REQUEST);
         }
     
         return imageBytes;

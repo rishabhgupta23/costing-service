@@ -9,6 +9,7 @@ import com.jubeiwato.costing_service.dtos.*;
 import com.jubeiwato.costing_service.services.FileGeneratorService;
 import jakarta.transaction.Transactional;
 import org.springframework.core.io.Resource;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -575,8 +576,7 @@ public CostHistoryResponseDto getPartCostsByPartAndVendor(Long partId, Long vend
   }  
   
   @Override
-  public String uploadPartImage(Long partId, PartImageUploadDto partImageUploadDto, Long companyId) {
-    try { 
+  public String uploadPartFile(Long partId, PartFileUploadDto partFileUploadDto, Long companyId) throws Exception {
     Part part = getValidatedPart(partId, companyId);
   
       int imageCount = partFileRepository.countByPart(part);
@@ -584,23 +584,22 @@ public CostHistoryResponseDto getPartCostsByPartAndVendor(Long partId, Long vend
           throw new AppException(ErrorMessageConstant.FILES_QUANTITY_EXCEEDS_LIMIT, HttpStatus.BAD_REQUEST);
       }
   
-      String s3Key = s3Service.uploadFile(partId, partImageUploadDto, companyId);
+      String s3Key = s3Service.uploadFile(partId, partFileUploadDto, companyId);
   
       PartFile partFile = PartFile.builder()
               .part(part)
               .s3FileKey(s3Key)
-              .build();
-  
-      partFileRepository.save(partFile);
-  
-      return "Image uploaded successfully";
-    } catch (AppException ex) {
-        throw ex;
-    } catch (Exception e) {
-        e.printStackTrace();
-        throw new AppException(ErrorMessageConstant.FILE_UPLOAD_FAILED, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-}
+              .build(); 
+
+              try {
+                partFileRepository.save(partFile);
+            } catch (DataIntegrityViolationException ex) {
+                // Catch unique constraint violation (like duplicate file for part)
+                throw new AppException(ErrorMessageConstant.FILE_ALREADY_EXISTS, HttpStatus.BAD_REQUEST);
+            }
+        
+            return "File uploaded successfully";
+        }
 
   @Override
   public FileResponseDto downloadFileFromS3(String s3FileKey, Long companyId) {
