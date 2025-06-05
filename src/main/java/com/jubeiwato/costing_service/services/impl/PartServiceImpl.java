@@ -8,6 +8,7 @@ import com.jubeiwato.costing_service.constants.Sorting;
 import com.jubeiwato.costing_service.dtos.*;
 import com.jubeiwato.costing_service.services.FileGeneratorService;
 import jakarta.transaction.Transactional;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -27,16 +28,19 @@ import com.jubeiwato.costing_service.entities.CostFactor;
 import com.jubeiwato.costing_service.entities.Part;
 import com.jubeiwato.costing_service.entities.PartCost;
 import com.jubeiwato.costing_service.entities.PartCostCostFactor;
+import com.jubeiwato.costing_service.entities.PartFile;
 import com.jubeiwato.costing_service.entities.Vendor;
 import com.jubeiwato.costing_service.repositories.BomRepository;
 import com.jubeiwato.costing_service.repositories.CategoryRepository;
 import com.jubeiwato.costing_service.repositories.CompanyRepository;
 import com.jubeiwato.costing_service.repositories.CostFactorRepository;
 import com.jubeiwato.costing_service.repositories.PartCostRepository;
+import com.jubeiwato.costing_service.repositories.PartFileRepository;
 import com.jubeiwato.costing_service.repositories.PartRepository;
 import com.jubeiwato.costing_service.repositories.VendorRepository;
 import com.jubeiwato.costing_service.repositories.PartUnitRepository;
 import com.jubeiwato.costing_service.services.PartService;
+import com.jubeiwato.costing_service.services.S3Service;
 import com.jubeiwato.costing_service.utils.ValidationUtil;
 
 import java.io.IOException;
@@ -56,8 +60,11 @@ public class PartServiceImpl implements PartService {
     private PartUnitRepository partUnitRepository;
     private FileGeneratorService excelService;
     private CompanyRepository companyRepository;
+    private final PartFileRepository partFileRepository;
+    private final S3Service s3Service;
+
     public PartServiceImpl(PartRepository partRepository, CategoryRepository categoryRepository, VendorRepository vendorRepository
-            , CostFactorRepository costFactorRepository, PartCostRepository partCostRepository, BomRepository bomRepository,PartUnitRepository partUnitRepository, FileGeneratorService excelService, CompanyRepository companyRepository) {
+            , CostFactorRepository costFactorRepository, PartCostRepository partCostRepository, BomRepository bomRepository,PartUnitRepository partUnitRepository, FileGeneratorService excelService, CompanyRepository companyRepository, PartFileRepository partFileRepository, S3Service s3Service) {
         this.partRepository = partRepository;
         this.categoryRepository = categoryRepository;
         this.vendorRepository = vendorRepository;
@@ -67,6 +74,8 @@ public class PartServiceImpl implements PartService {
         this.partUnitRepository=partUnitRepository;
         this.excelService=excelService;
         this.companyRepository=companyRepository;
+        this.partFileRepository=partFileRepository;
+        this.s3Service=s3Service;
     }
 
     private Part getValidatedPart(Long partId, Long companyId) {
@@ -106,7 +115,7 @@ public class PartServiceImpl implements PartService {
 
     @Override
     @Transactional
-    public void createPart(@Valid PartRequestDto request, Long companyId ) {
+    public PartDto createPart(@Valid PartRequestDto request, Long companyId ) {
         Map<Long, Vendor> vendorMap = new HashMap<>();
         Map<Long, CostFactor> costFactorMap = new HashMap<>();
  
@@ -122,6 +131,7 @@ public class PartServiceImpl implements PartService {
             if (request.getType().equalsIgnoreCase(PartType.MASTER.name()) && request.getBom() != null && !request.getBom().isEmpty()) {
             validateAndSaveBom(request, companyId, part);
         }
+        return PartDto.entityToDto(part);
         }
 
         private void validateCreatePartRequest(PartRequestDto request, Long companyId, Map<Long, Vendor> vendorMap, Map<Long, CostFactor> costFactorMap) {
@@ -275,9 +285,8 @@ private PartCostCostFactor createPartCostCostFactor(Long costFactorId, Double va
     @Override
     public ApiPageResponseDto<PartDataDto> getParts(PartDto filter,long companyId, int pageNo, int pageSize, String sortBy, Sorting sortMode) {
 
-
         // Apply Specification
-                if (!ValidationUtil.isValidInput(filter.getPartName()) ||
+             if (!ValidationUtil.isValidInput(filter.getPartName()) ||
                 !ValidationUtil.isValidInput(filter.getPartNumber()) ||
                 !ValidationUtil.isValidInput(filter.getCategoryName()) ||
                 !ValidationUtil.isValidInput(filter.getUnit())) {
@@ -563,7 +572,60 @@ public CostHistoryResponseDto getPartCostsByPartAndVendor(Long partId, Long vend
             .fileData(base64Excel)
             .fileName(filename)
             .build();
-  }            
+  }  
+  
+  @Override
+  public String uploadPartFile(Long partId, PartFileUploadDto partFileUploadDto, Long companyId) throws DataIntegrityViolationException, IOException{
+    Part part = getValidatedPart(partId, companyId);
+  
+      int imageCount = partFileRepository.countByPart(part);
+      if (imageCount >= 3) {
+          throw new AppException(ErrorMessageConstant.FILES_QUANTITY_EXCEEDS_LIMIT, HttpStatus.BAD_REQUEST);
+      }
+  
+      String s3Key = s3Service.uploadFile(partId, partFileUploadDto, companyId);
+  
+      PartFile partFile = PartFile.builder()
+              .part(part)
+              .s3FileKey(s3Key)
+              .build(); 
 
+              try {
+                partFileRepository.save(partFile);
+            } catch (DataIntegrityViolationException ex) {
+                // Catch unique constraint violation (like duplicate file for part)
+                throw new AppException(ErrorMessageConstant.FILE_ALREADY_EXISTS, HttpStatus.BAD_REQUEST); //note that we will change this logic later
+            }
+        
+            return "File uploaded successfully";
+        }
+
+  @Override
+  public FileResponseDto downloadFileFromS3(String s3FileKey, Long companyId) {
+    Optional<PartFile> partFileOpt = partFileRepository.findByS3FileKey(s3FileKey);
+    if (partFileOpt.isEmpty() || !partFileOpt.get().getPart().getCompany().getCompanyId().equals(companyId)) {
+        throw new AppException(ErrorMessageConstant.FILE_NOT_FOUND_OR_UNAUTHORIZED, HttpStatus.NOT_FOUND);
+    }
+  
+      byte[] fileBytes = s3Service.downloadFile(s3FileKey);
+      String base64File = Base64.getEncoder().encodeToString(fileBytes);
+  
+      String fileName = s3FileKey.substring(s3FileKey.lastIndexOf("/") + 1);
+  
+      return FileResponseDto.builder()
+              .fileData(base64File)
+              .fileName(fileName)
+              .build();
+   }
+  
+  @Override
+public List<String> getPartFileUrls(Long partId, Long companyId) {
+  Part part = getValidatedPart(partId, companyId); 
+  List<PartFile> files = partFileRepository.findByPart(part);
+  return files.stream()
+          .map(PartFile::getS3FileKey)
+          .collect(Collectors.toList());
+    }
+    
 }
     

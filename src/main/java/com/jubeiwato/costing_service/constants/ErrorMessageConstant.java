@@ -49,6 +49,8 @@ public class ErrorMessageConstant {
     public static final String VENDOR_NAME_NOT_NULL = "Vendor name must not be null or empty";
 
     public static final String CATEGORY_ALREADY_EXISTS_TEMPLATE = "Category with categoryName '%s' already exists";
+    public static final String FILE_SIZE_EXCEEDS_LIMIT = "File exceeds maximum allowed size of 5MB";
+    public static final String IMAGE_UPLOAD_FAILED = "Failed to upload image to S3";
     public static final String TEMPLATE_NOT_FOUND = "Template not found";
     public static final String TEMPLATE_ALREADY_EXISTS = "Template name already exists for the company.";
     public static final String ATTRIBUTE_NOT_SELECTED = "Cannot create empty template, selecting part attribute is mandatory.";
@@ -58,6 +60,14 @@ public class ErrorMessageConstant {
     public static final String COST_FACTOR_CREATED = "Cost Factor created successfully";
     public static final String INVALID_COST_FACTOR = "Cost Factor can not be empty or null";
     public static final String COST_FACTOR_SOFT_DELETED_EXISTS_TEMPLATE = "A deactivated cost factor with name '%s' already exists. To activate it, please create a cost factor with this name.";
+    public static final String FILE_NOT_FOUND_OR_UNAUTHORIZED = "File not found or unauthorized access.";
+    public static final String FILES_QUANTITY_EXCEEDS_LIMIT = "Cannot upload more than 3 files for a part";
+    public static final String FILE_PARSE_FAILED = "Failed to parse file content: %s";
+    public static final String UNSUPPORTED_FILE_TYPE = "Unsupported file type: %s";
+    public static final String DUPLICATE_FILE = "Duplicate entry: This file already exists for the specified part.";
+    public static final String FILE_READ_FAILED = "Failed to read file from S3";
+    public static final String FILE_UPLOAD_FAILED= "File upload failed";
+    public static final String FILE_ALREADY_EXISTS= "This File already exists for this part";
 
     private ErrorMessageConstant() {
 
