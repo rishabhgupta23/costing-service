@@ -32,12 +32,12 @@ import com.jubeiwato.costing_service.utils.ValidationUtil;
 @Service
 public class VendorServiceImpl implements VendorService {
 
-    private final VendorRepository vendorRepository;
-    private final PartRepository partRepository;
+        private final VendorRepository vendorRepository;
+        private final PartRepository partRepository;
 
         private final CompanyRepository companyRepository;
 
-    private final FileGeneratorService excelService;
+        private final FileGeneratorService excelService;
 
         public VendorServiceImpl(VendorRepository vendorRepository, PartRepository partRepository,
                         CompanyRepository companyRepository, FileGeneratorService excelService) {
@@ -48,7 +48,7 @@ public class VendorServiceImpl implements VendorService {
         }
 
         private void validateDuplicateVendor(Long companyId, String name) {
-                boolean exists = vendorRepository.existsByCompanyCompanyIdAndName(companyId, name);
+                boolean exists = vendorRepository.existsByCompanyCompanyIdAndNameIgnoreCase(companyId, name);
                 if (exists) {
                         throw new AppException(ErrorMessageConstant.VENDOR_ALREADY_EXISTS, HttpStatus.BAD_REQUEST);
                 }
@@ -56,7 +56,8 @@ public class VendorServiceImpl implements VendorService {
 
         private Vendor getAndValidateVendor(Long id, Long companyId) {
                 return vendorRepository.findByVendorIdAndCompany_CompanyId(id, companyId)
-                                .orElseThrow(() -> new AppException(ErrorMessageConstant.VENDOR_DOES_NOT_EXIST,HttpStatus.NOT_FOUND));
+                                .orElseThrow(() -> new AppException(ErrorMessageConstant.VENDOR_DOES_NOT_EXIST,
+                                                HttpStatus.NOT_FOUND));
 
         }
 
@@ -76,105 +77,112 @@ public class VendorServiceImpl implements VendorService {
                     }
                     
                 Company company = companyRepository.findById(companyId)
-                .orElseThrow(() -> new AppException("Company not found", HttpStatus.BAD_REQUEST));
+                                .orElseThrow(() -> new AppException("Company not found", HttpStatus.BAD_REQUEST));
                 validateDuplicateVendor(companyId, name);
-        Vendor vendor = Vendor.builder()
+                Vendor vendor = Vendor.builder()
 
-        .company(company)
-        .name(name)
-        .emailId(emailId)
-        .contactNumber(contactNumber)
-        .address(address)
-        .build();
+                                .company(company)
+                                .name(name)
+                                .emailId(emailId)
+                                .contactNumber(contactNumber)
+                                .address(address)
+                                .build();
 
-        vendorRepository.save(vendor);
-    }
+                vendorRepository.save(vendor);
+        }
 
-    @Override
-    public ApiPageResponseDto<List<VendorDto>> getVendorList(Long companyId, String name, String address, String emailId, String contactNumber, int pageNo, int pageSize, String sortColumn ,Sorting sortMode) {
+        @Override
+        public ApiPageResponseDto<List<VendorDto>> getVendorList(Long companyId, String name, String address,
+                        String emailId, String contactNumber, int pageNo, int pageSize, String sortColumn,
+                        Sorting sortMode) {
                 Sort.Direction direction = (sortMode == Sorting.DESC) ? Sort.Direction.DESC : Sort.Direction.ASC;
 
-        Sort sort = Sort.by(direction, sortColumn);
-        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
-       if (!ValidationUtil.isValidInput(name) ||
-    !ValidationUtil.isValidInput(address) ||
-    !ValidationUtil.isValidInput(emailId) ||
-    !ValidationUtil.isValidInput(contactNumber)) {
-    throw new AppException(ErrorMessageConstant.INVALID_INPUT, HttpStatus.BAD_REQUEST);
-}
+                Sort sort = Sort.by(direction, sortColumn);
+                Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
+                if (!ValidationUtil.isValidInput(name) ||
+                                !ValidationUtil.isValidInput(address) ||
+                                !ValidationUtil.isValidInput(emailId) ||
+                                !ValidationUtil.isValidInput(contactNumber)) {
+                        throw new AppException(ErrorMessageConstant.INVALID_INPUT, HttpStatus.BAD_REQUEST);
+                }
 
-Specification<Vendor> spec = new VendorSpecification(companyId, name, address, emailId, contactNumber);
+                Specification<Vendor> spec = new VendorSpecification(companyId, name, address, emailId, contactNumber);
 
-        Page<Vendor> vendorPage = vendorRepository.findAll(spec, pageable);
+                Page<Vendor> vendorPage = vendorRepository.findAll(spec, pageable);
 
-        List<VendorDto> vendorDtos = vendorPage.getContent().stream()
-                .map(VendorDto::entityToDto)
-                .toList();
+                List<VendorDto> vendorDtos = vendorPage.getContent().stream()
+                                .map(VendorDto::entityToDto)
+                                .toList();
 
-        PageInfoDto pageInfo = PageInfoDto.builder()
-             .totalPages(vendorPage.getTotalPages())
-             .pageNumber(pageNo)
-             .pageSize(pageSize)
-             .totalRecords(vendorPage.getTotalElements())
-                .build();
+                PageInfoDto pageInfo = PageInfoDto.builder()
+                                .totalPages(vendorPage.getTotalPages())
+                                .pageNumber(pageNo)
+                                .pageSize(pageSize)
+                                .totalRecords(vendorPage.getTotalElements())
+                                .build();
 
-        return ApiPageResponseDto.<List<VendorDto>>builder()
-                .data(vendorDtos)
-                .pageInfo(pageInfo)
-                .build();
-    }
+                return ApiPageResponseDto.<List<VendorDto>>builder()
+                                .data(vendorDtos)
+                                .pageInfo(pageInfo)
+                                .build();
+        }
 
-    @Override
-    public VendorDto getVendorById(Long id, Long companyId) {
+        @Override
+        public VendorDto getVendorById(Long id, Long companyId) {
 
                 Vendor vendor = getAndValidateVendor(id, companyId);
-        return VendorDto.entityToDto(vendor);
-    }
+                return VendorDto.entityToDto(vendor);
+        }
 
-    @Override
-    public VendorDto updateVendorById(Long id, String name, String emailId, String contactNumber, String address,Long companyId) {
+        @Override
+        public VendorDto updateVendorById(Long id, String name, String emailId, String contactNumber, String address,
+                        Long companyId) {
                 Vendor vendor = getAndValidateVendor(id, companyId);
-                boolean exists = vendorRepository.existsByCompanyCompanyIdAndNameAndVendorIdNot(companyId, name, id);
+                boolean exists = vendorRepository.existsByCompanyCompanyIdAndVendorIdNotAndNameIgnoreCase(companyId, id,
+                                name);
+
                 if (exists) {
                         throw new AppException(ErrorMessageConstant.VENDOR_ALREADY_EXISTS, HttpStatus.NOT_FOUND);
                 }
-        vendor.setName(name);
-        vendor.setEmailId(emailId);
-        vendor.setContactNumber(contactNumber);
-        vendor.setAddress(address);
+                vendor.setName(name);
+                vendor.setEmailId(emailId);
+                vendor.setContactNumber(contactNumber);
+                vendor.setAddress(address);
 
-        return VendorDto.entityToDto(this.vendorRepository.save(vendor)); }
+                return VendorDto.entityToDto(this.vendorRepository.save(vendor));
+        }
 
-    @Transactional
-    @Override
-    public void deleteVendorById(Long id, Long companyId) {
+        @Transactional
+        @Override
+        public void deleteVendorById(Long id, Long companyId) {
                 Vendor vendor = getAndValidateVendor(id, companyId);
-        vendorRepository.deleteById(id);
-    }
+                vendorRepository.deleteById(id);
+        }
 
-    @Override
-    public ApiPageResponseDto<List<PartDto>> getVendorParts(Long vendorId, int pageNo, int pageSize,Long companyId) {
+        @Override
+        public ApiPageResponseDto<List<PartDto>> getVendorParts(Long vendorId, int pageNo, int pageSize,
+                        Long companyId) {
                 Vendor vendor = getAndValidateVendor(vendorId, companyId);
-        PageRequest pageable = PageRequest.of(pageNo, pageSize);
-        Page<Part> partVendorList = partRepository.getVendorParts(vendorId, pageable);
+                PageRequest pageable = PageRequest.of(pageNo, pageSize);
+                Page<Part> partVendorList = partRepository.getVendorParts(vendorId, pageable);
 
-        List<PartDto> partDtos = partVendorList.getContent().stream()
-            .map(PartDto::entityToDto)
-            .toList();
+                List<PartDto> partDtos = partVendorList.getContent().stream()
+                                .map(PartDto::entityToDto)
+                                .toList();
 
-        PageInfoDto pageInfo = PageInfoDto.builder()
-            .totalPages(partVendorList.getTotalPages())
-            .pageNumber(pageNo)
-            .pageSize(pageSize)
-            .totalRecords(partVendorList.getTotalElements())
-            .build();
+                PageInfoDto pageInfo = PageInfoDto.builder()
+                                .totalPages(partVendorList.getTotalPages())
+                                .pageNumber(pageNo)
+                                .pageSize(pageSize)
+                                .totalRecords(partVendorList.getTotalElements())
+                                .build();
 
-            return ApiPageResponseDto.<List<PartDto>>builder()
+                return ApiPageResponseDto.<List<PartDto>>builder()
                                 .data(partDtos)
                                 .pageInfo(pageInfo)
                                 .build();
 
-    }
+        }
 
         @Override
         public byte[] downloadVendorExcel(Long companyId) throws IOException {
