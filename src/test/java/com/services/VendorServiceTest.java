@@ -96,6 +96,29 @@ class VendorServiceTest {
         }
 
         @Test
+        void shouldThrowExceptionWhenVendorWithSameNameExists_CaseInsensitive() {
+                Long companyId = 1L;
+                String existingName = "ALoo";
+                String newName = "aloo"; // same name, different case
+                String email = "test@example.com";
+                String contact = "9999999999";
+                String address = "123 Main Street";
+
+                // Simulate existing vendor
+                when(companyRepository.findById(companyId)).thenReturn(Optional.of(new Company()));
+                when(vendorRepository.existsByCompanyCompanyIdAndNameIgnoreCase(eq(companyId), eq(newName)))
+                                .thenReturn(true); // simulate name exists (case-insensitive logic expected in repo or
+                                                   // test)
+
+                AppException exception = assertThrows(AppException.class,
+                                () -> vendorService.createVendor(companyId, newName, email, contact, address));
+
+                // Assertions
+                assert (exception.getMessage().equals(ErrorMessageConstant.VENDOR_ALREADY_EXISTS));
+                assert (exception.getStatus().equals(HttpStatus.BAD_REQUEST));
+        }
+
+        @Test
         void testGetVendorList_WithSortingDESC() {
                 Long companyId = 1L;
                 String name = "VendorX";
@@ -326,6 +349,38 @@ class VendorServiceTest {
                 assertThrows(AppException.class, () -> {
                         vendorService.getVendorById(vendorId, companyId);
                 });
+        }
+
+        @Test
+        void shouldThrowExceptionWhenUpdatingToAnExistingVendorName_CaseInsensitive() {
+                Long vendorId = 1L;
+                Long companyId = 101L;
+                String existingVendorName = "ALoo";
+                String updateName = "aloo"; // same name, different case — should still conflict
+                String email = "updated@email.com";
+                String contact = "9876543210";
+                String address = "Updated Address";
+
+                Vendor vendorToUpdate = Vendor.builder()
+                                .vendorId(vendorId)
+                                .name("SomeOldName")
+                                .company(Company.builder().companyId(companyId).build())
+                                .build();
+
+                when(vendorRepository.findByVendorIdAndCompany_CompanyId(vendorId, companyId))
+                                .thenReturn(Optional.of(vendorToUpdate));
+
+                when(vendorRepository.existsByCompanyCompanyIdAndVendorIdNotAndNameIgnoreCase(companyId, vendorId,
+                                updateName))
+                                .thenReturn(true); // Simulate name conflict
+
+                AppException exception = assertThrows(AppException.class, () -> vendorService.updateVendorById(vendorId,
+                                updateName, email, contact, address, companyId));
+
+                assertEquals(ErrorMessageConstant.VENDOR_ALREADY_EXISTS, exception.getMessage());
+                assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
+
+                verify(vendorRepository, never()).save(any());
         }
 
         @Test
