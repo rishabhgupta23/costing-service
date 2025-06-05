@@ -58,7 +58,7 @@ public ResponseEntity<ApiPageResponseDto<List<CategoryDto>>> getCategoryList(
 }
 
     @PostMapping()
-    @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "') or hasRole('" + MAINTAINER + "')")
+    @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "')")
     public ResponseEntity<GeneralResponseDto> createCategory(@Valid @RequestBody CategoryDto request, @AuthenticationPrincipal User authenticatedUser) {
         Long companyId = authenticatedUser.getCompany().getCompanyId();
         this.categoryService.createCategory(request.getCategoryName(),companyId);
