@@ -19,6 +19,4 @@ public interface VendorRepository extends JpaRepository<Vendor, Long>, JpaSpecif
 
     boolean existsByCompanyCompanyIdAndVendorIdNotAndNameIgnoreCase(Long companyId, Long vendorId, String name);
 
-    boolean existsByCompanyCompanyIdAndNameAndVendorIdNot(Long companyId, String name, Long vendorId);
-
 }
