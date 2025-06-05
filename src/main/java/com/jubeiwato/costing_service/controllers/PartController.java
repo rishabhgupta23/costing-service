@@ -8,6 +8,7 @@ import java.util.List;
 import com.jubeiwato.costing_service.constants.*;
 import com.jubeiwato.costing_service.dtos.*;
 import com.jubeiwato.costing_service.entities.User;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -122,7 +123,7 @@ public class PartController {
     }
 
     @GetMapping("/bom/{parentPartId}/download")
-    public ResponseEntity<FileResponseDto> exportBomPartListToExcel(@PathVariable Long parentPartId,@AuthenticationPrincipal User authenticatedUser) throws Exception {   
+    public ResponseEntity<FileResponseDto> exportBomPartListToExcel(@PathVariable Long parentPartId,@AuthenticationPrincipal User authenticatedUser) throws IOException {   
     Long companyId = authenticatedUser.getCompany().getCompanyId(); 
     FileResponseDto responseDto = partService.downloadBomPartListToExcel(parentPartId,companyId);
     return ResponseEntity.ok().body(responseDto);
@@ -142,7 +143,7 @@ public class PartController {
     public ResponseEntity<GeneralResponseDto> uploadPartFile(
         @RequestParam Long partId,
         @RequestBody @Valid PartFileUploadDto partFileUploadDto,
-        @AuthenticationPrincipal User user) throws Exception{
+        @AuthenticationPrincipal User user) throws DataIntegrityViolationException, IOException{
     
         Long companyId = user.getCompany().getCompanyId();
         String result = partService.uploadPartFile(partId, partFileUploadDto, companyId);

@@ -46,7 +46,7 @@ public class S3ServiceImpl implements S3Service {
     );
 
     @Override
-    public String uploadFile(Long partId, PartFileUploadDto partFileUploadDto, Long companyId)  throws Exception{
+    public String uploadFile(Long partId, PartFileUploadDto partFileUploadDto, Long companyId){
         try {
             byte[] imageBytes = decodeAndValidateFile(partFileUploadDto.getFileData());
     

@@ -8,7 +8,6 @@ import com.jubeiwato.costing_service.constants.Sorting;
 import com.jubeiwato.costing_service.dtos.*;
 import com.jubeiwato.costing_service.services.FileGeneratorService;
 import jakarta.transaction.Transactional;
-import org.springframework.core.io.Resource;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -576,7 +575,7 @@ public CostHistoryResponseDto getPartCostsByPartAndVendor(Long partId, Long vend
   }  
   
   @Override
-  public String uploadPartFile(Long partId, PartFileUploadDto partFileUploadDto, Long companyId) throws Exception {
+  public String uploadPartFile(Long partId, PartFileUploadDto partFileUploadDto, Long companyId) throws DataIntegrityViolationException, IOException{
     Part part = getValidatedPart(partId, companyId);
   
       int imageCount = partFileRepository.countByPart(part);
@@ -595,7 +594,7 @@ public CostHistoryResponseDto getPartCostsByPartAndVendor(Long partId, Long vend
                 partFileRepository.save(partFile);
             } catch (DataIntegrityViolationException ex) {
                 // Catch unique constraint violation (like duplicate file for part)
-                throw new AppException(ErrorMessageConstant.FILE_ALREADY_EXISTS, HttpStatus.BAD_REQUEST);
+                throw new AppException(ErrorMessageConstant.FILE_ALREADY_EXISTS, HttpStatus.BAD_REQUEST); //note that we will change this logic later
             }
         
             return "File uploaded successfully";
