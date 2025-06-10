@@ -1,6 +1,5 @@
 package com.jubeiwato.costing_service.dtos;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.jubeiwato.costing_service.entities.Vendor;
 
 import lombok.AllArgsConstructor;
