@@ -14,9 +14,6 @@ public interface VendorRepository extends JpaRepository<Vendor, Long>, JpaSpecif
     Optional<Vendor> findByVendorIdAndCompany_CompanyId(Long vendorId, Long companyId);
     List<Vendor> findByVendorIdInAndCompany_CompanyId(Set<Long> vendorIds, Long companyId);
 
-
-    List<Vendor> findByVendorIdInAndCompany_CompanyId(Set<Long> vendorIds, Long companyId);
-
     boolean existsByCompanyCompanyIdAndNameIgnoreCase(Long companyId, String name);
 
     boolean existsByCompanyCompanyIdAndVendorIdNotAndNameIgnoreCase(Long companyId, Long vendorId, String name);

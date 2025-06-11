@@ -68,7 +68,8 @@ public class PartServiceImpl implements PartService {
         private PartAttributeRepository partAttributeRepository;
             private final PartFileRepository partFileRepository;
     private final S3Service s3Service;
-    public PartServiceImpl(PartRepository partRepository, CategoryRepository categoryRepository, VendorRepository vendorRepository
+    public PartServiceImpl(PartRepository partRepository, CategoryRepository categoryRepository,    PartPartAttributeRepository partPartAttributeRepository,
+    PartAttributeRepository partAttributeRepository, VendorRepository vendorRepository
             , CostFactorRepository costFactorRepository, PartCostRepository partCostRepository, BomRepository bomRepository,PartUnitRepository partUnitRepository, FileGeneratorService excelService, CompanyRepository companyRepository, PartFileRepository partFileRepository, S3Service s3Service) {
 
         this.partRepository = partRepository;
