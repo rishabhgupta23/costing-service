@@ -392,9 +392,9 @@ private PartCostCostFactor createPartCostCostFactor(Long costFactorId, Double va
         return createPartResponseDto(part, partCostList, bomDetails, attributeValues);
     }
 
-    PartResponseDto createPartResponseDto(Part part, List<PartCost> partCostList, List<Bom> bom, List<PartPartAttribute> attributes) {
+    PartResponseDto createPartResponseDto(Part part, List<PartCost> partCostList, List<Bom> bom, List<PartPartAttribute> attributeValueList) {
         List<BomResponseDto> bomDtoList = bom.stream().map(BomResponseDto::entityToDto).toList();
-    List<AttributeValueDto> attributeDtoList = attributes.stream()
+    List<AttributeValueDto> attributeDtoList = attributeValueList.stream()
         .map(attr -> AttributeValueDto.builder()
             .attributeId(attr.getAttribute().getAttributeId())
             .attributeName(attr.getAttribute().getAttributeName())
@@ -412,7 +412,7 @@ private PartCostCostFactor createPartCostCostFactor(Long costFactorId, Double va
                 .type(partDto.getType())                
                 .bom(bomDtoList)
                 .vendorCostList(createVendorCostList(partCostList))
-                .attributes(attributeDtoList)
+                .attributeValueList(attributeDtoList)
                 .build();
                 
     }
