@@ -318,15 +318,6 @@
             </collectionProp>
           </HeaderManager>
           <hashTree/>
-          <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="JSON Assertion" enabled="false">
-            <stringProp name="JSON_PATH">$.message, $.status</stringProp>
-            <stringProp name="EXPECTED_VALUE">{&quot;message&quot;:&quot;Successful&quot;,&quot;status&quot;:201}</stringProp>
-            <boolProp name="JSONVALIDATION">false</boolProp>
-            <boolProp name="EXPECT_NULL">false</boolProp>
-            <boolProp name="INVERT">false</boolProp>
-            <boolProp name="ISREGEX">true</boolProp>
-          </JSONPathAssertion>
-          <hashTree/>
         </hashTree>
         <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="GET PARTS">
           <stringProp name="HTTPSampler.domain">localhost</stringProp>
@@ -1205,7 +1196,7 @@ assert invalidParts.isEmpty() : &quot;❌ Test Failed! Found invalid partNames: 
               <elementProp name="" elementType="HTTPArgument">
                 <boolProp name="HTTPArgument.always_encode">false</boolProp>
                 <stringProp name="Argument.value">{&#xd;
-	&quot;name&quot;:&quot;Vendor 2&quot;,&#xd;
+	&quot;vendorName&quot;:&quot;Vendor 5&quot;,&#xd;
 	&quot;address&quot;:&quot;Rajiv Nagar&quot;,&#xd;
 	&quot;emailId&quot;:&quot;jmeter@gmail.com&quot;,&#xd;
 	&quot;contactNumber&quot;:&quot;4897485168&quot;&#xd;
@@ -1310,11 +1301,11 @@ assert invalidParts.isEmpty() : &quot;❌ Test Failed! Found invalid partNames: 
           </ResponseAssertion>
           <hashTree/>
         </hashTree>
-        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="GET VENDORS" enabled="true">
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="GET VENDORS">
           <stringProp name="HTTPSampler.domain">localhost</stringProp>
           <stringProp name="HTTPSampler.port">8080</stringProp>
           <stringProp name="HTTPSampler.protocol">http</stringProp>
-          <stringProp name="HTTPSampler.path">/vendors?sortColumn=name&amp;sortMode=DESC</stringProp>
+          <stringProp name="HTTPSampler.path">/vendors?sortColumn=vendorName&amp;sortMode=DESC</stringProp>
           <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
           <stringProp name="HTTPSampler.method">GET</stringProp>
           <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
@@ -1413,7 +1404,7 @@ assert invalidParts.isEmpty() : &quot;❌ Test Failed! Found invalid partNames: 
               <elementProp name="" elementType="HTTPArgument">
                 <boolProp name="HTTPArgument.always_encode">false</boolProp>
                 <stringProp name="Argument.value">{&#xd;
-	&quot;name&quot;:&quot;Updated Vendor&quot;,&#xd;
+	&quot;vendorName&quot;:&quot;Updated Vendor&quot;,&#xd;
 	&quot;address&quot;:&quot;Rajiv Nagar&quot;,&#xd;
 	&quot;emailId&quot;:&quot;jmeter@gmail.com&quot;,&#xd;
 	&quot;contactNumber&quot;:&quot;4897476168&quot;&#xd;
@@ -1461,7 +1452,7 @@ assert invalidParts.isEmpty() : &quot;❌ Test Failed! Found invalid partNames: 
             <stringProp name="filename"></stringProp>
           </ResultCollector>
           <hashTree/>
-          <ResultCollector guiclass="TableVisualizer" testclass="ResultCollector" testname="View Results in Table" enabled="true">
+          <ResultCollector guiclass="TableVisualizer" testclass="ResultCollector" testname="View Results in Table">
             <boolProp name="ResultCollector.error_logging">false</boolProp>
             <objProp>
               <name>saveConfig</name>
@@ -1507,22 +1498,12 @@ assert invalidParts.isEmpty() : &quot;❌ Test Failed! Found invalid partNames: 
             </collectionProp>
           </HeaderManager>
           <hashTree/>
-          <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Response Assertion" enabled="true">
-            <collectionProp name="Asserion.test_strings">
-              <stringProp name="2099845528">&quot;name&quot;:&quot;Updated Vendor&quot;</stringProp>
-            </collectionProp>
-            <stringProp name="Assertion.custom_message"></stringProp>
-            <stringProp name="Assertion.test_field">Assertion.response_data</stringProp>
-            <boolProp name="Assertion.assume_success">false</boolProp>
-            <intProp name="Assertion.test_type">16</intProp>
-          </ResponseAssertion>
-          <hashTree/>
         </hashTree>
-        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="GET VENDORS" enabled="true">
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="GET VENDORS">
           <stringProp name="HTTPSampler.domain">localhost</stringProp>
           <stringProp name="HTTPSampler.port">8080</stringProp>
           <stringProp name="HTTPSampler.protocol">http</stringProp>
-          <stringProp name="HTTPSampler.path">/vendors?name=A</stringProp>
+          <stringProp name="HTTPSampler.path">/vendors?vendorName=com</stringProp>
           <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
           <stringProp name="HTTPSampler.method">GET</stringProp>
           <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
@@ -1625,7 +1606,7 @@ assert invalidVendors.isEmpty() : &quot;❌ Test Failed! Found invalid partNames
           </JSR223Assertion>
           <hashTree/>
         </hashTree>
-        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="DELETE VENDOR" enabled="true">
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="DELETE VENDOR">
           <stringProp name="HTTPSampler.domain">localhost</stringProp>
           <stringProp name="HTTPSampler.port">8080</stringProp>
           <stringProp name="HTTPSampler.protocol">http</stringProp>

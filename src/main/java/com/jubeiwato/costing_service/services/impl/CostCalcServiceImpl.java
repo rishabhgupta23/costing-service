@@ -82,7 +82,7 @@ public class CostCalcServiceImpl implements CostCalcService {
                 .partNumber(part.getPartNumber())
                 .quantity(qt)
                 .rate(result.getValue())
-                .vendorName(result.getKey().getName())
+                .vendorName(result.getKey().getVendorName())
                .subTotal(qt*result.getValue())
                 .build();
     }
