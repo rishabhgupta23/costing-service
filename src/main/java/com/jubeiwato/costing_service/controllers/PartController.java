@@ -8,6 +8,7 @@ import java.util.List;
 import com.jubeiwato.costing_service.constants.*;
 import com.jubeiwato.costing_service.dtos.*;
 import com.jubeiwato.costing_service.entities.User;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -15,6 +16,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import static com.jubeiwato.costing_service.constants.UserRoleConstants.*;
 import com.jubeiwato.costing_service.services.PartService;
+import jakarta.validation.Valid;
 import java.io.IOException;
 
 
@@ -87,11 +89,10 @@ public class PartController {
 
     @PostMapping 
     @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "') or hasRole('" + MAINTAINER + "')")
-    public ResponseEntity<GeneralResponseDto> createPart(@RequestBody PartRequestDto request, @AuthenticationPrincipal User authenticatedUser) {
+    public ResponseEntity<PartDto> createPart(@RequestBody PartRequestDto request, @AuthenticationPrincipal User authenticatedUser) {
         Long companyId = authenticatedUser.getCompany().getCompanyId();
-        partService.createPart(request, companyId);
-        GeneralResponseDto response = new GeneralResponseDto("Successful", HttpStatus.CREATED.value());
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        PartDto createdPart = partService.createPart(request, companyId);
+        return new ResponseEntity<>(createdPart, HttpStatus.OK);
     }
 
     @DeleteMapping("/{partId}")
@@ -131,9 +132,42 @@ public class PartController {
     @GetMapping("/cost-history")
     public ResponseEntity<CostHistoryResponseDto> getPartCostsByPartAndVendor(
             @RequestParam Long partId,
-            @RequestParam Long vendorId, @AuthenticationPrincipal User authenticatedUser) {
-            Long companyId = authenticatedUser.getCompany().getCompanyId();
+            @RequestParam Long vendorId, @AuthenticationPrincipal User user) {
+            Long companyId = user.getCompany().getCompanyId();
         CostHistoryResponseDto response = partService.getPartCostsByPartAndVendor(partId, vendorId,companyId );
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/file/upload")
+    @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "') or hasRole('" + MAINTAINER + "')")
+    public ResponseEntity<GeneralResponseDto> uploadPartFile(
+        @RequestParam Long partId,
+        @RequestBody @Valid PartFileUploadDto partFileUploadDto,
+        @AuthenticationPrincipal User user) throws DataIntegrityViolationException, IOException{
+    
+        Long companyId = user.getCompany().getCompanyId();
+        String result = partService.uploadPartFile(partId, partFileUploadDto, companyId);
+    
+        GeneralResponseDto response = new GeneralResponseDto(result, HttpStatus.OK.value());
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/file/download")
+    public ResponseEntity<FileResponseDto> downloadFile(@RequestParam String s3FileKey, @AuthenticationPrincipal User user) {
+        Long companyId = user.getCompany().getCompanyId();
+        FileResponseDto fileResponse = partService.downloadFileFromS3(s3FileKey, companyId);
+        return ResponseEntity.ok(fileResponse);
+    } 
+
+    @GetMapping("/files")
+public ResponseEntity<List<String>> getPartFileUrls(
+        @RequestParam Long partId,
+        @AuthenticationPrincipal User authenticatedUser
+) {
+    Long companyId = authenticatedUser.getCompany().getCompanyId(); 
+    List<String> urls = partService.getPartFileUrls(partId, companyId);
+    return ResponseEntity.ok(urls);
+}
+
+
 }       
