@@ -19,14 +19,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-
 @Service
 public class CostCalcServiceImpl implements CostCalcService {
     private final PartRepository partRepository;
     private final PartCostRepository partCostRepository;
-    private final BomRepository  bomRepository;
+    private final BomRepository bomRepository;
 
-    public CostCalcServiceImpl(PartRepository partRepository, PartCostRepository partCostRepository,BomRepository  bomRepository) {
+    public CostCalcServiceImpl(PartRepository partRepository, PartCostRepository partCostRepository,
+            BomRepository bomRepository) {
         this.partRepository = partRepository;
         this.partCostRepository = partCostRepository;
         this.bomRepository = bomRepository;
@@ -42,7 +42,7 @@ public class CostCalcServiceImpl implements CostCalcService {
 
         for (Bom childPart : childParts) {
             Double quantity = childPart.getQuantity();
-            if (childPart.getChildPart().getType() == PartType.MASTER)  {
+            if (childPart.getChildPart().getType() == PartType.MASTER) {
 
                 List<CostItemDto> childCosts = calculateMasterPart(childPart.getChildPart().getPartId(), priceMode);
                 calculatedPrice = childCosts.stream().mapToDouble(CostItemDto::getSubTotal).sum();
@@ -62,28 +62,29 @@ public class CostCalcServiceImpl implements CostCalcService {
         return masterDto;
     }
 
-    private CostItemDto calculateUnitPart(Long partId, String  priceMode, Double qt) {
-            Part part = partRepository.findById(partId)
-                    .orElseThrow(() -> new AppException(ErrorMessageConstant.getFormattedMessage(ErrorMessageConstant.CHILD_PART_NOT_FOUND_TEMPLATE, partId), 
-                    HttpStatus.NOT_FOUND));
+    private CostItemDto calculateUnitPart(Long partId, String priceMode, Double qt) {
+        Part part = partRepository.findById(partId)
+                .orElseThrow(() -> new AppException(
+                        ErrorMessageConstant.getFormattedMessage(ErrorMessageConstant.CHILD_PART_NOT_FOUND_TEMPLATE,
+                                partId),
+                        HttpStatus.NOT_FOUND));
 
-        List<PartCost> partCostDetails = partCostRepository.findByPartId(partId);
+        List<PartCost> partCostDetails = partCostRepository.getByPartId(partId);
 
         Map<Vendor, Double> vendorCostMap = partCostDetails.stream()
                 .collect(Collectors.toMap(
                         PartCost::getVendor,
-                        pc -> (pc.getCostFactorList() == null) ? 0.0 :
-                                pc.getCostFactorList().stream().mapToDouble(PartCostCostFactor::getValue).sum()
-                ));
+                        pc -> (pc.getCostFactorList() == null) ? 0.0
+                                : pc.getCostFactorList().stream().mapToDouble(PartCostCostFactor::getValue).sum()));
         Map.Entry<Vendor, Double> result = calculateMinMaxAvgCost(vendorCostMap, priceMode);
 
-       return CostItemDto.builder()
+        return CostItemDto.builder()
                 .partName(part.getPartName())
                 .partNumber(part.getPartNumber())
                 .quantity(qt)
                 .rate(result.getValue())
                 .vendorName(result.getKey().getName())
-               .subTotal(qt*result.getValue())
+                .subTotal(qt * result.getValue())
                 .build();
     }
 
@@ -91,24 +92,26 @@ public class CostCalcServiceImpl implements CostCalcService {
     public CostCalcResultDto calculatePrice(Long partId, String priceMode, Long companyId) {
         List<CostItemDto> res;
         Double quantity = 1.0;
-        Double totalCost=0.0;
+        Double totalCost = 0.0;
         Part part = partRepository.findById(partId)
-                .orElseThrow(() -> new AppException(ErrorMessageConstant.getFormattedMessage(ErrorMessageConstant.CHILD_PART_NOT_FOUND_TEMPLATE, partId), 
-                HttpStatus.NOT_FOUND));
-          
+                .orElseThrow(() -> new AppException(
+                        ErrorMessageConstant.getFormattedMessage(ErrorMessageConstant.CHILD_PART_NOT_FOUND_TEMPLATE,
+                                partId),
+                        HttpStatus.NOT_FOUND));
+
         if (!part.getCompany().getCompanyId().equals(companyId)) {
             throw new AppException(
-                ErrorMessageConstant.getFormattedMessage(ErrorMessageConstant.PART_NOT_FOUND_TEMPLATE, partId),
-                HttpStatus.NOT_FOUND);
+                    ErrorMessageConstant.getFormattedMessage(ErrorMessageConstant.PART_NOT_FOUND_TEMPLATE, partId),
+                    HttpStatus.NOT_FOUND);
         }
 
-        if(part.getType() == PartType.UNIT) {
+        if (part.getType() == PartType.UNIT) {
             res = new ArrayList<>();
-            res.add(calculateUnitPart(partId,priceMode,quantity));
-            totalCost= res.get(0).getSubTotal();
+            res.add(calculateUnitPart(partId, priceMode, quantity));
+            totalCost = res.get(0).getSubTotal();
 
         } else {
-            res = calculateMasterPart(partId,priceMode);
+            res = calculateMasterPart(partId, priceMode);
             totalCost = res.stream().mapToDouble(CostItemDto::getSubTotal).sum();
         }
 
@@ -117,7 +120,6 @@ public class CostCalcServiceImpl implements CostCalcService {
                 .totalCost(totalCost)
                 .build();
     }
-
 
     private Map.Entry<Vendor, Double> calculateMinMaxAvgCost(Map<Vendor, Double> vendorCostMap, String priceMode) {
         switch (PriceMode.fromString(priceMode)) {
@@ -151,6 +153,5 @@ public class CostCalcServiceImpl implements CostCalcService {
                 throw new AppException(ErrorMessageConstant.INVALID_PRICE_MODE, HttpStatus.BAD_REQUEST);
         }
     }
-
 
 }

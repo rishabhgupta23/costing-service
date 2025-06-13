@@ -86,9 +86,6 @@ public class PartServiceTest {
     @Mock
     private BomRepository bomRepository;
 
-    // @InjectMocks
-    // private PartServiceImpl partService;
-
     @InjectMocks
     private PartServiceImpl partServiceImpl;
 
@@ -101,9 +98,6 @@ public class PartServiceTest {
     @Mock
     private CompanyRepository companyRepository;
 
-    @InjectMocks
-    private PartServiceTest partServiceTest;
-
     @Mock
     private CostFactorRepository costFactorRepository;
 
@@ -115,8 +109,6 @@ public class PartServiceTest {
 
     @Mock
     private Part validatedPart;
-
-    // @Mock
 
     @Mock
     private PartFileRepository partFileRepository;
@@ -611,76 +603,110 @@ public class PartServiceTest {
 
     @Test
     void testUpdatePartById_ForUnitPart_WhenCostIsChanged() {
-        // Input setup
+        // UdatePartById when one vendor is removed and one cost factor value is changed
         Long partId = 1L;
-        Long vendorId = 1L;
         Long companyId = 500L;
+        Long vendorId1 = 1L;
+        Long vendorId2 = 2L;
+        Long costFactorId = 2L;
 
-        // Existing part
+        // Setup existing Part
         Part existingPart = new Part();
         existingPart.setPartId(partId);
-        existingPart.setPartName("Old Name");
+        existingPart.setPartName("Eng1");
         existingPart.setType(PartType.UNIT);
 
-        // Existing vendor and cost
-        Vendor vendor = new Vendor();
-        vendor.setVendorId(vendorId);
-        vendor.setName("Vendor A");
-        vendor.setEmailId("a@gmail.com");
-
+        // Setup CostFactor
         CostFactor costFactor = new CostFactor();
-        costFactor.setFactorId(1L);
-        costFactor.setFactorName("CF1");
+        costFactor.setFactorId(costFactorId);
+        costFactor.setFactorName("Cost Price");
 
-        PartCost existingCost = new PartCost();
-        existingCost.setVendor(vendor);
-        existingCost.setPart(existingPart);
+        // Existing Vendor 1 (XYZ) with value = 300.0
+        Vendor vendor1 = new Vendor();
+        vendor1.setVendorId(vendorId1);
+        vendor1.setName("XYZ Company");
 
-        PartCostCostFactor oldFactor = new PartCostCostFactor();
-        oldFactor.setCostFactor(costFactor);
-        oldFactor.setValue(50.0); // Old value
-        oldFactor.setPartCost(existingCost);
+        PartCost partCost1 = new PartCost();
+        partCost1.setVendor(vendor1);
+        partCost1.setPart(existingPart);
 
-        existingCost.setCostFactorList(List.of(oldFactor));
+        PartCostCostFactor pcf1 = new PartCostCostFactor();
+        pcf1.setCostFactor(costFactor);
+        pcf1.setValue(300.0);
+        pcf1.setPartCost(partCost1);
 
-        // Incoming updated VendorCostDto
-        CostFactorDto costFactorDto = new CostFactorDto(1L, "CF1", 100.0); // New value
-        VendorCostDto vendorCostDto = new VendorCostDto(
-                vendorId, "Vendor A", "addr", "email", "123", List.of(costFactorDto));
+        partCost1.setCostFactorList(List.of(pcf1));
 
-        PartRequestDto request = new PartRequestDto();
-        request.setPartName("New Name");
-        request.setType("UNIT");
-        request.setUnit("Kg");
-        request.setVendorCostList(List.of(vendorCostDto));
+        // Existing Vendor 2 (ABC) with value = 500.0
+        Vendor vendor2 = new Vendor();
+        vendor2.setVendorId(vendorId2);
+        vendor2.setName("ABC Company");
 
-        // Mock lookups
+        PartCost partCost2 = new PartCost();
+        partCost2.setVendor(vendor2);
+        partCost2.setPart(existingPart);
+
+        PartCostCostFactor pcf2 = new PartCostCostFactor();
+        pcf2.setCostFactor(costFactor);
+        pcf2.setValue(500.0);
+        pcf2.setPartCost(partCost2);
+
+        partCost2.setCostFactorList(List.of(pcf2));
+
+        // Setup update request: only vendor1 remains, value updated to 100.0
+        CostFactorDto updatedFactor = new CostFactorDto(costFactorId, "Cost Price", 100.0);
+
+        VendorCostDto updatedVendor1 = new VendorCostDto(
+                vendorId1, "XYZ Company", "address", "email", "9999999999", List.of(updatedFactor));
+
+        PartRequestDto requestDto = new PartRequestDto();
+        requestDto.setPartName("Eng1");
+        requestDto.setType("UNIT");
+        requestDto.setUnit("KG");
+        requestDto.setVendorCostList(List.of(updatedVendor1));
+
+        // Mocking
         when(partRepository.findByPartIdAndCompany_CompanyId(partId, companyId))
                 .thenReturn(Optional.of(existingPart));
 
-        PartUnit partUnit = new PartUnit();
-        partUnit.setUnitName("Kg");
+        PartUnit mockUnit = new PartUnit();
+        mockUnit.setUnitName("KG");
 
-        when(partUnitRepository.findByUnitName("Kg"))
-                .thenReturn(Optional.of(partUnit));
+        when(partUnitRepository.findByUnitName("KG"))
+                .thenReturn(Optional.of(mockUnit));
 
-        when(partCostRepository.findByPartId(partId))
-                .thenReturn(List.of(existingCost));
+        when(partCostRepository.getByPartId(partId))
+                .thenReturn(List.of(partCost1, partCost2)); // Existing costs
 
-        when(vendorRepository.findByVendorIdInAndCompany_CompanyId(Set.of(vendorId), companyId))
-                .thenReturn(List.of(vendor));
+        when(vendorRepository.findByVendorIdInAndCompany_CompanyId(Set.of(vendorId1), companyId))
+                .thenReturn(List.of(vendor1));
 
-        when(costFactorRepository.findByFactorIdInAndCompany_CompanyId(Set.of(1L), companyId))
+        when(costFactorRepository.findByFactorIdInAndCompany_CompanyId(Set.of(costFactorId), companyId))
                 .thenReturn(List.of(costFactor));
 
-        // When
-        PartDto result = partServiceImpl.updatePartById(partId, request, companyId);
+        // ArgumentCaptor to inspect saved and deleted data
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<PartCost>> saveCaptor = ArgumentCaptor.forClass(List.class);
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<PartCost>> deleteCaptor = ArgumentCaptor.forClass(List.class);
 
-        // Then
-        verify(partRepository).save(any(Part.class));
-        verify(partCostRepository).saveAll(anyList());
+        // Act
+        partServiceImpl.updatePartById(partId, requestDto, companyId);
 
-        assertEquals("New Name", result.getPartName());
+        // Assert saveAll was called with updated vendor1
+        verify(partCostRepository).saveAll(saveCaptor.capture());
+        List<PartCost> savedCosts = saveCaptor.getValue();
+
+        assertEquals(1, savedCosts.size());
+        assertEquals(vendorId1, savedCosts.get(0).getVendor().getVendorId());
+        assertEquals(100.0, savedCosts.get(0).getCostFactorList().get(0).getValue());
+
+        // Assert deleteAll was called with vendor2 (ABC Company)
+        verify(partCostRepository).deleteAll(deleteCaptor.capture());
+        List<PartCost> deletedCosts = deleteCaptor.getValue();
+
+        assertEquals(1, deletedCosts.size());
+        assertEquals(vendorId2, deletedCosts.get(0).getVendor().getVendorId());
     }
 
     @Test
@@ -849,7 +875,7 @@ public class PartServiceTest {
         when(partRepository.findByPartIdAndCompany_CompanyId(partId, companyId))
                 .thenReturn(Optional.of(validatedPart));
 
-        when(partCostRepository.findByPartId(partId)).thenReturn(List.of());
+        when(partCostRepository.getByPartId(partId)).thenReturn(List.of());
 
         when(bomRepository.findByParentPart(validatedPart)).thenReturn(List.of());
 

@@ -5,7 +5,6 @@ import com.jubeiwato.costing_service.constants.DeleteFlag;
 import com.jubeiwato.costing_service.constants.ErrorMessageConstant;
 import com.jubeiwato.costing_service.constants.Sorting;
 import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
-import com.jubeiwato.costing_service.dtos.GeneralResponseDto;
 import com.jubeiwato.costing_service.dtos.PageInfoDto;
 import com.jubeiwato.costing_service.dtos.PartAttributeDto;
 import com.jubeiwato.costing_service.entities.Company;

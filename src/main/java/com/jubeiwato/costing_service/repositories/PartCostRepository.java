@@ -19,14 +19,12 @@ public interface PartCostRepository extends JpaRepository<PartCost, Long> {
             "    WHERE p2.part.id = :partId AND p2.vendor.id = p1.vendor.id" +
             ") AND p1.part.id = :partId")
 
-    List<PartCost> findByPartId(@Param("partId") Long partId);
+    List<PartCost> getByPartId(@Param("partId") Long partId);
 
     @Query("SELECT pc FROM PartCost pc WHERE pc.part.partId = :partId AND pc.vendor.vendorId = :vendorId ORDER BY pc.updatedDateTime DESC")
     List<PartCost> fetchByPartIdAndVendorId(@Param("partId") Long partId, @Param("vendorId") Long vendorId);
 
-
-    @Query(value = "SELECT MAX(vendor_count) FROM " +"(SELECT COUNT(DISTINCT vendor_id) AS vendor_count " +
-   " FROM app.part_cost GROUP BY part_id) AS subquery",
-    nativeQuery = true)
+    @Query(value = "SELECT MAX(vendor_count) FROM " + "(SELECT COUNT(DISTINCT vendor_id) AS vendor_count " +
+            " FROM app.part_cost GROUP BY part_id) AS subquery", nativeQuery = true)
     Integer getMaxVendorCount();
 }

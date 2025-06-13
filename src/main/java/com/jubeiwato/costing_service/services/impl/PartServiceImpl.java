@@ -375,7 +375,7 @@ public class PartServiceImpl implements PartService {
                 Part part = getValidatedPart(partId, companyId);
 
                 // Fetch Part Cost
-                List<PartCost> partCostList = partCostRepository.findByPartId(partId);
+                List<PartCost> partCostList = partCostRepository.getByPartId(partId);
                 // Fetch Bom
                 List<Bom> bomDetails = bomRepository.findByParentPart(part);
 
@@ -462,7 +462,7 @@ public class PartServiceImpl implements PartService {
                 partRepository.save(existingPart);
 
                 // Update vendor cost map if present
-                List<PartCost> partCosts = partCostRepository.findByPartId(existingPart.getPartId());
+                List<PartCost> partCosts = partCostRepository.getByPartId(existingPart.getPartId());
 
                 List<VendorCostDto> vendorCostList = request.getVendorCostList() != null
                                 ? request.getVendorCostList()
@@ -515,7 +515,7 @@ public class PartServiceImpl implements PartService {
                         bomRepository.saveAll(newBom);
                 }
 
-                return createPartResponseDto(existingPart, partCostRepository.findByPartId(existingPart.getPartId()),
+                return createPartResponseDto(existingPart, partCostRepository.getByPartId(existingPart.getPartId()),
                                 bomRepository.findByParentPart(existingPart));
         }
 
