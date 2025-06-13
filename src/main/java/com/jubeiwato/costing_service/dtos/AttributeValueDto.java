@@ -1,5 +1,7 @@
 package com.jubeiwato.costing_service.dtos;
 
+import com.jubeiwato.costing_service.entities.PartPartAttribute;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,9 +16,12 @@ public class AttributeValueDto {
     private String attributeName;
     private String value;
 
-        public Long getAttributeId() { return attributeId; }
-    public void setAttributeId(Long attributeId) { this.attributeId = attributeId; }
+public static AttributeValueDto entityToDto(PartPartAttribute partPartAttribute) {
+    return AttributeValueDto.builder()
+        .attributeId(partPartAttribute.getAttribute().getAttributeId())
+        .attributeName(partPartAttribute.getAttribute().getAttributeName())
+        .value(partPartAttribute.getAttributeValue())
+        .build();
+}
 
-    public String getValue() { return value; }
-    public void setValue(String value) { this.value = value; }
 }

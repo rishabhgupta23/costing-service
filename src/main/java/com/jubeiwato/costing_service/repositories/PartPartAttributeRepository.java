@@ -13,11 +13,7 @@ import com.jubeiwato.costing_service.entities.PartPartAttribute;
 import jakarta.transaction.Transactional;
 
 public interface PartPartAttributeRepository extends JpaRepository<PartPartAttribute, Long> {
-
-    @Transactional
-    @Modifying
-    @Query("DELETE FROM PartPartAttribute p WHERE p.part.id = :partId")
-    void deleteByPartId(@Param("partId") Long partId);
+    void deleteByPart_PartId(Long partId);
     List<PartPartAttribute> findByPart(Part part);
 
 

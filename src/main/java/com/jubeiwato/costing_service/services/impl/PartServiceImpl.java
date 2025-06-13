@@ -124,7 +124,7 @@ public class PartServiceImpl implements PartService {
 
     @Override
     @Transactional
-    public PartDto createPart(@Valid PartRequestDto request, Long companyId ) {
+    public PartDto createPart(@Valid PartRequestDto request, Long companyId) {
         Map<Long, Vendor> vendorMap = new HashMap<>();
         Map<Long, CostFactor> costFactorMap = new HashMap<>();
  
@@ -133,15 +133,26 @@ public class PartServiceImpl implements PartService {
         partRepository.save(part);
  
         if(request.getVendorCostList() != null && !request.getVendorCostList().isEmpty()) {
-                List<PartCost> partCostList = request.getVendorCostList().stream().map(vendorCost -> createPartCostEntity(part, vendorCost,vendorMap, costFactorMap)).toList();
+                List<PartCost> partCostList = request.getVendorCostList().stream()
+            .map(vendorCost -> createPartCostEntity(part, vendorCost, vendorMap, costFactorMap))
+            .toList();
                 partCostRepository.saveAll(partCostList);
             }
     
-            if (request.getType().equalsIgnoreCase(PartType.MASTER.name()) && request.getBom() != null && !request.getBom().isEmpty()) {
+            if (request.getType().equalsIgnoreCase(PartType.MASTER.name())
+            && request.getBom() != null && !request.getBom().isEmpty()) {
             validateAndSaveBom(request, companyId, part);
         }
+    savePartAttributes(request, part);
 
-if (request.getAttributeValueList() != null && !request.getAttributeValueList().isEmpty()) {
+    return PartDto.entityToDto(part);
+}
+
+
+        private void savePartAttributes(PartRequestDto request, Part part) {
+    if (request.getAttributeValueList() == null || request.getAttributeValueList().isEmpty()) {
+        return;
+    }
 
     Set<Long> attributeIdSet = new HashSet<>();
 
@@ -170,8 +181,6 @@ if (request.getAttributeValueList() != null && !request.getAttributeValueList().
     partPartAttributeRepository.saveAll(partAttributes);
 }
 
-        return PartDto.entityToDto(part);
-        }
 
         private void validateCreatePartRequest(PartRequestDto request, Long companyId, Map<Long, Vendor> vendorMap, Map<Long, CostFactor> costFactorMap) {
 
@@ -404,13 +413,9 @@ private PartCostCostFactor createPartCostCostFactor(Long costFactorId, Double va
 
     PartResponseDto createPartResponseDto(Part part, List<PartCost> partCostList, List<Bom> bom, List<PartPartAttribute> attributeValueList) {
         List<BomResponseDto> bomDtoList = bom.stream().map(BomResponseDto::entityToDto).toList();
-    List<AttributeValueDto> attributeDtoList = attributeValueList.stream()
-        .map(attr -> AttributeValueDto.builder()
-            .attributeId(attr.getAttribute().getAttributeId())
-            .attributeName(attr.getAttribute().getAttributeName())
-            .value(attr.getAttributeValue())
-            .build())
-        .toList();
+List<AttributeValueDto> attributeDtoList = attributeValueList.stream()
+    .map(AttributeValueDto::entityToDto)
+    .toList();
         PartDto partDto = PartDto.entityToDto(part); 
 
         return PartResponseDto.superBuilder()
@@ -515,30 +520,8 @@ public PartDto updatePartById(Long partId, @Valid PartRequestDto request,Long co
       bomRepository.saveAll(newBom);
     }
 
-partPartAttributeRepository.deleteByPartId(existingPart.getPartId());
-
-if (request.getAttributeValueList() != null && !request.getAttributeValueList().isEmpty()) {
-    Set<Long> attributeIdSet = new HashSet<>();
-    List<PartPartAttribute> partAttributes = request.getAttributeValueList().stream().map(attrValDto -> {
-        Long attributeId = attrValDto.getAttributeId();
-        if (attributeId == null) {
-            throw new AppException("Attribute ID cannot be null", HttpStatus.BAD_REQUEST);
-        }
-        if (!attributeIdSet.add(attributeId)) {
-            throw new AppException("Duplicate attribute found with ID: " + attributeId, HttpStatus.BAD_REQUEST);
-        }
-        PartAttribute attribute = partAttributeRepository.findById(attributeId)
-                .orElseThrow(() -> new AppException("Attribute not found with ID: " + attributeId, HttpStatus.NOT_FOUND));
-
-        PartPartAttribute ppa = new PartPartAttribute();
-        ppa.setPart(existingPart);
-        ppa.setAttribute(attribute);
-        ppa.setAttributeValue(attrValDto.getValue());
-
-        return ppa;
-    }).toList();
-    partPartAttributeRepository.saveAll(partAttributes);
-}
+partPartAttributeRepository.deleteByPart_PartId(existingPart.getPartId());
+savePartAttributes(request, existingPart);
     return createPartResponseDto(existingPart, partCostRepository.findByPartId(existingPart.getPartId()), bomRepository.findByParentPart(existingPart),partPartAttributeRepository.findByPart(existingPart));
 }
 

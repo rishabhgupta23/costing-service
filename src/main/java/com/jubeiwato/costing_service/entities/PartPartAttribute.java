@@ -16,7 +16,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "part_partattribute", schema = "app",
+@Table(name = "part_part_attribute", schema = "app",
     uniqueConstraints = @UniqueConstraint(columnNames = {"part_id", "attribute_id"}))
 @Data
 @NoArgsConstructor
@@ -26,14 +26,14 @@ public class PartPartAttribute extends BaseEntity {
  @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "part_attribute_id")
-    private Long partAttributeId;
+    private Long partPartAttributeId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "part_id", nullable = false)
+    @JoinColumn(name = "part_id", nullable = false, referencedColumnName = "part_id")
     private Part part;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "attribute_id", nullable = false)
+    @JoinColumn(name = "attribute_id", nullable = false, referencedColumnName = "attribute_id")
     private PartAttribute attribute;
 
     @Column(name = "attribute_value")
