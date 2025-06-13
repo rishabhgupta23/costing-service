@@ -22,8 +22,8 @@
                         REFERENCES app.part(part_id) ON DELETE CASCADE,
                     CONSTRAINT fk_part_attribute_id_part_attribute FOREIGN KEY (attribute_id)
                         REFERENCES app.part_attribute(attribute_id) ON DELETE CASCADE,
-        
-                    CONSTRAINT uq_part_part_attribute UNIQUE (part_id, attribute_id)
+    
+                    CONSTRAINT part_part_attribute_key UNIQUE (part_id, attribute_id)
                 );
             </sql>
             <rollback>
