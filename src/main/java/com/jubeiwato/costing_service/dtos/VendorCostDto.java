@@ -14,8 +14,8 @@ public class VendorCostDto extends VendorDto{
     List<CostFactorDto> costFactorValues;
 
     @Builder(builderMethodName = "superBuilder")
-    public VendorCostDto(Long id, String name, String address, String emailId, String contactNumber, List<CostFactorDto> costFactorValues) {
-        super(id, name, address, emailId, contactNumber);
+    public VendorCostDto(Long id, String vendorName, String address, String emailId, String contactNumber, List<CostFactorDto> costFactorValues) {
+        super(id, vendorName, address, emailId, contactNumber);
         this.costFactorValues = costFactorValues;
     }
 }

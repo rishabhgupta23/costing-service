@@ -312,7 +312,7 @@ private PartCostCostFactor createPartCostCostFactor(Long costFactorId, Double va
                 .map(part -> {
                     Set<String> vendorNames = part.getPartCosts().stream()
                             .map(PartCost::getVendor)
-                            .map(Vendor::getName)
+                            .map(Vendor::getVendorName)
                             .collect(Collectors.toSet());
 
                             return PartRowDto.superBuilder()
@@ -402,7 +402,7 @@ private PartCostCostFactor createPartCostCostFactor(Long costFactorId, Double va
             // Build and add VendorCostDto to the result list
             VendorCostDto vendorCostDto = VendorCostDto.superBuilder()
                     .id(vendor.getVendorId())
-                    .name(vendor.getName())
+                    .vendorName(vendor.getVendorName())
                     .address(vendor.getAddress())
                     .emailId(vendor.getEmailId())
                     .contactNumber(vendor.getContactNumber())
@@ -518,7 +518,7 @@ public CostHistoryResponseDto getPartCostsByPartAndVendor(Long partId, Long vend
             .map(part -> {
                 Set<String> vendorNames = part.getPartCosts().stream()
                         .map(PartCost::getVendor)
-                        .map(Vendor::getName)
+                        .map(Vendor::getVendorName)
                         .collect(Collectors.toSet());
 
                 return new String[]{
