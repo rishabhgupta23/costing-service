@@ -105,7 +105,7 @@ class VendorServiceTest {
 
                 // Simulate existing vendor
                 when(companyRepository.findById(companyId)).thenReturn(Optional.of(new Company()));
-                when(vendorRepository.existsByCompanyCompanyIdAndNameIgnoreCase(eq(companyId), eq(newName)))
+                when(vendorRepository.existsByCompanyCompanyIdAndVendorNameIgnoreCase(eq(companyId), eq(newName)))
                                 .thenReturn(true); // simulate name exists (case-insensitive logic expected in repo or
                                                    // test)
 
@@ -130,7 +130,7 @@ class VendorServiceTest {
                 Sorting sortMode = Sorting.DESC;
 
                 Vendor vendor = Vendor.builder()
-                                .name(name)
+                                .vendorName(name)
                                 .address(address)
                                 .emailId(emailId)
                                 .contactNumber(contactNumber)
@@ -150,7 +150,7 @@ class VendorServiceTest {
                 assertEquals(1, response.getData().size());
 
                 VendorDto vendorDto = response.getData().get(0);
-                assertEquals(name, vendorDto.getName());
+                assertEquals(name, vendorDto.getVendorName());
                 assertEquals(address, vendorDto.getAddress());
                 assertEquals(emailId, vendorDto.getEmailId());
                 assertEquals(contactNumber, vendorDto.getContactNumber());
@@ -169,7 +169,7 @@ class VendorServiceTest {
         @Test
         void getVendorListTest() {
                 Vendor vendor = Vendor.builder()
-                                .name("VendorX")
+                                .vendorName("VendorX")
                                 .address("Kolkata")
                                 .emailId("vendorx@mail.com")
                                 .contactNumber("9876543210")
@@ -189,7 +189,7 @@ class VendorServiceTest {
 
                 VendorDto vendorDto = response.getData().get(0);
 
-                assertEquals("VendorX", vendorDto.getName());
+                assertEquals("VendorX", vendorDto.getVendorName());
                 assertEquals("Kolkata", vendorDto.getAddress());
                 assertEquals("vendorx@mail.com", vendorDto.getEmailId());
                 assertEquals("9876543210", vendorDto.getContactNumber());
@@ -225,7 +225,7 @@ class VendorServiceTest {
 
                 // Assert that all fields were correctly set in the Vendor object before saving
                 assertEquals(company, savedVendor.getCompany());
-                assertEquals(name, savedVendor.getName());
+                assertEquals(name, savedVendor.getVendorName());
                 assertEquals(emailId, savedVendor.getEmailId());
                 assertEquals(contactNumber, savedVendor.getContactNumber());
                 assertEquals(address, savedVendor.getAddress());
@@ -273,7 +273,7 @@ class VendorServiceTest {
 
                 Vendor vendor = Vendor.builder()
                                 .vendorId(vendorId)
-                                .name("VendorX")
+                                .vendorName("VendorX")
                                 .emailId("vendorx@mail.com")
                                 .company(mockCompany)
                                 .build();
@@ -282,7 +282,7 @@ class VendorServiceTest {
                                 .thenReturn(Optional.of(vendor));
                 VendorDto dto = vendorService.getVendorById(vendorId, companyId);
 
-                assertEquals("VendorX", dto.getName());
+                assertEquals("VendorX", dto.getVendorName());
                 assertEquals("vendorx@mail.com", dto.getEmailId());
         }
 
@@ -309,7 +309,7 @@ class VendorServiceTest {
 
                 Vendor existingVendor = Vendor.builder()
                                 .vendorId(vendorId)
-                                .name("Old Name")
+                                .vendorName("Old Name")
                                 .emailId("old@mail.com")
                                 .contactNumber("0000000000")
                                 .address("Old Address")
@@ -318,7 +318,7 @@ class VendorServiceTest {
 
                 Vendor updatedVendor = Vendor.builder()
                                 .vendorId(vendorId)
-                                .name("New Name")
+                                .vendorName("New Name")
                                 .emailId("new@mail.com")
                                 .contactNumber("1234567890")
                                 .address("New Address")
@@ -332,7 +332,7 @@ class VendorServiceTest {
                 VendorDto dto = vendorService.updateVendorById(
                                 vendorId, "New Name", "new@mail.com", "1234567890", "New Address", companyId);
 
-                assertEquals("New Name", dto.getName());
+                assertEquals("New Name", dto.getVendorName());
                 assertEquals("new@mail.com", dto.getEmailId());
                 assertEquals("1234567890", dto.getContactNumber());
                 assertEquals("New Address", dto.getAddress());
@@ -362,14 +362,14 @@ class VendorServiceTest {
 
                 Vendor vendorToUpdate = Vendor.builder()
                                 .vendorId(vendorId)
-                                .name("SomeOldName")
+                                .vendorName("SomeOldName")
                                 .company(Company.builder().companyId(companyId).build())
                                 .build();
 
                 when(vendorRepository.findByVendorIdAndCompany_CompanyId(vendorId, companyId))
                                 .thenReturn(Optional.of(vendorToUpdate));
 
-                when(vendorRepository.existsByCompanyCompanyIdAndVendorIdNotAndNameIgnoreCase(companyId, vendorId,
+                when(vendorRepository.existsByCompanyCompanyIdAndVendorIdNotAndVendorNameIgnoreCase(companyId, vendorId,
                                 updateName))
                                 .thenReturn(true); // Simulate name conflict
 
@@ -402,7 +402,7 @@ class VendorServiceTest {
 
                 Vendor vendor = Vendor.builder()
                                 .vendorId(vendorId)
-                                .name("VendorX")
+                                .vendorName("VendorX")
                                 .emailId("vendorx@mail.com")
                                 .company(Company.builder().companyId(companyId).build())
                                 .build();
@@ -474,15 +474,14 @@ class VendorServiceTest {
                 verify(vendorRepository).findByVendorIdAndCompany_CompanyId(vendorId, companyId);
                 verify(partRepository, never()).getVendorParts(anyLong(), any(Pageable.class));
         }
-
         @Test
         void testDownloadVendorExcel() throws IOException {
                 Long companyId = 1L;
 
                 List<Vendor> vendors = List.of(
-                                Vendor.builder().name("Vendor A").emailId("a@mail.com")
+                                Vendor.builder().vendorName("Vendor A").emailId("a@mail.com")
                                                 .contactNumber("1234567890").address("Address 1").build(),
-                                Vendor.builder().name("Vendor B").emailId("b@mail.com")
+                                Vendor.builder().vendorName("Vendor B").emailId("b@mail.com")
                                                 .contactNumber("0987654321").address("Address 2").build());
 
                 when(vendorRepository.findByCompanyCompanyId(companyId)).thenReturn(vendors);
@@ -500,7 +499,7 @@ class VendorServiceTest {
                 verify(excelService).generateSpreadsheet(dataCaptor.capture(), headerCaptor.capture());
 
                 assertArrayEquals(
-                                new String[] { "Name", "Email", "Contact Number", "Address" },
+                                new String[] { "Vendor Name", "Email", "Contact Number", "Address" },
                                 headerCaptor.getValue());
                 assertEquals(2, dataCaptor.getValue().size());
         }
@@ -519,7 +518,7 @@ class VendorServiceTest {
 
                 verify(vendorRepository).findByCompanyCompanyId(companyId);
                 verify(excelService).generateSpreadsheet(eq(Collections.emptyList()),
-                                eq(new String[] { "Name", "Email", "Contact Number", "Address" }));
+                                eq(new String[] { "Vendor Name", "Email", "Contact Number", "Address" }));
         }
 
 }

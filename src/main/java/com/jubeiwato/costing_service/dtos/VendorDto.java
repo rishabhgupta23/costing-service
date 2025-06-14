@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class VendorDto {
     private Long id;
-    private String name;
+    private String vendorName;
     private String address;
     private String emailId;
     private String contactNumber;
@@ -21,7 +21,7 @@ public class VendorDto {
     public static VendorDto entityToDto(Vendor vendor) {
         return VendorDto.builder()
                 .id(vendor.getVendorId())
-                .name(vendor.getName())
+                .vendorName(vendor.getVendorName())
                 .emailId(vendor.getEmailId())
                 .contactNumber(vendor.getContactNumber())
                 .address(vendor.getAddress())

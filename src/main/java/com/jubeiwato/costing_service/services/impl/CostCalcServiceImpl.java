@@ -69,7 +69,7 @@ public class CostCalcServiceImpl implements CostCalcService {
                                 partId),
                         HttpStatus.NOT_FOUND));
 
-        List<PartCost> partCostDetails = partCostRepository.getByPartId(partId);
+        List<PartCost> partCostDetails = partCostRepository.getRecentByPartId(partId);
 
         Map<Vendor, Double> vendorCostMap = partCostDetails.stream()
                 .collect(Collectors.toMap(
@@ -83,7 +83,7 @@ public class CostCalcServiceImpl implements CostCalcService {
                 .partNumber(part.getPartNumber())
                 .quantity(qt)
                 .rate(result.getValue())
-                .vendorName(result.getKey().getName())
+                .vendorName(result.getKey().getVendorName())
                 .subTotal(qt * result.getValue())
                 .build();
     }

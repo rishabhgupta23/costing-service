@@ -8,15 +8,15 @@ import java.util.List;
 
 public class VendorSpecification implements Specification<Vendor> {
     private final Long companyId;
-    private final String name;
+    private final String vendorName;
     private final String address;
     private final String emailId;
     private final String contactNumber;
 
 
-    public VendorSpecification(Long companyId,String name, String address, String emailId, String contactNumber) {
+    public VendorSpecification(Long companyId,String vendorName, String address, String emailId, String contactNumber) {
         this.companyId=companyId;
-        this.name = name;
+        this.vendorName = vendorName;
         this.address = address;
         this.emailId = emailId;
         this.contactNumber = contactNumber;
@@ -29,8 +29,8 @@ public class VendorSpecification implements Specification<Vendor> {
         if (companyId != null) {
         predicates.add(cb.equal(root.get("company").get("companyId"), companyId));
         }
-        if (name != null && !name.trim().isEmpty()) {
-            predicates.add(cb.like(cb.lower(root.get("name")), "%" + name.toLowerCase() + "%"));
+        if (vendorName != null && !vendorName.trim().isEmpty()) {
+            predicates.add(cb.like(cb.lower(root.get("vendorName")), "%" + vendorName.toLowerCase() + "%"));
         }
         if (address != null && !address.trim().isEmpty()) {
             predicates.add(cb.like(cb.lower(root.get("address")), "%" + address.toLowerCase() + "%"));

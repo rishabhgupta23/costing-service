@@ -335,7 +335,7 @@ public class PartServiceImpl implements PartService {
                                 .map(part -> {
                                         Set<String> vendorNames = part.getPartCosts().stream()
                                                         .map(PartCost::getVendor)
-                                                        .map(Vendor::getName)
+                                                        .map(Vendor::getVendorName)
                                                         .collect(Collectors.toSet());
 
                                         return PartRowDto.superBuilder()
@@ -375,7 +375,7 @@ public class PartServiceImpl implements PartService {
                 Part part = getValidatedPart(partId, companyId);
 
                 // Fetch Part Cost
-                List<PartCost> partCostList = partCostRepository.getByPartId(partId);
+                List<PartCost> partCostList = partCostRepository.getRecentByPartId(partId);
                 // Fetch Bom
                 List<Bom> bomDetails = bomRepository.findByParentPart(part);
 
@@ -423,7 +423,7 @@ public class PartServiceImpl implements PartService {
                         // Build and add VendorCostDto to the result list
                         VendorCostDto vendorCostDto = VendorCostDto.superBuilder()
                                         .id(vendor.getVendorId())
-                                        .name(vendor.getName())
+                                        .vendorName(vendor.getVendorName())
                                         .address(vendor.getAddress())
                                         .emailId(vendor.getEmailId())
                                         .contactNumber(vendor.getContactNumber())
@@ -462,7 +462,7 @@ public class PartServiceImpl implements PartService {
                 partRepository.save(existingPart);
 
                 // Update vendor cost map if present
-                List<PartCost> partCosts = partCostRepository.getByPartId(existingPart.getPartId());
+                List<PartCost> partCosts = partCostRepository.getRecentByPartId(existingPart.getPartId());
 
                 List<VendorCostDto> vendorCostList = request.getVendorCostList() != null
                                 ? request.getVendorCostList()
@@ -515,7 +515,8 @@ public class PartServiceImpl implements PartService {
                         bomRepository.saveAll(newBom);
                 }
 
-                return createPartResponseDto(existingPart, partCostRepository.getByPartId(existingPart.getPartId()),
+                return createPartResponseDto(existingPart,
+                                partCostRepository.getRecentByPartId(existingPart.getPartId()),
                                 bomRepository.findByParentPart(existingPart));
         }
 
@@ -590,7 +591,7 @@ public class PartServiceImpl implements PartService {
                                 .map(part -> {
                                         Set<String> vendorNames = part.getPartCosts().stream()
                                                         .map(PartCost::getVendor)
-                                                        .map(Vendor::getName)
+                                                        .map(Vendor::getVendorName)
                                                         .collect(Collectors.toSet());
 
                                         return new String[] {

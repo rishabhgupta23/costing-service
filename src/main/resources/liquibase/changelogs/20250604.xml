@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+      
+<changeSet id="20250604" author="Anusha">
+    <sql>
+        -- Rename the column from 'name' to 'vendor_name'
+        ALTER TABLE app.vendor RENAME COLUMN name TO vendor_name;
+
+        -- Drop the previous composite constraint (company_id, name)
+        ALTER TABLE app.vendor DROP CONSTRAINT IF EXISTS vendor_company_name_key;
+
+        -- Add the correct composite constraint (company_id, vendor_name)
+        ALTER TABLE app.vendor 
+        ADD CONSTRAINT vendor_company_vendor_name_key 
+        UNIQUE (company_id, vendor_name);
+    </sql>
+
+    <rollback>
+        -- Drop the new composite constraint
+        ALTER TABLE app.vendor DROP CONSTRAINT IF EXISTS vendor_company_vendor_name_key;
+
+        -- Rename the column back to 'name'
+        ALTER TABLE app.vendor RENAME COLUMN vendor_name TO name;
+
+        -- Restore the previous composite constraint
+        ALTER TABLE app.vendor 
+        ADD CONSTRAINT vendor_company_name_key 
+        UNIQUE (company_id, name);
+    </rollback>
+</changeSet>
+
+</databaseChangeLog>

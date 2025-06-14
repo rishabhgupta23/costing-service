@@ -142,7 +142,7 @@ public class PartServiceTest {
 
         vendor = new Vendor();
         vendor.setVendorId(1L);
-        vendor.setName("Vendor A");
+        vendor.setVendorName("Vendor A");
         vendorMap.put(vendor.getVendorId(), vendor);
 
         // Setup mock Part
@@ -385,7 +385,7 @@ public class PartServiceTest {
 
         VendorCostDto vendorCostDto = VendorCostDto.superBuilder()
                 .id(1L)
-                .name("Vendor1")
+                .vendorName("Vendor1")
                 .emailId("vendor1@example.com")
                 .address("123 Vendor St")
                 .contactNumber("1234567890")
@@ -415,7 +415,7 @@ public class PartServiceTest {
 
         Vendor validVendor = new Vendor();
         validVendor.setVendorId(1L);
-        validVendor.setName("Vendor1");
+        validVendor.setVendorName("Vendor1");
         validVendor.setEmailId("vendor1@example.com");
         validVendor.setAddress("123 Vendor St");
         validVendor.setContactNumber("1234567890");
@@ -458,7 +458,7 @@ public class PartServiceTest {
         // Arrange: create mock vendor objects
         Vendor vendor = new Vendor();
         vendor.setVendorId(100L);
-        vendor.setName("Vendor A");
+        vendor.setVendorName("Vendor A");
 
         Set<Long> vendorIds = Set.of(100L); // A valid set of vendor IDs
 
@@ -562,7 +562,7 @@ public class PartServiceTest {
 
         Vendor vendor = new Vendor();
         vendor.setVendorId(1L);
-        vendor.setName("Vendor A");
+        vendor.setVendorName("Vendor A");
 
         CostFactor costFactor = new CostFactor();
         costFactor.setFactorId(1L);
@@ -586,7 +586,7 @@ public class PartServiceTest {
         assertEquals(1L, partCost.getPart().getPartId());
         assertEquals("Part A", partCost.getPart().getPartName());
         assertEquals(1L, partCost.getVendor().getVendorId());
-        assertEquals("Vendor A", partCost.getVendor().getName());
+        assertEquals("Vendor A", partCost.getVendor().getVendorName());
 
         // Verify the cost factor list is not null and contains the correct data
         assertNotNull(partCost.getCostFactorList());
@@ -624,7 +624,7 @@ public class PartServiceTest {
         // Existing Vendor 1 (XYZ) with value = 300.0
         Vendor vendor1 = new Vendor();
         vendor1.setVendorId(vendorId1);
-        vendor1.setName("XYZ Company");
+        vendor1.setVendorName("XYZ Company");
 
         PartCost partCost1 = new PartCost();
         partCost1.setVendor(vendor1);
@@ -640,7 +640,7 @@ public class PartServiceTest {
         // Existing Vendor 2 (ABC) with value = 500.0
         Vendor vendor2 = new Vendor();
         vendor2.setVendorId(vendorId2);
-        vendor2.setName("ABC Company");
+        vendor2.setVendorName("ABC Company");
 
         PartCost partCost2 = new PartCost();
         partCost2.setVendor(vendor2);
@@ -675,7 +675,7 @@ public class PartServiceTest {
         when(partUnitRepository.findByUnitName("KG"))
                 .thenReturn(Optional.of(mockUnit));
 
-        when(partCostRepository.getByPartId(partId))
+        when(partCostRepository.getRecentByPartId(partId))
                 .thenReturn(List.of(partCost1, partCost2)); // Existing costs
 
         when(vendorRepository.findByVendorIdInAndCompany_CompanyId(Set.of(vendorId1), companyId))
@@ -799,7 +799,7 @@ public class PartServiceTest {
 
         // Sample Vendor
         Vendor vendor = new Vendor();
-        vendor.setName("Vendor1");
+        vendor.setVendorName("Vendor1");
 
         // Sample PartCost
         PartCost partCost = new PartCost();
@@ -875,7 +875,7 @@ public class PartServiceTest {
         when(partRepository.findByPartIdAndCompany_CompanyId(partId, companyId))
                 .thenReturn(Optional.of(validatedPart));
 
-        when(partCostRepository.getByPartId(partId)).thenReturn(List.of());
+        when(partCostRepository.getRecentByPartId(partId)).thenReturn(List.of());
 
         when(bomRepository.findByParentPart(validatedPart)).thenReturn(List.of());
 
@@ -971,7 +971,7 @@ public class PartServiceTest {
         // Mock Vendor
         Vendor vendor = new Vendor();
         vendor.setVendorId(1L);
-        vendor.setName("Vendor 1");
+        vendor.setVendorName("Vendor 1");
         vendor.setAddress("Vendor Address");
         vendor.setEmailId("vendor1@example.com");
         vendor.setContactNumber("1234567890");
@@ -997,7 +997,7 @@ public class PartServiceTest {
 
         VendorCostDto vendorCostDto = vendorCostList.get(0);
         assertEquals(1L, vendorCostDto.getId());
-        assertEquals("Vendor 1", vendorCostDto.getName());
+        assertEquals("Vendor 1", vendorCostDto.getVendorName());
         assertEquals("Vendor Address", vendorCostDto.getAddress());
         assertEquals("vendor1@example.com", vendorCostDto.getEmailId());
         assertEquals("1234567890", vendorCostDto.getContactNumber());
