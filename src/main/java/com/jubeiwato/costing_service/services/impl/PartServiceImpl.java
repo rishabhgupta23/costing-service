@@ -277,7 +277,7 @@ private PartCost createPartCostEntity(Part part, VendorCostDto vendorCost, Map<L
 private PartCostCostFactor createPartCostCostFactor(Long costFactorId, Double value, Map<Long, CostFactor> costFactorMap) {
     return PartCostCostFactor.builder()
         .costFactor(costFactorMap.get(costFactorId))
-        .value(value)
+        .value(value != null ? value : 0.0)
         .build();
 }
 
