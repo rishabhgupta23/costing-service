@@ -298,7 +298,7 @@ public class PartServiceImpl implements PartService {
                         Map<Long, CostFactor> costFactorMap) {
                 return PartCostCostFactor.builder()
                                 .costFactor(costFactorMap.get(costFactorId))
-                                .value(value)
+                                .value(value != null ? value : 0.0)
                                 .build();
         }
 
@@ -462,42 +462,7 @@ public class PartServiceImpl implements PartService {
                 partRepository.save(existingPart);
 
                 // Update vendor cost map if present
-                List<PartCost> partCosts = partCostRepository.getRecentByPartId(existingPart.getPartId());
-
-                List<VendorCostDto> vendorCostList = request.getVendorCostList() != null
-                                ? request.getVendorCostList()
-                                : Collections.emptyList();
-
-                // Map existing PartCost by vendorId
-                Map<Long, PartCost> existingCostMap = partCosts.stream()
-                                .collect(Collectors.toMap(pc -> pc.getVendor().getVendorId(), pc -> pc));
-
-                Set<Long> incomingVendorCostIds = vendorCostList.stream()
-                                .map(VendorCostDto::getId)
-                                .collect(Collectors.toSet());
-                List<PartCost> toDelete = partCosts.stream()
-                                .filter(partCost -> !incomingVendorCostIds.contains(partCost.getVendor().getVendorId()))
-                                .toList();
-                partCostRepository.deleteAll(toDelete);
-
-                List<PartCost> toSave = new ArrayList<>();
-                for (VendorCostDto dto : vendorCostList) {
-                        Long vendorId = dto.getId();
-                        PartCost existing = existingCostMap.get(vendorId);
-                        PartCost incoming = createPartCostEntity(existingPart, dto, vendorMap, costFactorMap);
-
-                        if (existing == null) {
-                                // New vendor
-                                toSave.add(incoming);
-                        } else if (!isPartCostEqual(existing, incoming)) {
-                                toSave.add(incoming);
-                        }
-                }
-
-                // Save only the new/changed costs
-                if (!toSave.isEmpty()) {
-                        partCostRepository.saveAll(toSave);
-                }
+                updateVendorCosts(existingPart, request, vendorMap, costFactorMap);
 
                 // Update BOM if type is MASTER
                 if (oldType == PartType.MASTER && existingPart.getType() == PartType.UNIT) {
@@ -518,6 +483,45 @@ public class PartServiceImpl implements PartService {
                 return createPartResponseDto(existingPart,
                                 partCostRepository.getRecentByPartId(existingPart.getPartId()),
                                 bomRepository.findByParentPart(existingPart));
+        }
+
+        private void updateVendorCosts(Part existingPart, PartRequestDto request,
+                        Map<Long, Vendor> vendorMap, Map<Long, CostFactor> costFactorMap) {
+
+                List<PartCost> partCosts = partCostRepository.getRecentByPartId(existingPart.getPartId());
+
+                List<VendorCostDto> vendorCostList = request.getVendorCostList() != null
+                                ? request.getVendorCostList()
+                                : Collections.emptyList();
+
+                // Map existing PartCost by vendorId
+                Map<Long, PartCost> existingCostMap = partCosts.stream()
+                                .collect(Collectors.toMap(pc -> pc.getVendor().getVendorId(), pc -> pc));
+
+                Set<Long> incomingVendorCostIds = vendorCostList.stream()
+                                .map(VendorCostDto::getId)
+                                .collect(Collectors.toSet());
+
+                List<PartCost> toDelete = partCosts.stream()
+                                .filter(partCost -> !incomingVendorCostIds.contains(partCost.getVendor().getVendorId()))
+                                .toList();
+                partCostRepository.deleteAll(toDelete);
+
+                List<PartCost> toSave = new ArrayList<>();
+                for (VendorCostDto dto : vendorCostList) {
+                        Long vendorId = dto.getId();
+                        PartCost existing = existingCostMap.get(vendorId);
+                        PartCost incoming = createPartCostEntity(existingPart, dto, vendorMap, costFactorMap);
+
+                        if (existing == null || !isPartCostEqual(existing, incoming)) {
+                                toSave.add(incoming);
+                        }
+                }
+
+                // Save only the new/changed costs
+                if (!toSave.isEmpty()) {
+                        partCostRepository.saveAll(toSave);
+                }
         }
 
         private boolean isPartCostEqual(PartCost existing, PartCost incoming) {
