@@ -46,18 +46,18 @@ public class VendorController {
     @GetMapping()
 
     public ResponseEntity<ApiPageResponseDto<List<VendorDto>>> getVendorList(
-            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String vendorName,
             @RequestParam(required = false) String address,
             @RequestParam(required = false) String emailId,
             @RequestParam(required = false) String contactNumber,
             @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNo,
             @RequestParam(defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int pageSize,
-            @RequestParam(required = false, defaultValue = "name") String sortColumn,
+            @RequestParam(required = false, defaultValue = "vendorName") String sortColumn,
             @RequestParam(required = false, defaultValue = "ASC") Sorting sortMode,
             @AuthenticationPrincipal User authenticatedUser) {
         Long companyId = authenticatedUser.getCompany().getCompanyId();
 
-        ApiPageResponseDto<List<VendorDto>> response = this.vendorService.getVendorList(companyId, name, address,
+        ApiPageResponseDto<List<VendorDto>> response = this.vendorService.getVendorList(companyId, vendorName, address,
                 emailId, contactNumber, pageNo, pageSize, sortColumn, sortMode);
         return ResponseEntity.ok(response);
     }
@@ -94,7 +94,7 @@ public class VendorController {
     public ResponseEntity<GeneralResponseDto> createVendor(@RequestBody VendorDto vendorDto,
                         @AuthenticationPrincipal User authenticatedUser) {
         Long companyId = authenticatedUser.getCompany().getCompanyId();
-        vendorService.createVendor(companyId, vendorDto.getName(), vendorDto.getEmailId(),
+        vendorService.createVendor(companyId, vendorDto.getVendorName(), vendorDto.getEmailId(),
                vendorDto.getContactNumber(), vendorDto.getAddress());
          GeneralResponseDto response = new GeneralResponseDto("Vendor created successfully", HttpStatus.CREATED.value());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -106,7 +106,7 @@ public class VendorController {
             @AuthenticationPrincipal User authenticatedUser) {
                 Long companyId = authenticatedUser.getCompany().getCompanyId();
 
-         VendorDto updatedVendor = this.vendorService.updateVendorById(id, vendorDto.getName(),vendorDto.getEmailId(),
+         VendorDto updatedVendor = this.vendorService.updateVendorById(id, vendorDto.getVendorName(),vendorDto.getEmailId(),
                                 vendorDto.getContactNumber(), vendorDto.getAddress(), companyId);
                 return new ResponseEntity<>(updatedVendor, HttpStatus.OK);
         }

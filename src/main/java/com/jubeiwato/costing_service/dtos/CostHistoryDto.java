@@ -16,4 +16,3 @@ public class CostHistoryDto {
     private ZonedDateTime updatedDateTime;
 
 }
-
