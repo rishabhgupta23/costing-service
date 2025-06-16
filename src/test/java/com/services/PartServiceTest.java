@@ -87,9 +87,6 @@ public class PartServiceTest {
     private BomRepository bomRepository;
 
     @InjectMocks
-    private PartServiceImpl partService;
-
-    @InjectMocks
     private PartServiceImpl partServiceImpl;
 
     @Mock
@@ -101,11 +98,9 @@ public class PartServiceTest {
     @Mock
     private CompanyRepository companyRepository;
 
-    @InjectMocks
-    private PartServiceTest partServiceTest;
-
     @Mock
     private CostFactorRepository costFactorRepository;
+
     @Mock
     private VendorRepository vendorRepository;
 
@@ -116,14 +111,10 @@ public class PartServiceTest {
     private Part validatedPart;
 
     @Mock
-    private Vendor vendor;
-    
-    @Mock
     private PartFileRepository partFileRepository;
 
     @Mock
     private S3Service s3Service;
-
 
     @Mock
     private FileGeneratorService excelService;
@@ -142,6 +133,7 @@ public class PartServiceTest {
     private Part validPart;
     private Vendor validVendor;
     private CostFactor validCostFactor;
+    private Vendor vendor;
 
     @BeforeEach
     void setUp() {
@@ -212,9 +204,8 @@ public class PartServiceTest {
         Long companyId = 1L;
 
         Category category = Category.builder()
-    .categoryId(1L) 
-    .build();
-
+                .categoryId(1L)
+                .build();
 
         Part mockPart = Part.builder()
                 .partId(partId)
@@ -287,7 +278,7 @@ public class PartServiceTest {
         method.setAccessible(true);
 
         try {
-            method.invoke(partService, request, companyId, vendorMap, costFactorMap);
+            method.invoke(partServiceImpl, request, companyId, vendorMap, costFactorMap);
             fail("Expected AppException to be thrown");
         } catch (InvocationTargetException e) {
 
@@ -324,7 +315,7 @@ public class PartServiceTest {
             when(partRepository.existsByCompany_CompanyIdAndPartNumber(companyId, partNumber)).thenReturn(true);
 
             // Invoke method
-            method.invoke(partService, request, companyId, vendorMap, costFactorMap);
+            method.invoke(partServiceImpl, request, companyId, vendorMap, costFactorMap);
 
             fail("Expected AppException to be thrown");
         } catch (InvocationTargetException e) {
@@ -347,7 +338,7 @@ public class PartServiceTest {
 
     @Test
     void testGetPartTypes() {
-        List<String> result = partService.getPartTypes();
+        List<String> result = partServiceImpl.getPartTypes();
         List<String> expected = List.of("MASTER", "UNIT");
 
         assertEquals(expected, result);
@@ -355,7 +346,7 @@ public class PartServiceTest {
 
     @Test
     void testGetPartTypes_ShouldNotReturnNullOrEmpty() {
-        List<String> result = partService.getPartTypes();
+        List<String> result = partServiceImpl.getPartTypes();
 
         assertNotNull(result);
         assertFalse(result.isEmpty());
@@ -374,7 +365,7 @@ public class PartServiceTest {
 
         when(partUnitRepository.findAll(PageRequest.of(pageNo, pageSize))).thenReturn(mockPage);
 
-        ApiPageResponseDto<List<PartUnitDto>> result = partService.getPartUnits(pageNo, pageSize);
+        ApiPageResponseDto<List<PartUnitDto>> result = partServiceImpl.getPartUnits(pageNo, pageSize);
 
         assertNotNull(result);
         assertEquals(2, result.getData().size());
@@ -453,7 +444,7 @@ public class PartServiceTest {
         when(partUnitRepository.findByUnitName(anyString())).thenReturn(Optional.of(validPartUnit));
 
         // Act: Call the service method
-        partService.createPart(validRequest, companyId);
+        partServiceImpl.createPart(validRequest, companyId);
 
         // Assert: Verify the interactions
         verify(partRepository, times(1)).save(any(Part.class));
@@ -485,7 +476,7 @@ public class PartServiceTest {
                 "validateAndStoreVendors", List.class, Long.class, Map.class);
         method.setAccessible(true); // Allow access to the private method
 
-        method.invoke(partService, vendorCostList, companyId, vendorMap);
+        method.invoke(partServiceImpl, vendorCostList, companyId, vendorMap);
 
         assertEquals(1, vendorMap.size());
         assertTrue(vendorMap.containsKey(100L)); // The vendor ID should be in the map
@@ -513,7 +504,7 @@ public class PartServiceTest {
                 Map.class);
         method.setAccessible(true);
 
-        method.invoke(partService, vendorCostList, companyId, costFactorMap);
+        method.invoke(partServiceImpl, vendorCostList, companyId, costFactorMap);
 
         assertEquals(1, costFactorMap.size());
         assertEquals(costFactor, costFactorMap.get(100L));
@@ -541,7 +532,7 @@ public class PartServiceTest {
                 "validateAndSaveBom", PartRequestDto.class, Long.class, Part.class);
         method.setAccessible(true);
 
-        method.invoke(partService, requestDto, companyId, parentPart);
+        method.invoke(partServiceImpl, requestDto, companyId, parentPart);
 
         ArgumentCaptor<List<Bom>> captor = ArgumentCaptor.forClass(List.class);
         verify(bomRepository).saveAll(captor.capture());
@@ -611,11 +602,119 @@ public class PartServiceTest {
     }
 
     @Test
+    void testUpdatePartById_ForUnitPart_WhenCostIsChanged() {
+        // UdatePartById when one vendor is removed and one cost factor value is changed
+        Long partId = 1L;
+        Long companyId = 500L;
+        Long vendorId1 = 1L;
+        Long vendorId2 = 2L;
+        Long costFactorId = 2L;
+
+        // Setup existing Part
+        Part existingPart = new Part();
+        existingPart.setPartId(partId);
+        existingPart.setPartName("Eng1");
+        existingPart.setType(PartType.UNIT);
+
+        // Setup CostFactor
+        CostFactor costFactor = new CostFactor();
+        costFactor.setFactorId(costFactorId);
+        costFactor.setFactorName("Cost Price");
+
+        // Existing Vendor 1 (XYZ) with value = 300.0
+        Vendor vendor1 = new Vendor();
+        vendor1.setVendorId(vendorId1);
+        vendor1.setVendorName("XYZ Company");
+
+        PartCost partCost1 = new PartCost();
+        partCost1.setVendor(vendor1);
+        partCost1.setPart(existingPart);
+
+        PartCostCostFactor pcf1 = new PartCostCostFactor();
+        pcf1.setCostFactor(costFactor);
+        pcf1.setValue(300.0);
+        pcf1.setPartCost(partCost1);
+
+        partCost1.setCostFactorList(List.of(pcf1));
+
+        // Existing Vendor 2 (ABC) with value = 500.0
+        Vendor vendor2 = new Vendor();
+        vendor2.setVendorId(vendorId2);
+        vendor2.setVendorName("ABC Company");
+
+        PartCost partCost2 = new PartCost();
+        partCost2.setVendor(vendor2);
+        partCost2.setPart(existingPart);
+
+        PartCostCostFactor pcf2 = new PartCostCostFactor();
+        pcf2.setCostFactor(costFactor);
+        pcf2.setValue(500.0);
+        pcf2.setPartCost(partCost2);
+
+        partCost2.setCostFactorList(List.of(pcf2));
+
+        // Setup update request: only vendor1 remains, value updated to 100.0
+        CostFactorDto updatedFactor = new CostFactorDto(costFactorId, "Cost Price", 100.0);
+
+        VendorCostDto updatedVendor1 = new VendorCostDto(
+                vendorId1, "XYZ Company", "address", "email", "9999999999", List.of(updatedFactor));
+
+        PartRequestDto requestDto = new PartRequestDto();
+        requestDto.setPartName("Eng1");
+        requestDto.setType("UNIT");
+        requestDto.setUnit("KG");
+        requestDto.setVendorCostList(List.of(updatedVendor1));
+
+        // Mocking
+        when(partRepository.findByPartIdAndCompany_CompanyId(partId, companyId))
+                .thenReturn(Optional.of(existingPart));
+
+        PartUnit mockUnit = new PartUnit();
+        mockUnit.setUnitName("KG");
+
+        when(partUnitRepository.findByUnitName("KG"))
+                .thenReturn(Optional.of(mockUnit));
+
+        when(partCostRepository.getRecentByPartId(partId))
+                .thenReturn(List.of(partCost1, partCost2)); // Existing costs
+
+        when(vendorRepository.findByVendorIdInAndCompany_CompanyId(Set.of(vendorId1), companyId))
+                .thenReturn(List.of(vendor1));
+
+        when(costFactorRepository.findByFactorIdInAndCompany_CompanyId(Set.of(costFactorId), companyId))
+                .thenReturn(List.of(costFactor));
+
+        // ArgumentCaptor to inspect saved and deleted data
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<PartCost>> saveCaptor = ArgumentCaptor.forClass(List.class);
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<PartCost>> deleteCaptor = ArgumentCaptor.forClass(List.class);
+
+        // Act
+        partServiceImpl.updatePartById(partId, requestDto, companyId);
+
+        // Assert saveAll was called with updated vendor1
+        verify(partCostRepository).saveAll(saveCaptor.capture());
+        List<PartCost> savedCosts = saveCaptor.getValue();
+
+        assertEquals(1, savedCosts.size());
+        assertEquals(vendorId1, savedCosts.get(0).getVendor().getVendorId());
+        assertEquals(100.0, savedCosts.get(0).getCostFactorList().get(0).getValue());
+
+        // Assert deleteAll was called with vendor2 (ABC Company)
+        verify(partCostRepository).deleteAll(deleteCaptor.capture());
+        List<PartCost> deletedCosts = deleteCaptor.getValue();
+
+        assertEquals(1, deletedCosts.size());
+        assertEquals(vendorId2, deletedCosts.get(0).getVendor().getVendorId());
+    }
+
+    @Test
     void updatePartById_shouldUpdatePartSuccessfully() {
         // Setup mock data
         Long partId = 1L;
         Long companyId = 1L;
-    
+
         // Prepare mock PartRequestDto with vendor cost list and BOM
         List<BomDto> bomList = new ArrayList<>();
         BomDto bomDto = BomDto.builder()
@@ -623,7 +722,7 @@ public class PartServiceTest {
                 .quantity(10.00)
                 .build();
         bomList.add(bomDto);
-    
+
         PartRequestDto partRequestDto = PartRequestDto.builder()
                 .partName("Updated Part")
                 .partNumber("P12345")
@@ -632,60 +731,60 @@ public class PartServiceTest {
                 .vendorCostList(new ArrayList<>()) // Mock an empty list
                 .bom(bomList) // Ensure BOM list is provided
                 .build();
-    
+
         // Mock the existing part that should be returned by getValidatedPart
         Part existingPart = new Part();
         existingPart.setPartId(partId);
         existingPart.setPartNumber("P12345");
         existingPart.setPartName("Old Part");
-    
+
         // Mock child part used in BOM
         Part childPart = new Part();
         childPart.setPartId(2L);
-    
+
         // Mock repository behavior
         when(partRepository.findByPartIdAndCompany_CompanyId(partId, companyId))
                 .thenReturn(Optional.of(existingPart));
-    
+
         when(partUnitRepository.findByUnitName(partRequestDto.getUnit()))
                 .thenReturn(Optional.of(new PartUnit()));
-    
+
         // Ensure child part exists for BOM validation
         when(partRepository.findAllById(List.of(2L)))
                 .thenReturn(List.of(childPart));
-    
+
         // Mock BOM save
         Bom newBom = new Bom(existingPart, childPart, bomDto.getQuantity());
         when(bomRepository.saveAll(anyList()))
                 .thenReturn(Collections.singletonList(newBom));
-    
+
         // Mock save of updated part
         when(partRepository.save(existingPart))
                 .thenReturn(existingPart);
-    
+
         // Mock part cost repository save
         when(partCostRepository.saveAll(anyList()))
                 .thenReturn(Collections.emptyList());
-    
+
         // Mock BOM delete
         doNothing().when(bomRepository).deleteByParentPart(existingPart);
-    
+
         // Call the service method
-        PartDto updatedPartDto = partService.updatePartById(partId, partRequestDto, companyId);
-    
+        PartDto updatedPartDto = partServiceImpl.updatePartById(partId, partRequestDto, companyId);
+
         // Verify interactions
         verify(partRepository, times(1)).save(existingPart);
         verify(partCostRepository, times(1)).saveAll(anyList());
         verify(bomRepository, times(1)).deleteByParentPart(existingPart);
         verify(bomRepository, times(1)).saveAll(anyList());
         verify(partRepository, times(1)).findAllById(List.of(2L));
-    
+
         // Assert result
         assertNotNull(updatedPartDto);
         assertEquals("Updated Part", updatedPartDto.getPartName());
     }
-    
-       @Test
+
+    @Test
     void testGetPartsBasic() {
         int pageNo = 0;
         int pageSize = 2;
@@ -695,9 +794,8 @@ public class PartServiceTest {
         PartDto filter = new PartDto();
 
         Category category = Category.builder()
-        .categoryId(1L) // or any valid ID
-        .build();
-
+                .categoryId(1L) // or any valid ID
+                .build();
 
         // Sample Vendor
         Vendor vendor = new Vendor();
@@ -723,8 +821,8 @@ public class PartServiceTest {
         when(partRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(partPage);
         when(partCostRepository.getMaxVendorCount()).thenReturn(3);
 
-        ApiPageResponseDto<PartDataDto> response = partService.getParts(filter, companyId, pageNo, pageSize, sortBy,
-        sortMode);
+        ApiPageResponseDto<PartDataDto> response = partServiceImpl.getParts(filter, companyId, pageNo, pageSize, sortBy,
+                sortMode);
 
         assertNotNull(response);
         assertEquals(1, response.getData().getPartsList().size());
@@ -758,7 +856,7 @@ public class PartServiceTest {
 
         // Act & Assert
         try {
-            method.invoke(partService, request, companyId, vendorMap, costFactorMap);
+            method.invoke(partServiceImpl, request, companyId, vendorMap, costFactorMap);
             fail("Expected AppException was not thrown");
         } catch (InvocationTargetException e) {
             // Unwrap the exception
@@ -777,11 +875,11 @@ public class PartServiceTest {
         when(partRepository.findByPartIdAndCompany_CompanyId(partId, companyId))
                 .thenReturn(Optional.of(validatedPart));
 
-        when(partCostRepository.findByPartId(partId)).thenReturn(List.of());
+        when(partCostRepository.getRecentByPartId(partId)).thenReturn(List.of());
 
         when(bomRepository.findByParentPart(validatedPart)).thenReturn(List.of());
 
-        PartDto result = partService.getPartById(partId, companyId);
+        PartDto result = partServiceImpl.getPartById(partId, companyId);
 
         assertNotNull(result, "The result should not be null");
     }
@@ -795,7 +893,7 @@ public class PartServiceTest {
                 .thenReturn(Optional.empty());
 
         AppException exception = assertThrows(AppException.class, () -> {
-            partService.getPartById(partId, companyId);
+            partServiceImpl.getPartById(partId, companyId);
         });
 
         assertEquals(ErrorMessageConstant.PART_NOT_FOUND, exception.getMessage());
@@ -832,10 +930,9 @@ public class PartServiceTest {
                 .companyId(companyId)
                 .build();
 
-                Category category = Category.builder()
+        Category category = Category.builder()
                 .categoryId(1L) // or any valid ID
                 .build();
-            
 
         Part part1 = Part.builder()
                 .partNumber("P001")
@@ -863,7 +960,7 @@ public class PartServiceTest {
         byte[] mockExcelData = new byte[1]; // Simulated byte data
         when(excelService.generateSpreadsheet(any(), any())).thenReturn(mockExcelData);
 
-        byte[] result = partService.downloadPartsToExcel(companyId);
+        byte[] result = partServiceImpl.downloadPartsToExcel(companyId);
 
         assertNotNull(result, "The generated Excel data should not be null.");
         assertArrayEquals(mockExcelData, result, "The generated Excel data should match the expected byte array.");
@@ -893,7 +990,7 @@ public class PartServiceTest {
 
         List<PartCost> partCostList = Arrays.asList(partCost);
 
-        List<VendorCostDto> vendorCostList = partService.createVendorCostList(partCostList);
+        List<VendorCostDto> vendorCostList = partServiceImpl.createVendorCostList(partCostList);
 
         assertNotNull(vendorCostList);
         assertFalse(vendorCostList.isEmpty());
@@ -918,7 +1015,7 @@ public class PartServiceTest {
 
         List<PartCost> partCostList = new ArrayList<>();
 
-        List<VendorCostDto> result = partService.createVendorCostList(partCostList);
+        List<VendorCostDto> result = partServiceImpl.createVendorCostList(partCostList);
         assertTrue(result.isEmpty(), "The list should be empty when no PartCosts are provided.");
     }
 
@@ -1007,7 +1104,7 @@ public class PartServiceTest {
 
         when(partUnitRepository.findAll(PageRequest.of(pageNo, pageSize))).thenReturn(emptyPage);
 
-        ApiPageResponseDto<List<PartUnitDto>> result = partService.getPartUnits(pageNo, pageSize);
+        ApiPageResponseDto<List<PartUnitDto>> result = partServiceImpl.getPartUnits(pageNo, pageSize);
 
         assertNotNull(result);
         assertTrue(result.getData().isEmpty());
@@ -1058,168 +1155,170 @@ public class PartServiceTest {
         when(bomRepository.findByParentPart_PartId(parentPartId)).thenReturn(bomList);
         when(excelService.generateSpreadsheet(anyList(), any())).thenReturn(new byte[] { 9, 9, 9 });
 
-        FileResponseDto response = partService.downloadBomPartListToExcel(parentPartId, companyId);
+        FileResponseDto response = partServiceImpl.downloadBomPartListToExcel(parentPartId, companyId);
 
         assertNotNull(response);
         assertTrue(response.getFileName().contains("PARENT456_Bom_"));
         assertFalse(response.getFileData().isEmpty());
     }
-    
+
     @Test
     void testDownloadFileFromS3_Success() {
         String s3Key = "company/parts/test.png";
         Long companyId = 1L;
-    
+
         Part part = new Part();
         Company company = new Company();
         company.setCompanyId(companyId);
         part.setCompany(company);
-    
+
         PartFile partFile = new PartFile();
         partFile.setS3FileKey(s3Key);
         partFile.setPart(part);
-    
+
         when(partFileRepository.findByS3FileKey(s3Key)).thenReturn(Optional.of(partFile));
         when(s3Service.downloadFile(s3Key)).thenReturn("fileContent".getBytes());
-    
+
         FileResponseDto response = partServiceImpl.downloadFileFromS3(s3Key, companyId);
-    
+
         assertEquals("test.png", response.getFileName());
         assertEquals(Base64.getEncoder().encodeToString("fileContent".getBytes()), response.getFileData());
     }
 
     @Test
-void testUploadPartFile_ExceedsLimit_ThrowsException() {
-    Long partId = 1L;
-    Long companyId = 1L;
+    void testUploadPartFile_ExceedsLimit_ThrowsException() {
+        Long partId = 1L;
+        Long companyId = 1L;
 
-    PartFileUploadDto fileDto = new PartFileUploadDto();
-    fileDto.setFileName("test.png");
-    fileDto.setFileData(Base64.getEncoder().encodeToString("fileContent".getBytes()));
+        PartFileUploadDto fileDto = new PartFileUploadDto();
+        fileDto.setFileName("test.png");
+        fileDto.setFileData(Base64.getEncoder().encodeToString("fileContent".getBytes()));
 
-    Part part = new Part();
-    part.setPartId(partId);
-    Company company = new Company();
-    company.setCompanyId(companyId);
-    part.setCompany(company);
+        Part part = new Part();
+        part.setPartId(partId);
+        Company company = new Company();
+        company.setCompanyId(companyId);
+        part.setCompany(company);
 
-    when(partRepository.findByPartIdAndCompany_CompanyId(partId, companyId)).thenReturn(Optional.of(part));
-    when(partFileRepository.countByPart(part)).thenReturn(3); // Already max
+        when(partRepository.findByPartIdAndCompany_CompanyId(partId, companyId)).thenReturn(Optional.of(part));
+        when(partFileRepository.countByPart(part)).thenReturn(3); // Already max
 
-    AppException exception = assertThrows(AppException.class, () -> {
-        partServiceImpl.uploadPartFile(partId, fileDto, companyId);
-    });
+        AppException exception = assertThrows(AppException.class, () -> {
+            partServiceImpl.uploadPartFile(partId, fileDto, companyId);
+        });
 
-    assertEquals(ErrorMessageConstant.FILES_QUANTITY_EXCEEDS_LIMIT, exception.getMessage()); // Adjust if your actual constant message differs
-    assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
-}
+        assertEquals(ErrorMessageConstant.FILES_QUANTITY_EXCEEDS_LIMIT, exception.getMessage()); // Adjust if your
+                                                                                                 // actual constant
+                                                                                                 // message differs
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
+    }
 
-@Test
-void testDownloadFileFromS3_UnauthorizedOrNotFound() {
-    String s3Key = "company/parts/test.png";
-    Long companyId = 1L;
+    @Test
+    void testDownloadFileFromS3_UnauthorizedOrNotFound() {
+        String s3Key = "company/parts/test.png";
+        Long companyId = 1L;
 
-    when(partFileRepository.findByS3FileKey(s3Key)).thenReturn(Optional.empty());
+        when(partFileRepository.findByS3FileKey(s3Key)).thenReturn(Optional.empty());
 
-    AppException exception = assertThrows(AppException.class, () -> {
-        partServiceImpl.downloadFileFromS3(s3Key, companyId);
-    });
+        AppException exception = assertThrows(AppException.class, () -> {
+            partServiceImpl.downloadFileFromS3(s3Key, companyId);
+        });
 
-    assertEquals(ErrorMessageConstant.FILE_NOT_FOUND_OR_UNAUTHORIZED, exception.getMessage()); // Adjust if constant differs
-    assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
-}
+        assertEquals(ErrorMessageConstant.FILE_NOT_FOUND_OR_UNAUTHORIZED, exception.getMessage()); // Adjust if constant
+                                                                                                   // differs
+        assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
+    }
 
-@Test
-void testGetPartFileUrls_Success() {
-    Long partId = 1L;
-    Long companyId = 1L;
+    @Test
+    void testGetPartFileUrls_Success() {
+        Long partId = 1L;
+        Long companyId = 1L;
 
-    Part part = new Part();
-    part.setPartId(partId);
-    Company company = new Company();
-    company.setCompanyId(companyId);
-    part.setCompany(company);
+        Part part = new Part();
+        part.setPartId(partId);
+        Company company = new Company();
+        company.setCompanyId(companyId);
+        part.setCompany(company);
 
-    when(partRepository.findByPartIdAndCompany_CompanyId(partId, companyId)).thenReturn(Optional.of(part));
+        when(partRepository.findByPartIdAndCompany_CompanyId(partId, companyId)).thenReturn(Optional.of(part));
 
-    List<PartFile> mockFiles = List.of(
-        PartFile.builder().s3FileKey("file1.png").build(),
-        PartFile.builder().s3FileKey("file2.pdf").build()
-    );
+        List<PartFile> mockFiles = List.of(
+                PartFile.builder().s3FileKey("file1.png").build(),
+                PartFile.builder().s3FileKey("file2.pdf").build());
 
-    when(partFileRepository.findByPart(part)).thenReturn(mockFiles);
+        when(partFileRepository.findByPart(part)).thenReturn(mockFiles);
 
-    List<String> urls = partServiceImpl.getPartFileUrls(partId, companyId);
+        List<String> urls = partServiceImpl.getPartFileUrls(partId, companyId);
 
-    assertEquals(2, urls.size());
-    assertTrue(urls.contains("file1.png"));
-    assertTrue(urls.contains("file2.pdf"));
-}
+        assertEquals(2, urls.size());
+        assertTrue(urls.contains("file1.png"));
+        assertTrue(urls.contains("file2.pdf"));
+    }
 
-@Test
-void testUploadPartFile_Success() throws Exception {
-    Long partId = 1L;
-    Long companyId = 1L;
+    @Test
+    void testUploadPartFile_Success() throws Exception {
+        Long partId = 1L;
+        Long companyId = 1L;
 
-    Part part = new Part();
-    Company company = new Company();
-    company.setCompanyId(companyId);
-    part.setCompany(company);
+        Part part = new Part();
+        Company company = new Company();
+        company.setCompanyId(companyId);
+        part.setCompany(company);
 
-    PartFileUploadDto dto = new PartFileUploadDto();
-    dto.setFileName("test.png");
-    dto.setFileData(Base64.getEncoder().encodeToString("valid".getBytes()));
+        PartFileUploadDto dto = new PartFileUploadDto();
+        dto.setFileName("test.png");
+        dto.setFileData(Base64.getEncoder().encodeToString("valid".getBytes()));
 
-    when(partRepository.findByPartIdAndCompany_CompanyId(partId, companyId)).thenReturn(Optional.of(part));
-    when(partFileRepository.countByPart(part)).thenReturn(1);
-    when(s3Service.uploadFile(partId, dto, companyId)).thenReturn("companyId/parts/1/test.png");
+        when(partRepository.findByPartIdAndCompany_CompanyId(partId, companyId)).thenReturn(Optional.of(part));
+        when(partFileRepository.countByPart(part)).thenReturn(1);
+        when(s3Service.uploadFile(partId, dto, companyId)).thenReturn("companyId/parts/1/test.png");
 
-    String result = partServiceImpl.uploadPartFile(partId, dto, companyId);
+        String result = partServiceImpl.uploadPartFile(partId, dto, companyId);
 
-    assertEquals("File uploaded successfully", result);
-    verify(partFileRepository, times(1)).save(any(PartFile.class));
-}
+        assertEquals("File uploaded successfully", result);
+        verify(partFileRepository, times(1)).save(any(PartFile.class));
+    }
 
-@Test
-void testUploadPartFile_DuplicateFile_ThrowsAppException() throws Exception {
-    Long partId = 1L;
-    Long companyId = 1L;
+    @Test
+    void testUploadPartFile_DuplicateFile_ThrowsAppException() throws Exception {
+        Long partId = 1L;
+        Long companyId = 1L;
 
-    Part part = new Part();
-    Company company = new Company();
-    company.setCompanyId(companyId);
-    part.setCompany(company);
+        Part part = new Part();
+        Company company = new Company();
+        company.setCompanyId(companyId);
+        part.setCompany(company);
 
-    PartFileUploadDto dto = new PartFileUploadDto();
-    dto.setFileName("duplicate.png");
-    dto.setFileData(Base64.getEncoder().encodeToString("content".getBytes()));
+        PartFileUploadDto dto = new PartFileUploadDto();
+        dto.setFileName("duplicate.png");
+        dto.setFileData(Base64.getEncoder().encodeToString("content".getBytes()));
 
-    when(partRepository.findByPartIdAndCompany_CompanyId(partId, companyId)).thenReturn(Optional.of(part));
-    when(partFileRepository.countByPart(part)).thenReturn(1);
-    when(s3Service.uploadFile(partId, dto, companyId)).thenReturn("companyId/parts/1/duplicate.png");
-    doThrow(new DataIntegrityViolationException("Unique constraint")).when(partFileRepository).save(any());
+        when(partRepository.findByPartIdAndCompany_CompanyId(partId, companyId)).thenReturn(Optional.of(part));
+        when(partFileRepository.countByPart(part)).thenReturn(1);
+        when(s3Service.uploadFile(partId, dto, companyId)).thenReturn("companyId/parts/1/duplicate.png");
+        doThrow(new DataIntegrityViolationException("Unique constraint")).when(partFileRepository).save(any());
 
-    AppException exception = assertThrows(AppException.class, () -> {
-        partServiceImpl.uploadPartFile(partId, dto, companyId);
-    });
+        AppException exception = assertThrows(AppException.class, () -> {
+            partServiceImpl.uploadPartFile(partId, dto, companyId);
+        });
 
-    assertEquals(ErrorMessageConstant.FILE_ALREADY_EXISTS, exception.getMessage());
-    assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
-}
+        assertEquals(ErrorMessageConstant.FILE_ALREADY_EXISTS, exception.getMessage());
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
+    }
 
-@Test
-void testUploadFile_FileTooLarge_ThrowsAppException() {
-    ReflectionTestUtils.setField(s3ServiceImpl, "maxFileSizeBytes", 5L); // override max size
+    @Test
+    void testUploadFile_FileTooLarge_ThrowsAppException() {
+        ReflectionTestUtils.setField(s3ServiceImpl, "maxFileSizeBytes", 5L); // override max size
 
-    PartFileUploadDto dto = new PartFileUploadDto();
-    dto.setFileName("bigfile.png");
-    dto.setFileData(Base64.getEncoder().encodeToString("toolargecontent".getBytes()));
+        PartFileUploadDto dto = new PartFileUploadDto();
+        dto.setFileName("bigfile.png");
+        dto.setFileData(Base64.getEncoder().encodeToString("toolargecontent".getBytes()));
 
-    AppException exception = assertThrows(AppException.class, () -> {
-        s3ServiceImpl.uploadFile(1L, dto, 1L);
-    });
+        AppException exception = assertThrows(AppException.class, () -> {
+            s3ServiceImpl.uploadFile(1L, dto, 1L);
+        });
 
-    assertTrue(exception.getMessage().contains(ErrorMessageConstant.FILE_SIZE_EXCEEDS_LIMIT));
-}
+        assertTrue(exception.getMessage().contains(ErrorMessageConstant.FILE_SIZE_EXCEEDS_LIMIT));
+    }
 
 }

@@ -1,10 +1,7 @@
 package com.jubeiwato.costing_service.services.impl;
 
-import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -16,7 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.jubeiwato.costing_service.authentication.config.AppException;
-import com.jubeiwato.costing_service.constants.AppConstants;
 import com.jubeiwato.costing_service.constants.ErrorMessageConstant;
 import com.jubeiwato.costing_service.constants.Sorting;
 import static com.jubeiwato.costing_service.constants.UserRoleConstants.*;
@@ -28,17 +24,13 @@ import com.jubeiwato.costing_service.dtos.UserRoleDto;
 import com.jubeiwato.costing_service.entities.Company;
 import com.jubeiwato.costing_service.entities.User;
 import com.jubeiwato.costing_service.entities.UserRole;
-import com.jubeiwato.costing_service.entities.Vendor;
 import com.jubeiwato.costing_service.repositories.CompanyRepository;
 import com.jubeiwato.costing_service.repositories.UserRepository;
 import com.jubeiwato.costing_service.repositories.UserRoleRepository;
 import com.jubeiwato.costing_service.services.UserService;
 import com.jubeiwato.costing_service.services.UserSpecification;
-import com.jubeiwato.costing_service.services.VendorSpecification;
 import com.jubeiwato.costing_service.utils.AuthUtil;
 import com.jubeiwato.costing_service.utils.ValidationUtil;
-
-import lombok.RequiredArgsConstructor;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -48,16 +40,18 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final CompanyRepository companyRepository;
 
-    public UserServiceImpl(UserRepository userRepository, UserRoleRepository userRoleRepository, PasswordEncoder passwordEncoder, CompanyRepository companyRepository) {
+    public UserServiceImpl(UserRepository userRepository, UserRoleRepository userRoleRepository,
+            PasswordEncoder passwordEncoder, CompanyRepository companyRepository) {
         this.userRepository = userRepository;
         this.userRoleRepository = userRoleRepository;
         this.passwordEncoder = passwordEncoder;
         this.companyRepository = companyRepository;
     }
+
     private User getAndValidateUser(Long userId, Long companyId) {
-        return  this.userRepository.findByUserIdAndCompany_CompanyId(userId, companyId)
-            .orElseThrow(() -> new AppException(ErrorMessageConstant.getFormattedMessage(
-                ErrorMessageConstant.USER_NOT_FOUND_TEMPLATE, userId), HttpStatus.NOT_FOUND));
+        return this.userRepository.findByUserIdAndCompany_CompanyId(userId, companyId)
+                .orElseThrow(() -> new AppException(ErrorMessageConstant.getFormattedMessage(
+                        ErrorMessageConstant.USER_NOT_FOUND_TEMPLATE, userId), HttpStatus.NOT_FOUND));
     }
 
     private void validateUserInput(CreateUserDto user) {
@@ -75,11 +69,11 @@ public class UserServiceImpl implements UserService {
     private void validateRoleAssignment(String currentUserRole, String targetUserRole) {
         String currentAuthority = AuthUtil.normalizeRole(currentUserRole);
         String targetAuthority = AuthUtil.normalizeRole(targetUserRole);
-    
+
         if (SUPER_ADMIN.equals(targetAuthority)) {
             throw new AppException(ErrorMessageConstant.SUPER_ADMIN_CREATION_ERROR, HttpStatus.FORBIDDEN);
         }
-    
+
         if (ADMIN.equals(targetAuthority) && !SUPER_ADMIN.equals(currentAuthority)) {
             throw new AppException(ErrorMessageConstant.ADMIN_CREATION_RESTRICTED, HttpStatus.FORBIDDEN);
         }
@@ -89,11 +83,11 @@ public class UserServiceImpl implements UserService {
 
         validateUserInput(user);
 
-            if (userRepository.findByEmailId(user.getEmailId()).isPresent()) {
-        throw new AppException(ErrorMessageConstant.USER_ALREADY_EXISTS, HttpStatus.CONFLICT);
-    }
-UserRole role = userRoleRepository.findById(user.getRoleId())
-            .orElseThrow(() -> new AppException(ErrorMessageConstant.ROLE_NOT_FOUND, HttpStatus.NOT_FOUND));
+        if (userRepository.findByEmailId(user.getEmailId()).isPresent()) {
+            throw new AppException(ErrorMessageConstant.USER_ALREADY_EXISTS, HttpStatus.CONFLICT);
+        }
+        UserRole role = userRoleRepository.findById(user.getRoleId())
+                .orElseThrow(() -> new AppException(ErrorMessageConstant.ROLE_NOT_FOUND, HttpStatus.NOT_FOUND));
 
         String newUserRole = role.getRoleName().toUpperCase();
         validateRoleAssignment(currentUserRole, newUserRole);
@@ -106,64 +100,65 @@ UserRole role = userRoleRepository.findById(user.getRoleId())
             throw new AppException("Maximum user limit (" + company.getMaxUsers() + ") reached for this company",
                     HttpStatus.BAD_REQUEST);
         }
-        
 
-    User userEntity = User.builder()
-        .emailId(user.getEmailId())
-        .displayName(user.getDisplayName())
-        .password(passwordEncoder.encode(user.getPassword()))
-        .company(Company.builder().companyId(companyId).build())
-        .userRole(role)
-        .build();
-    
-    userRepository.save(userEntity);
-}
-@Override
-public ApiPageResponseDto<List<UserRoleDto>> getUserRoles(int pageNo, int pageSize) {
-    Pageable pageable = PageRequest.of(pageNo, pageSize);
-    Page<UserRole> userRolePage = userRoleRepository.findAll(pageable);
+        User userEntity = User.builder()
+                .emailId(user.getEmailId())
+                .displayName(user.getDisplayName())
+                .password(passwordEncoder.encode(user.getPassword()))
+                .company(Company.builder().companyId(companyId).build())
+                .userRole(role)
+                .build();
 
-    List<UserRoleDto> userRoleDtos = userRolePage.getContent()
-            .stream()
-            .map(UserRoleDto::entityToDto)
-            .filter(role -> MAINTAINER.equalsIgnoreCase(role.getRoleName()) ||
+        userRepository.save(userEntity);
+    }
+
+    @Override
+    public ApiPageResponseDto<List<UserRoleDto>> getUserRoles(int pageNo, int pageSize) {
+        Pageable pageable = PageRequest.of(pageNo, pageSize);
+        Page<UserRole> userRolePage = userRoleRepository.findAll(pageable);
+
+        List<UserRoleDto> userRoleDtos = userRolePage.getContent()
+                .stream()
+                .map(UserRoleDto::entityToDto)
+                .filter(role -> MAINTAINER.equalsIgnoreCase(role.getRoleName()) ||
                         GUEST.equalsIgnoreCase(role.getRoleName()))
-            .toList();
+                .toList();
 
-    PageInfoDto pageInfo = PageInfoDto.builder()
-            .pageNumber(pageNo)
-            .pageSize(pageSize)
-            .totalPages(userRolePage.getTotalPages())
-            .totalRecords(userRolePage.getTotalElements())
-            .build();
+        PageInfoDto pageInfo = PageInfoDto.builder()
+                .pageNumber(pageNo)
+                .pageSize(pageSize)
+                .totalPages(userRolePage.getTotalPages())
+                .totalRecords(userRolePage.getTotalElements())
+                .build();
 
-    return ApiPageResponseDto.<List<UserRoleDto>>builder()
-            .data(userRoleDtos)
-            .pageInfo(pageInfo)
-            .build();
-}
-    
+        return ApiPageResponseDto.<List<UserRoleDto>>builder()
+                .data(userRoleDtos)
+                .pageInfo(pageInfo)
+                .build();
+    }
+
     @Override
     public ApiPageResponseDto<List<UserDto>> getUserListByCompany(Long userId,
-            String displayName, String emailId, String roleName, int pageNo, int pageSize, String sortColumn, Sorting sortMode, Long companyId) {
+            String displayName, String emailId, String roleName, int pageNo, int pageSize, String sortColumn,
+            Sorting sortMode, Long companyId) {
         if (companyId == null) {
             throw new AppException(ErrorMessageConstant.COMPANY_ID_REQUIRED, HttpStatus.BAD_REQUEST);
         }
-                if (!ValidationUtil.isValidInput(displayName) || 
-        !ValidationUtil.isValidInput(emailId) || 
-        !ValidationUtil.isValidInput(roleName)){
-        throw new AppException(ErrorMessageConstant.INVALID_INPUT, HttpStatus.BAD_REQUEST);
-    }
+        if (!ValidationUtil.isValidInput(displayName) ||
+                !ValidationUtil.isValidInput(emailId) ||
+                !ValidationUtil.isValidInput(roleName)) {
+            throw new AppException(ErrorMessageConstant.INVALID_INPUT, HttpStatus.BAD_REQUEST);
+        }
         Sort sort = Sort.unsorted();
         Specification<User> spec = new UserSpecification(companyId, displayName, emailId, roleName);
-        
-    if (!"roleName".equals(sortColumn)) {
-        Sort.Direction direction = (sortMode == Sorting.DESC) ? Sort.Direction.DESC : Sort.Direction.ASC;
-        sort = Sort.by(direction, sortColumn);
-    } else {
-        spec = spec.and(UserSpecification.orderByRoleName(sortMode));
-    }
-    Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
+
+        if (!"roleName".equals(sortColumn)) {
+            Sort.Direction direction = (sortMode == Sorting.DESC) ? Sort.Direction.DESC : Sort.Direction.ASC;
+            sort = Sort.by(direction, sortColumn);
+        } else {
+            spec = spec.and(UserSpecification.orderByRoleName(sortMode));
+        }
+        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
         Page<User> userPage = userRepository.findAll(spec, pageable);
         List<UserDto> userDtos = userPage.getContent()
                 .stream()
@@ -181,49 +176,46 @@ public ApiPageResponseDto<List<UserRoleDto>> getUserRoles(int pageNo, int pageSi
                 .build();
     }
 
-
     @Override
-    public UserDto updateUserById(Long userId, CreateUserDto userDto, Long companyId,  Long currentUserId) {
+    public UserDto updateUserById(Long userId, CreateUserDto userDto, Long companyId, Long currentUserId) {
         User userEntity = getAndValidateUser(userId, companyId);
         validateUserInput(userDto);
 
         User currentUser = userRepository.findByUserIdAndCompany_CompanyId(currentUserId, companyId)
-        .orElseThrow(() -> new AppException(ErrorMessageConstant.UNAUTHORIZED_ACCESS, HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException(ErrorMessageConstant.UNAUTHORIZED_ACCESS, HttpStatus.NOT_FOUND));
 
-    String currentUserRole = currentUser.getUserRole().getRoleName().toUpperCase();
-    String targetUserRole = userEntity.getUserRole().getRoleName().toUpperCase();
-    validateRoleAssignment(currentUserRole, targetUserRole);
+        String currentUserRole = currentUser.getUserRole().getRoleName().toUpperCase();
+        String targetUserRole = userEntity.getUserRole().getRoleName().toUpperCase();
+        validateRoleAssignment(currentUserRole, targetUserRole);
         userEntity.setDisplayName(userDto.getDisplayName());
         userEntity.setEmailId(userDto.getEmailId());
 
         UserRole userRole = userRoleRepository.findById(userDto.getRoleId())
-            .orElseThrow(() -> new AppException(ErrorMessageConstant.ROLE_NOT_FOUND, HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException(ErrorMessageConstant.ROLE_NOT_FOUND, HttpStatus.NOT_FOUND));
 
         userEntity.setUserRole(userRole);
         User updatedUser = userRepository.save(userEntity);
         return UserDto.entityToDto(updatedUser);
     }
 
-
-
     @Override
     @Transactional
     public void deleteUserById(Long currentUserId, Long userIdToDelete, Long companyId) {
-    User targetUser = getAndValidateUser(userIdToDelete, companyId);
-    User currentUser = getAndValidateUser(currentUserId, companyId);
+        User targetUser = getAndValidateUser(userIdToDelete, companyId);
+        User currentUser = getAndValidateUser(currentUserId, companyId);
         String targetUserRole = targetUser.getUserRole().getRoleName().toUpperCase();
         String currentUserRole = currentUser.getUserRole().getRoleName().toUpperCase();
         String currentAuthority = AuthUtil.normalizeRole(currentUserRole);
         String targetAuthority = AuthUtil.normalizeRole(targetUserRole);
-    
+
         if (SUPER_ADMIN.equals(targetAuthority)) {
             throw new AppException(ErrorMessageConstant.SUPER_ADMIN_DELETE_ERROR, HttpStatus.FORBIDDEN);
         }
-    
+
         if (ADMIN.equals(targetAuthority) && !SUPER_ADMIN.equals(currentAuthority)) {
             throw new AppException(ErrorMessageConstant.ADMIN_DELETE_ERROR, HttpStatus.FORBIDDEN);
         }
-    userRepository.deleteById(userIdToDelete);
+        userRepository.deleteById(userIdToDelete);
     }
 
     @Override

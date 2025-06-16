@@ -1,6 +1,5 @@
 package com.jubeiwato.costing_service.entities;
 
-import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 
 import jakarta.persistence.EntityListeners;
@@ -22,7 +21,7 @@ public class BaseEntity {
     @CreatedBy
     @Column(name = "created_by")
     Long createdBy;
-    
+
     @CreationTimestamp
     @Column(name = "created_date_time", updatable = false)
     ZonedDateTime createdDateTime;
@@ -38,10 +37,9 @@ public class BaseEntity {
     @Column(name = "delete_flag", columnDefinition = "integer default 0")
     Integer deleteFlag;
 
-
     @PrePersist
     public void prePersist() {
-        if(deleteFlag == null) {
+        if (deleteFlag == null) {
             deleteFlag = 0;
         }
     }
