@@ -14,12 +14,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.jubeiwato.costing_service.entities.User;
 
 import com.jubeiwato.costing_service.dtos.CompanyDto;
-import com.jubeiwato.costing_service.dtos.UserDto;
 import com.jubeiwato.costing_service.services.CompanyService;
 
 import lombok.RequiredArgsConstructor;

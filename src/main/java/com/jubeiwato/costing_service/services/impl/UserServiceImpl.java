@@ -1,10 +1,7 @@
 package com.jubeiwato.costing_service.services.impl;
 
-import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -16,7 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.jubeiwato.costing_service.authentication.config.AppException;
-import com.jubeiwato.costing_service.constants.AppConstants;
 import com.jubeiwato.costing_service.constants.ErrorMessageConstant;
 import com.jubeiwato.costing_service.constants.Sorting;
 import static com.jubeiwato.costing_service.constants.UserRoleConstants.*;
@@ -28,17 +24,14 @@ import com.jubeiwato.costing_service.dtos.UserRoleDto;
 import com.jubeiwato.costing_service.entities.Company;
 import com.jubeiwato.costing_service.entities.User;
 import com.jubeiwato.costing_service.entities.UserRole;
-import com.jubeiwato.costing_service.entities.Vendor;
 import com.jubeiwato.costing_service.repositories.CompanyRepository;
 import com.jubeiwato.costing_service.repositories.UserRepository;
 import com.jubeiwato.costing_service.repositories.UserRoleRepository;
 import com.jubeiwato.costing_service.services.UserService;
 import com.jubeiwato.costing_service.services.UserSpecification;
-import com.jubeiwato.costing_service.services.VendorSpecification;
 import com.jubeiwato.costing_service.utils.AuthUtil;
 import com.jubeiwato.costing_service.utils.ValidationUtil;
 
-import lombok.RequiredArgsConstructor;
 
 @Service
 public class UserServiceImpl implements UserService {

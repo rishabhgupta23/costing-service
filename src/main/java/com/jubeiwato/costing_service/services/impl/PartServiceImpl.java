@@ -145,10 +145,10 @@ public class PartServiceImpl implements PartService {
                     HttpStatus.CONFLICT);
             }
         
-            validateCommonPartRequest(request, companyId, vendorMap, costFactorMap);
+            validateCommonPartRequest(request, companyId, vendorMap, costFactorMap,null);
         }
 
-        private void validateCommonPartRequest(PartRequestDto request, Long companyId, Map<Long, Vendor> vendorMap, Map<Long, CostFactor> costFactorMap) {
+        private void validateCommonPartRequest(PartRequestDto request, Long companyId, Map<Long, Vendor> vendorMap, Map<Long, CostFactor> costFactorMap, Long partId) {
             if (request.getCategoryId() != null) {
                 categoryRepository.findByCategoryIdAndCompany_CompanyId(request.getCategoryId(), companyId)
                     .orElseThrow(() -> new AppException(ErrorMessageConstant.INVALID_CATEGORY, HttpStatus.NOT_FOUND));
@@ -167,7 +167,7 @@ public class PartServiceImpl implements PartService {
             }
 
            if (request.getBom() != null && !request.getBom().isEmpty()) {
-           validateBomPartsExist(request, companyId); 
+           validateBomPartsExist(request, companyId,partId); 
         }
     }
         
@@ -202,10 +202,14 @@ public class PartServiceImpl implements PartService {
     costFactors.forEach(cf -> costFactorMap.put(cf.getFactorId(), cf));
     }
      
-    private List<Part> validateBomPartsExist(PartRequestDto request, Long companyId) {
+    private List<Part> validateBomPartsExist(PartRequestDto request, Long companyId, Long partId) {
         Set<Long> childPartIds = request.getBom().stream()
             .map(BomDto::getChildPartId)
             .collect(Collectors.toSet());
+
+               if (partId != null && childPartIds.contains(partId)) {
+        throw new AppException(ErrorMessageConstant.PART_CANNOT_BE_CHILD_OF_ITSELF, HttpStatus.BAD_REQUEST);
+    }
     
         List<Part> validChildParts = partRepository.findByPartIdInAndCompany_CompanyId(childPartIds, companyId);
     
@@ -226,7 +230,7 @@ public class PartServiceImpl implements PartService {
     }
 
     private void validateAndSaveBom(PartRequestDto request, Long companyId, Part part) {
-        List<Part> validChildParts = validateBomPartsExist(request, companyId);
+        List<Part> validChildParts = validateBomPartsExist(request, companyId, part.getPartId());
     
         Map<Long, Part> childPartMap = validChildParts.stream()
             .collect(Collectors.toMap(Part::getPartId, Function.identity()));
@@ -425,7 +429,7 @@ public PartDto updatePartById(Long partId, @Valid PartRequestDto request,Long co
     Map<Long, CostFactor> costFactorMap = new HashMap<>(); 
     PartType oldType = existingPart.getType();
    // Validate and update fields
-    validateCommonPartRequest(request, companyId, vendorMap, costFactorMap);
+    validateCommonPartRequest(request, companyId, vendorMap, costFactorMap, partId);
     existingPart.setPartName(request.getPartName());
     existingPart.setType(PartType.valueOf(request.getType()));
     existingPart.setUnit(partUnitRepository.findByUnitName(request.getUnit())

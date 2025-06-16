@@ -1,6 +1,4 @@
 package com.jubeiwato.costing_service.controllers;
-
-import com.jubeiwato.costing_service.entities.Company;
 import com.jubeiwato.costing_service.entities.User;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -10,9 +8,6 @@ import com.jubeiwato.costing_service.constants.Sorting;
 import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
 import com.jubeiwato.costing_service.dtos.CreateUserDto;
 import com.jubeiwato.costing_service.dtos.GeneralResponseDto;
-import org.springframework.security.core.Authentication;
-
-import com.jubeiwato.costing_service.dtos.CompanyDto;
 import com.jubeiwato.costing_service.dtos.UserDto;
 import com.jubeiwato.costing_service.dtos.UserRoleDto;
 import com.jubeiwato.costing_service.services.UserService;

@@ -68,6 +68,7 @@ public class ErrorMessageConstant {
     public static final String FILE_READ_FAILED = "Failed to read file from S3";
     public static final String FILE_UPLOAD_FAILED= "File upload failed";
     public static final String FILE_ALREADY_EXISTS= "This File already exists for this part";
+    public static final String PART_CANNOT_BE_CHILD_OF_ITSELF = "A part cannot include itself in BOM.";
 
     private ErrorMessageConstant() {
 
