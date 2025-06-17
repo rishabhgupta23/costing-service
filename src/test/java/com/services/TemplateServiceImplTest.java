@@ -17,297 +17,307 @@ import org.junit.jupiter.api.Test;
 import org.mockito.*;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.http.HttpStatus;
 
 import java.util.*;
 
 class TemplateServiceImplTest {
 
-    @InjectMocks
-    private TemplateServiceImpl templateService;
+        @InjectMocks
+        private TemplateServiceImpl templateService;
 
-    @Mock
-    private TemplateRepository templateRepository;
-    @Mock
-    private PartAttributeRepository partAttributeRepository;
-    @Mock
-    private CompanyRepository companyRepository;
-    @Mock
-    private TemplatePartAttributeRepository templatePartAttributeRepository;
+        @Mock
+        private TemplateRepository templateRepository;
+        @Mock
+        private PartAttributeRepository partAttributeRepository;
+        @Mock
+        private CompanyRepository companyRepository;
+        @Mock
+        private TemplatePartAttributeRepository templatePartAttributeRepository;
 
-    private Company testCompany;
-    private Template testTemplate;
-    private List<PartAttribute> testPartAttributes;
+        private Company testCompany;
+        private Template testTemplate;
+        private List<PartAttribute> testPartAttributes;
 
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
+        @BeforeEach
+        void setUp() {
+                MockitoAnnotations.openMocks(this);
 
-        testCompany = Company.builder()
-                .companyId(1L)
-                .companyName("TestCo")
-                .build();
+                testCompany = Company.builder()
+                                .companyId(1L)
+                                .companyName("TestCo")
+                                .build();
 
-        testTemplate = Template.builder()
-                .templateId(100L)
-                .templateName("Test Template")
-                .company(testCompany)
-                .build();
+                testTemplate = Template.builder()
+                                .templateId(100L)
+                                .templateName("Test Template")
+                                .company(testCompany)
+                                .build();
 
-        PartAttribute attr1 = PartAttribute.builder().attributeId(10L).attributeName("Attr1").company(testCompany).build();
-        PartAttribute attr2 = PartAttribute.builder().attributeId(20L).attributeName("Attr2").company(testCompany).build();
-        testPartAttributes = List.of(attr1, attr2);
-    }
+                PartAttribute attr1 = PartAttribute.builder().attributeId(10L).attributeName("Attr1")
+                                .company(testCompany).build();
+                PartAttribute attr2 = PartAttribute.builder().attributeId(20L).attributeName("Attr2")
+                                .company(testCompany).build();
+                testPartAttributes = List.of(attr1, attr2);
+        }
 
+        @Test
+        void createTemplate_Success() {
+                TemplateRequestDto dto = TemplateRequestDto.builder()
+                                .templateName("New Template")
+                                .partAttributes(List.of(10L, 20L))
+                                .build();
 
-    @Test
-    void createTemplate_Success() {
-        TemplateRequestDto dto = TemplateRequestDto.builder()
-                .templateName("New Template")
-                .partAttributes(List.of(10L, 20L))
-                .build();
+                when(companyRepository.findById(1L)).thenReturn(Optional.of(testCompany));
+                when(templateRepository.existsByTemplateNameIgnoreCaseAndCompany("New Template", testCompany))
+                                .thenReturn(false);
+                when(templateRepository.save(any())).thenAnswer(invocation -> {
+                        Template t = invocation.getArgument(0);
+                        t.setTemplateId(101L);
+                        return t;
+                });
+                when(partAttributeRepository.findByAttributeIdInAndCompany(anyList(), eq(testCompany)))
+                                .thenReturn(testPartAttributes);
+                when(templatePartAttributeRepository.saveAll(anyList())).thenReturn(null);
 
-        when(companyRepository.findById(1L)).thenReturn(Optional.of(testCompany));
-        when(templateRepository.existsByTemplateNameIgnoreCaseAndCompany("New Template", testCompany)).thenReturn(false);
-        when(templateRepository.save(any())).thenAnswer(invocation -> {
-            Template t = invocation.getArgument(0);
-            t.setTemplateId(101L);
-            return t;
-        });
-        when(partAttributeRepository.findByAttributeIdInAndCompany(anyList(), eq(testCompany))).thenReturn(testPartAttributes);
-        when(templatePartAttributeRepository.saveAll(anyList())).thenReturn(null);
+                assertDoesNotThrow(() -> templateService.createTemplate(dto, 1L));
 
-        assertDoesNotThrow(() -> templateService.createTemplate(dto, 1L));
+                verify(templateRepository).save(any());
+                verify(templatePartAttributeRepository).saveAll(anyList());
+        }
 
-        verify(templateRepository).save(any());
-        verify(templatePartAttributeRepository).saveAll(anyList());
-    }
+        @Test
+        void createTemplate_Throws_WhenTemplateNameNullOrEmpty() {
+                TemplateRequestDto dto1 = TemplateRequestDto.builder()
+                                .templateName(null)
+                                .partAttributes(List.of(10L))
+                                .build();
+                TemplateRequestDto dto2 = TemplateRequestDto.builder()
+                                .templateName("   ")
+                                .partAttributes(List.of(10L))
+                                .build();
 
-    @Test
-    void createTemplate_Throws_WhenTemplateNameNullOrEmpty() {
-        TemplateRequestDto dto1 = TemplateRequestDto.builder()
-                .templateName(null)
-                .partAttributes(List.of(10L))
-                .build();
-        TemplateRequestDto dto2 = TemplateRequestDto.builder()
-                .templateName("   ")
-                .partAttributes(List.of(10L))
-                .build();
-
-        AppException ex1 = assertThrows(AppException.class, () -> templateService.createTemplate(dto1, 1L));
-        assertEquals(ErrorMessageConstant.TEMPLATE_NULL, ex1.getMessage());
-
-        AppException ex2 = assertThrows(AppException.class, () -> templateService.createTemplate(dto2, 1L));
-        assertEquals(ErrorMessageConstant.TEMPLATE_NULL, ex2.getMessage());
-    }
-
-    @Test
-    void createTemplate_Throws_WhenNoAttributesSelected() {
-        TemplateRequestDto dto1 = TemplateRequestDto.builder()
-                .templateName("Valid Name")
-                .partAttributes(Collections.emptyList())
-                .build();
-
-        TemplateRequestDto dto2 = TemplateRequestDto.builder()
-                .templateName("Valid Name")
-                .partAttributes(null)
-                .build();
-
-        AppException ex1 = assertThrows(AppException.class, () -> templateService.createTemplate(dto1, 1L));
-        assertEquals(ErrorMessageConstant.ATTRIBUTE_NOT_SELECTED, ex1.getMessage());
+                AppException ex1 = assertThrows(AppException.class, () -> templateService.createTemplate(dto1, 1L));
+                assertEquals(ErrorMessageConstant.TEMPLATE_NULL, ex1.getMessage());
 
                 AppException ex2 = assertThrows(AppException.class, () -> templateService.createTemplate(dto2, 1L));
-        assertEquals(ErrorMessageConstant.ATTRIBUTE_NOT_SELECTED, ex2.getMessage());
-    }
+                assertEquals(ErrorMessageConstant.TEMPLATE_NULL, ex2.getMessage());
+        }
 
-    @Test
-    void createTemplate_Throws_WhenCompanyInvalid() {
-        when(companyRepository.findById(1L)).thenReturn(Optional.empty());
+        @Test
+        void createTemplate_Throws_WhenNoAttributesSelected() {
+                TemplateRequestDto dto1 = TemplateRequestDto.builder()
+                                .templateName("Valid Name")
+                                .partAttributes(Collections.emptyList())
+                                .build();
 
-        TemplateRequestDto dto = TemplateRequestDto.builder()
-                .templateName("Valid Name")
-                .partAttributes(List.of(10L))
-                .build();
+                TemplateRequestDto dto2 = TemplateRequestDto.builder()
+                                .templateName("Valid Name")
+                                .partAttributes(null)
+                                .build();
 
-        AppException ex = assertThrows(AppException.class, () -> templateService.createTemplate(dto, 1L));
-        assertEquals(ErrorMessageConstant.INVALID_COMPANY, ex.getMessage());
-    }
+                AppException ex1 = assertThrows(AppException.class, () -> templateService.createTemplate(dto1, 1L));
+                assertEquals(ErrorMessageConstant.ATTRIBUTE_NOT_SELECTED, ex1.getMessage());
 
-    @Test
-    void createTemplate_Throws_WhenTemplateNameExists() {
-        when(companyRepository.findById(1L)).thenReturn(Optional.of(testCompany));
-        when(templateRepository.existsByTemplateNameIgnoreCaseAndCompany("Exists", testCompany)).thenReturn(true);
+                AppException ex2 = assertThrows(AppException.class, () -> templateService.createTemplate(dto2, 1L));
+                assertEquals(ErrorMessageConstant.ATTRIBUTE_NOT_SELECTED, ex2.getMessage());
+        }
 
-        TemplateRequestDto dto = TemplateRequestDto.builder()
-                .templateName("Exists")
-                .partAttributes(List.of(10L))
-                .build();
+        @Test
+        void createTemplate_Throws_WhenCompanyInvalid() {
+                when(companyRepository.findById(1L)).thenReturn(Optional.empty());
 
-        AppException ex = assertThrows(AppException.class, () -> templateService.createTemplate(dto, 1L));
-        assertEquals(ErrorMessageConstant.TEMPLATE_ALREADY_EXISTS, ex.getMessage());
-    }
+                TemplateRequestDto dto = TemplateRequestDto.builder()
+                                .templateName("Valid Name")
+                                .partAttributes(List.of(10L))
+                                .build();
 
-    @Test
-    void createTemplate_Throws_WhenAttributesNotFound() {
-        when(companyRepository.findById(1L)).thenReturn(Optional.of(testCompany));
-        when(templateRepository.existsByTemplateNameIgnoreCaseAndCompany("Valid", testCompany)).thenReturn(false);
+                AppException ex = assertThrows(AppException.class, () -> templateService.createTemplate(dto, 1L));
+                assertEquals(ErrorMessageConstant.INVALID_COMPANY, ex.getMessage());
+        }
 
-        when(partAttributeRepository.findByAttributeIdInAndCompany(anyList(), eq(testCompany)))
-                .thenReturn(Collections.emptyList());
+        @Test
+        void createTemplate_Throws_WhenTemplateNameExists() {
+                when(companyRepository.findById(1L)).thenReturn(Optional.of(testCompany));
+                when(templateRepository.existsByTemplateNameIgnoreCaseAndCompany("Exists", testCompany))
+                                .thenReturn(true);
 
-        TemplateRequestDto dto = TemplateRequestDto.builder()
-                .templateName("Valid")
-                .partAttributes(List.of(10L, 20L))
-                .build();
+                TemplateRequestDto dto = TemplateRequestDto.builder()
+                                .templateName("Exists")
+                                .partAttributes(List.of(10L))
+                                .build();
 
-        AppException ex = assertThrows(AppException.class, () -> templateService.createTemplate(dto, 1L));
-        assertTrue(ex.getMessage().contains(ErrorMessageConstant.ATTRIBUTE_NOT_FOUND));
-    }
+                AppException ex = assertThrows(AppException.class, () -> templateService.createTemplate(dto, 1L));
+                assertEquals(ErrorMessageConstant.TEMPLATE_ALREADY_EXISTS, ex.getMessage());
+        }
 
-    @Test
-    void getAllTemplates_Success() {
-        Pageable pageable = PageRequest.of(0, 2, Sort.by(Sort.Direction.ASC, "templateName"));
+        @Test
+        void createTemplate_Throws_WhenAttributesNotFound() {
+                when(companyRepository.findById(1L)).thenReturn(Optional.of(testCompany));
+                when(templateRepository.existsByTemplateNameIgnoreCaseAndCompany("Valid", testCompany))
+                                .thenReturn(false);
 
-        List<Template> templates = List.of(testTemplate);
+                when(partAttributeRepository.findByAttributeIdInAndCompany(anyList(), eq(testCompany)))
+                                .thenReturn(Collections.emptyList());
 
-        Page<Template> page = new PageImpl<>(templates, pageable, templates.size());
+                TemplateRequestDto dto = TemplateRequestDto.builder()
+                                .templateName("Valid")
+                                .partAttributes(List.of(10L, 20L))
+                                .build();
 
-when(templateRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(page);
+                AppException ex = assertThrows(AppException.class, () -> templateService.createTemplate(dto, 1L));
+                assertTrue(ex.getMessage().contains(ErrorMessageConstant.ATTRIBUTE_NOT_FOUND));
+        }
 
+        @Test
+        void getAllTemplates_Success() {
+                Pageable pageable = PageRequest.of(0, 2, Sort.by(Sort.Direction.ASC, "templateName"));
 
-        ApiPageResponseDto<List<TemplateResponseDto>> response = templateService.getAllTemplates(1L, "Test", 0, 2, "templateName", Sorting.ASC);
+                List<Template> templates = List.of(testTemplate);
 
-        assertNotNull(response);
-        assertEquals(1, response.getData().size());
-        assertEquals(testTemplate.getTemplateName(), response.getData().get(0).getTemplateName());
-        assertEquals(1, response.getPageInfo().getTotalRecords());
-    }
+                Page<Template> page = new PageImpl<>(templates, pageable, templates.size());
 
-    @Test
-    void getAllTemplates_Throws_InvalidInput() {
-        AppException ex = assertThrows(AppException.class,
-                () -> templateService.getAllTemplates(1L, "%", 0, 1, "templateName", Sorting.DESC));
-        assertEquals(ErrorMessageConstant.INVALID_INPUT, ex.getMessage());
-    }
+                when(templateRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(page);
 
+                ApiPageResponseDto<List<TemplateResponseDto>> response = templateService.getAllTemplates(1L, "Test", 0,
+                                2, "templateName", Sorting.ASC);
 
-    @Test
-    void getTemplateById_Success() {
-        when(templateRepository.findByTemplateIdAndCompany_CompanyId(100L, 1L)).thenReturn(Optional.of(testTemplate));
+                assertNotNull(response);
+                assertEquals(1, response.getData().size());
+                assertEquals(testTemplate.getTemplateName(), response.getData().get(0).getTemplateName());
+                assertEquals(1, response.getPageInfo().getTotalRecords());
+        }
 
-        Template_PartAttribute rel1 = Template_PartAttribute.builder()
-                .template(testTemplate)
-                .partAttribute(testPartAttributes.get(0))
-                .build();
-        Template_PartAttribute rel2 = Template_PartAttribute.builder()
-                .template(testTemplate)
-                .partAttribute(testPartAttributes.get(1))
-                .build();
+        @Test
+        void getAllTemplates_Throws_InvalidInput() {
+                AppException ex = assertThrows(AppException.class,
+                                () -> templateService.getAllTemplates(1L, "%", 0, 1, "templateName", Sorting.DESC));
+                assertEquals(ErrorMessageConstant.INVALID_INPUT, ex.getMessage());
+        }
 
-        when(templatePartAttributeRepository.findByTemplate(testTemplate))
-                .thenReturn(List.of(rel1, rel2));
+        @Test
+        void getTemplateById_Success() {
+                when(templateRepository.findByTemplateIdAndCompany_CompanyId(100L, 1L))
+                                .thenReturn(Optional.of(testTemplate));
 
-        TemplateResponseDto response = templateService.getTemplateById(100L, 1L);
+                Template_PartAttribute rel1 = Template_PartAttribute.builder()
+                                .template(testTemplate)
+                                .partAttribute(testPartAttributes.get(0))
+                                .build();
+                Template_PartAttribute rel2 = Template_PartAttribute.builder()
+                                .template(testTemplate)
+                                .partAttribute(testPartAttributes.get(1))
+                                .build();
 
-        assertNotNull(response);
-        assertEquals(testTemplate.getTemplateName(), response.getTemplateName());
-        assertEquals(2, response.getPartAttributes().size());
-    }
+                when(templatePartAttributeRepository.findByTemplate(testTemplate))
+                                .thenReturn(List.of(rel1, rel2));
 
-    @Test
-    void getTemplateById_Throws_NotFound() {
-        when(templateRepository.findByTemplateIdAndCompany_CompanyId(100L, 1L)).thenReturn(Optional.empty());
+                TemplateResponseDto response = templateService.getTemplateById(100L, 1L);
 
-        AppException ex = assertThrows(AppException.class,
-                () -> templateService.getTemplateById(100L, 1L));
-        assertEquals(ErrorMessageConstant.TEMPLATE_NOT_FOUND, ex.getMessage());
-    }
+                assertNotNull(response);
+                assertEquals(testTemplate.getTemplateName(), response.getTemplateName());
+                assertEquals(2, response.getPartAttributes().size());
+        }
 
+        @Test
+        void getTemplateById_Throws_NotFound() {
+                when(templateRepository.findByTemplateIdAndCompany_CompanyId(100L, 1L)).thenReturn(Optional.empty());
 
-    @Test
-    void updateTemplate_Success_ChangeName() {
-        TemplateRequestDto dto = TemplateRequestDto.builder()
-                .templateName("New Name")
-                .partAttributes(List.of(10L, 20L))
-                .build();
+                AppException ex = assertThrows(AppException.class,
+                                () -> templateService.getTemplateById(100L, 1L));
+                assertEquals(ErrorMessageConstant.TEMPLATE_NOT_FOUND, ex.getMessage());
+        }
 
-        when(templateRepository.findByTemplateIdAndCompany_CompanyId(100L, 1L)).thenReturn(Optional.of(testTemplate));
-        when(templateRepository.existsByTemplateNameIgnoreCaseAndCompany("New Name", testCompany)).thenReturn(false);
-        when(partAttributeRepository.findByAttributeIdInAndCompany(anyList(), eq(testCompany))).thenReturn(testPartAttributes);
-        doNothing().when(templatePartAttributeRepository).deleteByTemplate(testTemplate);
-        when(templatePartAttributeRepository.saveAll(anyList())).thenReturn(null);
-        when(templateRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        @Test
+        void updateTemplate_Success_ChangeName() {
+                TemplateRequestDto dto = TemplateRequestDto.builder()
+                                .templateName("New Name")
+                                .partAttributes(List.of(10L, 20L))
+                                .build();
 
-        TemplateResponseDto updated = templateService.updateTemplate(100L, dto, 1L);
+                when(templateRepository.findByTemplateIdAndCompany_CompanyId(100L, 1L))
+                                .thenReturn(Optional.of(testTemplate));
+                when(templateRepository.existsByTemplateNameIgnoreCaseAndCompany("New Name", testCompany))
+                                .thenReturn(false);
+                when(partAttributeRepository.findByAttributeIdInAndCompany(anyList(), eq(testCompany)))
+                                .thenReturn(testPartAttributes);
+                doNothing().when(templatePartAttributeRepository).deleteByTemplate(testTemplate);
+                when(templatePartAttributeRepository.saveAll(anyList())).thenReturn(null);
+                when(templateRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        assertEquals("New Name", updated.getTemplateName());
-        assertEquals(2, updated.getPartAttributes().size());
-    }
+                TemplateResponseDto updated = templateService.updateTemplate(100L, dto, 1L);
 
-    @Test
-    void updateTemplate_Success_SameName() {
-        TemplateRequestDto dto = TemplateRequestDto.builder()
-                .templateName(testTemplate.getTemplateName())
-                .partAttributes(List.of(10L))
-                .build();
+                assertEquals("New Name", updated.getTemplateName());
+                assertEquals(2, updated.getPartAttributes().size());
+        }
 
-        when(templateRepository.findByTemplateIdAndCompany_CompanyId(100L, 1L)).thenReturn(Optional.of(testTemplate));
-        when(partAttributeRepository.findByAttributeIdInAndCompany(anyList(), eq(testCompany))).thenReturn(testPartAttributes);
-        doNothing().when(templatePartAttributeRepository).deleteByTemplate(testTemplate);
-        when(templatePartAttributeRepository.saveAll(anyList())).thenReturn(null);
-        when(templateRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        @Test
+        void updateTemplate_Success_SameName() {
+                TemplateRequestDto dto = TemplateRequestDto.builder()
+                                .templateName(testTemplate.getTemplateName())
+                                .partAttributes(List.of(10L))
+                                .build();
 
-        TemplateResponseDto updated = templateService.updateTemplate(100L, dto, 1L);
+                when(templateRepository.findByTemplateIdAndCompany_CompanyId(100L, 1L))
+                                .thenReturn(Optional.of(testTemplate));
+                when(partAttributeRepository.findByAttributeIdInAndCompany(anyList(), eq(testCompany)))
+                                .thenReturn(testPartAttributes);
+                doNothing().when(templatePartAttributeRepository).deleteByTemplate(testTemplate);
+                when(templatePartAttributeRepository.saveAll(anyList())).thenReturn(null);
+                when(templateRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        assertEquals(testTemplate.getTemplateName(), updated.getTemplateName());
-        assertEquals(2, updated.getPartAttributes().size());
-    }
+                TemplateResponseDto updated = templateService.updateTemplate(100L, dto, 1L);
 
-    @Test
-    void updateTemplate_Throws_TemplateNotFound() {
-        when(templateRepository.findByTemplateIdAndCompany_CompanyId(100L, 1L)).thenReturn(Optional.empty());
+                assertEquals(testTemplate.getTemplateName(), updated.getTemplateName());
+                assertEquals(2, updated.getPartAttributes().size());
+        }
 
-        TemplateRequestDto dto = TemplateRequestDto.builder()
-                .templateName("Any Name")
-                .partAttributes(List.of(10L))
-                .build();
+        @Test
+        void updateTemplate_Throws_TemplateNotFound() {
+                when(templateRepository.findByTemplateIdAndCompany_CompanyId(100L, 1L)).thenReturn(Optional.empty());
 
-        AppException ex = assertThrows(AppException.class, () -> templateService.updateTemplate(100L, dto, 1L));
-        assertEquals(ErrorMessageConstant.TEMPLATE_NOT_FOUND, ex.getMessage());
-    }
+                TemplateRequestDto dto = TemplateRequestDto.builder()
+                                .templateName("Any Name")
+                                .partAttributes(List.of(10L))
+                                .build();
 
-    @Test
-    void updateTemplate_Throws_TemplateNameExists() {
-        TemplateRequestDto dto = TemplateRequestDto.builder()
-                .templateName("Exists")
-                .partAttributes(List.of(10L))
-                .build();
+                AppException ex = assertThrows(AppException.class, () -> templateService.updateTemplate(100L, dto, 1L));
+                assertEquals(ErrorMessageConstant.TEMPLATE_NOT_FOUND, ex.getMessage());
+        }
 
-        when(templateRepository.findByTemplateIdAndCompany_CompanyId(100L, 1L)).thenReturn(Optional.of(testTemplate));
-        when(templateRepository.existsByTemplateNameIgnoreCaseAndCompany("Exists", testCompany)).thenReturn(true);
+        @Test
+        void updateTemplate_Throws_TemplateNameExists() {
+                TemplateRequestDto dto = TemplateRequestDto.builder()
+                                .templateName("Exists")
+                                .partAttributes(List.of(10L))
+                                .build();
 
-        AppException ex = assertThrows(AppException.class, () -> templateService.updateTemplate(100L, dto, 1L));
-        assertEquals(ErrorMessageConstant.TEMPLATE_ALREADY_EXISTS, ex.getMessage());
-    }
+                when(templateRepository.findByTemplateIdAndCompany_CompanyId(100L, 1L))
+                                .thenReturn(Optional.of(testTemplate));
+                when(templateRepository.existsByTemplateNameIgnoreCaseAndCompany("Exists", testCompany))
+                                .thenReturn(true);
 
+                AppException ex = assertThrows(AppException.class, () -> templateService.updateTemplate(100L, dto, 1L));
+                assertEquals(ErrorMessageConstant.TEMPLATE_ALREADY_EXISTS, ex.getMessage());
+        }
 
-    @Test
-    void deleteTemplate_Success() {
-        when(templateRepository.findByTemplateIdAndCompany_CompanyId(100L, 1L)).thenReturn(Optional.of(testTemplate));
-        doNothing().when(templatePartAttributeRepository).deleteByTemplate(testTemplate);
-        doNothing().when(templateRepository).delete(testTemplate);
+        @Test
+        void deleteTemplate_Success() {
+                when(templateRepository.findByTemplateIdAndCompany_CompanyId(100L, 1L))
+                                .thenReturn(Optional.of(testTemplate));
+                doNothing().when(templatePartAttributeRepository).deleteByTemplate(testTemplate);
+                doNothing().when(templateRepository).delete(testTemplate);
 
-        assertDoesNotThrow(() -> templateService.deleteTemplate(100L, 1L));
+                assertDoesNotThrow(() -> templateService.deleteTemplate(100L, 1L));
 
-        verify(templatePartAttributeRepository).deleteByTemplate(testTemplate);
-        verify(templateRepository).delete(testTemplate);
-    }
+                verify(templatePartAttributeRepository).deleteByTemplate(testTemplate);
+                verify(templateRepository).delete(testTemplate);
+        }
 
-    @Test
-    void deleteTemplate_Throws_TemplateNotFound() {
-        when(templateRepository.findByTemplateIdAndCompany_CompanyId(100L, 1L)).thenReturn(Optional.empty());
+        @Test
+        void deleteTemplate_Throws_TemplateNotFound() {
+                when(templateRepository.findByTemplateIdAndCompany_CompanyId(100L, 1L)).thenReturn(Optional.empty());
 
-        AppException ex = assertThrows(AppException.class, () -> templateService.deleteTemplate(100L, 1L));
-        assertEquals(ErrorMessageConstant.TEMPLATE_NOT_FOUND, ex.getMessage());
-    }
+                AppException ex = assertThrows(AppException.class, () -> templateService.deleteTemplate(100L, 1L));
+                assertEquals(ErrorMessageConstant.TEMPLATE_NOT_FOUND, ex.getMessage());
+        }
 }

@@ -47,8 +47,8 @@ public class VendorServiceImpl implements VendorService {
                 this.excelService = excelService;
         }
 
-        private void validateDuplicateVendor(Long companyId, String name) {
-                boolean exists = vendorRepository.existsByCompanyCompanyIdAndNameIgnoreCase(companyId, name);
+        private void validateDuplicateVendor(Long companyId, String vendorName) {
+                boolean exists = vendorRepository.existsByCompanyCompanyIdAndVendorNameIgnoreCase(companyId, vendorName);
                 if (exists) {
                         throw new AppException(ErrorMessageConstant.VENDOR_ALREADY_EXISTS, HttpStatus.BAD_REQUEST);
                 }
@@ -62,13 +62,13 @@ public class VendorServiceImpl implements VendorService {
         }
 
         @Override
-        public void createVendor(Long companyId, String name, String emailId, String contactNumber, String address) {
+        public void createVendor(Long companyId, String vendorName, String emailId, String contactNumber, String address) {
 
-                if (name == null || name.trim().isEmpty()) {
+                if (vendorName == null || vendorName.trim().isEmpty()) {
                         throw new AppException(ErrorMessageConstant.VENDOR_NAME_NOT_NULL, HttpStatus.BAD_REQUEST);
                 }
 
-                if (!ValidationUtil.isValidInput(name)) {
+                if (!ValidationUtil.isValidInput(vendorName)) {
                         throw new AppException(ErrorMessageConstant.INVALID_INPUT, HttpStatus.BAD_REQUEST);
                 }
 
@@ -78,35 +78,35 @@ public class VendorServiceImpl implements VendorService {
                     
                 Company company = companyRepository.findById(companyId)
                                 .orElseThrow(() -> new AppException("Company not found", HttpStatus.BAD_REQUEST));
-                validateDuplicateVendor(companyId, name);
+                validateDuplicateVendor(companyId, vendorName);
                 Vendor vendor = Vendor.builder()
 
-                                .company(company)
-                                .name(name)
-                                .emailId(emailId)
-                                .contactNumber(contactNumber)
-                                .address(address)
-                                .build();
+        .company(company)
+        .vendorName(vendorName)
+        .emailId(emailId)
+        .contactNumber(contactNumber)
+        .address(address)
+        .build();
 
                 vendorRepository.save(vendor);
         }
 
         @Override
-        public ApiPageResponseDto<List<VendorDto>> getVendorList(Long companyId, String name, String address,
+        public ApiPageResponseDto<List<VendorDto>> getVendorList(Long companyId, String vendorName, String address,
                         String emailId, String contactNumber, int pageNo, int pageSize, String sortColumn,
                         Sorting sortMode) {
                 Sort.Direction direction = (sortMode == Sorting.DESC) ? Sort.Direction.DESC : Sort.Direction.ASC;
 
                 Sort sort = Sort.by(direction, sortColumn);
                 Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
-                if (!ValidationUtil.isValidInput(name) ||
+                if (!ValidationUtil.isValidInput(vendorName) ||
                                 !ValidationUtil.isValidInput(address) ||
                                 !ValidationUtil.isValidInput(emailId) ||
                                 !ValidationUtil.isValidInput(contactNumber)) {
                         throw new AppException(ErrorMessageConstant.INVALID_INPUT, HttpStatus.BAD_REQUEST);
                 }
 
-                Specification<Vendor> spec = new VendorSpecification(companyId, name, address, emailId, contactNumber);
+                Specification<Vendor> spec = new VendorSpecification(companyId, vendorName, address, emailId, contactNumber);
 
                 Page<Vendor> vendorPage = vendorRepository.findAll(spec, pageable);
 
@@ -135,19 +135,19 @@ public class VendorServiceImpl implements VendorService {
         }
 
         @Override
-        public VendorDto updateVendorById(Long id, String name, String emailId, String contactNumber, String address,
+        public VendorDto updateVendorById(Long id, String vendorName, String emailId, String contactNumber, String address,
                         Long companyId) {
                 Vendor vendor = getAndValidateVendor(id, companyId);
-                boolean exists = vendorRepository.existsByCompanyCompanyIdAndVendorIdNotAndNameIgnoreCase(companyId, id,
-                                name);
+                boolean exists = vendorRepository.existsByCompanyCompanyIdAndVendorIdNotAndVendorNameIgnoreCase(companyId, id,
+                                vendorName);
 
                 if (exists) {
                         throw new AppException(ErrorMessageConstant.VENDOR_ALREADY_EXISTS, HttpStatus.NOT_FOUND);
                 }
-                vendor.setName(name);
-                vendor.setEmailId(emailId);
-                vendor.setContactNumber(contactNumber);
-                vendor.setAddress(address);
+        vendor.setVendorName(vendorName);
+        vendor.setEmailId(emailId);
+        vendor.setContactNumber(contactNumber);
+        vendor.setAddress(address);
 
                 return VendorDto.entityToDto(this.vendorRepository.save(vendor));
         }
@@ -188,12 +188,12 @@ public class VendorServiceImpl implements VendorService {
         public byte[] downloadVendorExcel(Long companyId) throws IOException {
 
                 List<Vendor> vendors = vendorRepository.findByCompanyCompanyId(companyId);
-                String[] headers = { "Name", "Email", "Contact Number", "Address" };
+                String[] headers = { "Vendor Name", "Email", "Contact Number", "Address" };
 
                 List<String[]> data = vendors.stream()
 
                                 .map(vendor -> new String[] {
-                                                vendor.getName(),
+                                                vendor.getVendorName(),
                                                 vendor.getEmailId(),
                                                 vendor.getContactNumber(),
                                                 vendor.getAddress()

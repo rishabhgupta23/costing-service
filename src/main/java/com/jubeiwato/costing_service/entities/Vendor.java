@@ -19,15 +19,15 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "vendor", schema = "app", uniqueConstraints = @UniqueConstraint(columnNames = { "company_id", "name" }))
+@Table(name = "vendor", schema = "app", uniqueConstraints = @UniqueConstraint(columnNames = { "company_id", "vendor_name" }))
 public class Vendor extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "vendor_id")
     private Long vendorId;
 
-    @Column(unique = true, nullable = false)
-    private String name;
+    @Column(name = "vendor_name", nullable = false)
+    private String vendorName;
 
     @Column(name = "email_id", nullable = false)
     private String emailId;
