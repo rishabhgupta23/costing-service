@@ -18,6 +18,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import com.jubeiwato.costing_service.authentication.config.AppException;
 import com.jubeiwato.costing_service.constants.DateFormat;
+import com.jubeiwato.costing_service.constants.DeleteFlag;
 import com.jubeiwato.costing_service.constants.ErrorMessageConstant;
 import com.jubeiwato.costing_service.constants.FileExtension;
 import com.jubeiwato.costing_service.constants.PartType;
@@ -148,19 +149,18 @@ public class PartServiceImpl implements PartService {
                                 && !request.getBom().isEmpty()) {
                         validateAndSaveBom(request, companyId, part);
                 }
-                savePartAttributes(request, part);
+                savePartAttributes(request, part, false);
                 return PartDto.entityToDto(part);
         }
 
         
-        private void savePartAttributes(PartRequestDto request, Part part) {
+        public void savePartAttributes(PartRequestDto request, Part part, boolean isUpdate) {
     if (request.getAttributeValueList() == null || request.getAttributeValueList().isEmpty()) {
         return;
     }
 
     Set<Long> attributeIdSet = new HashSet<>();
-
-    List<PartPartAttribute> partAttributes = request.getAttributeValueList().stream().map(attrValDto -> {
+    for (AttributeValueDto attrValDto : request.getAttributeValueList()) {
         Long attributeId = attrValDto.getAttributeId();
 
         if (attributeId == null) {
@@ -170,9 +170,21 @@ public class PartServiceImpl implements PartService {
         if (!attributeIdSet.add(attributeId)) {
             throw new AppException(ErrorMessageConstant.ATTRIBUTE_ALREADY_EXISTS, HttpStatus.BAD_REQUEST);
         }
+    }
 
-        PartAttribute attribute = partAttributeRepository.findById(attributeId)
-                .orElseThrow(() -> new AppException(ErrorMessageConstant.ATTRIBUTE_MARKED_DELETED, HttpStatus.NOT_FOUND));
+    List<PartPartAttribute> partAttributes = request.getAttributeValueList().stream().map(attrValDto -> {
+        Long attributeId = attrValDto.getAttributeId();
+
+        PartAttribute attribute;
+         if (isUpdate) {
+            attribute = partAttributeRepository.findById(attributeId)
+                    .orElseThrow(() -> new AppException(ErrorMessageConstant.ATTRIBUTE_NOT_FOUND, HttpStatus.NOT_FOUND));
+        } else {
+            attribute = partAttributeRepository
+                    .findByAttributeIdAndDeleteFlag(attributeId, DeleteFlag.NEGATIVE.getValue())
+                    .orElseThrow(() -> new AppException(ErrorMessageConstant.ATTRIBUTE_MARKED_DELETED, HttpStatus.BAD_REQUEST));
+        }
+
 
         PartPartAttribute ppa = new PartPartAttribute();
         ppa.setPart(part);
@@ -530,7 +542,7 @@ public class PartServiceImpl implements PartService {
                 }
                 partPartAttributeRepository.deleteByPart_PartId(existingPart.getPartId());
                 partPartAttributeRepository.flush();
-                savePartAttributes(request, existingPart);
+                savePartAttributes(request, existingPart, true);
                 return createPartResponseDto(existingPart,
                                 partCostRepository.getRecentByPartId(existingPart.getPartId()),
                                 bomRepository.findByParentPart(existingPart),partPartAttributeRepository.findByPart(existingPart));
