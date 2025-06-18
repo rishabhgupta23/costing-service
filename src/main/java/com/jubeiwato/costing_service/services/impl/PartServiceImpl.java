@@ -174,10 +174,6 @@ public class PartServiceImpl implements PartService {
                 validateAndStoreVendors(request.getVendorCostList(), companyId, vendorMap);
                 validateAndStoreCostFactors(request.getVendorCostList(), companyId, costFactorMap);
             }
-
-           if (request.getBom() != null && !request.getBom().isEmpty()) {
-           validateBomPartsExist(request, companyId,partId); 
-        }
     }
         
          private void validateAndStoreVendors(List<VendorCostDto> vendorCostList, Long companyId,Map<Long, Vendor> vendorMap) {
@@ -213,14 +209,10 @@ public class PartServiceImpl implements PartService {
     costFactors.forEach(cf -> costFactorMap.put(cf.getFactorId(), cf));
     }
      
-    private List<Part> validateBomPartsExist(PartRequestDto request, Long companyId, Long partId) {
+    private List<Part> validateBomPartsExist(PartRequestDto request, Long companyId) {
         Set<Long> childPartIds = request.getBom().stream()
             .map(BomDto::getChildPartId)
             .collect(Collectors.toSet());
-
-               if (partId != null && childPartIds.contains(partId)) {
-        throw new AppException(ErrorMessageConstant.PART_CANNOT_BE_CHILD_OF_ITSELF, HttpStatus.BAD_REQUEST);
-    }
     
         List<Part> validChildParts = partRepository.findByPartIdInAndCompany_CompanyId(childPartIds, companyId);
     
@@ -241,7 +233,7 @@ public class PartServiceImpl implements PartService {
     }
 
     private void validateAndSaveBom(PartRequestDto request, Long companyId, Part part) {
-        List<Part> validChildParts = validateBomPartsExist(request, companyId, part.getPartId());
+        List<Part> validChildParts = validateBomPartsExist(request, companyId);
     
         Map<Long, Part> childPartMap = validChildParts.stream()
             .collect(Collectors.toMap(Part::getPartId, Function.identity()));
@@ -474,6 +466,9 @@ public PartDto updatePartById(Long partId, @Valid PartRequestDto request,Long co
                                                 .orElseThrow(() -> new AppException(
                                                                 ErrorMessageConstant.INVALID_CHILD_PART,
                                                                 HttpStatus.BAD_REQUEST));
+                                if (childPart.getPartId() == partId) {
+                                        throw new AppException(ErrorMessageConstant.PART_CANNOT_BE_CHILD_OF_ITSELF, HttpStatus.BAD_REQUEST);
+                                }
                                 return new Bom(existingPart, childPart, bomDto.getQuantity());
                         }).toList();
                         bomRepository.saveAll(newBom);
