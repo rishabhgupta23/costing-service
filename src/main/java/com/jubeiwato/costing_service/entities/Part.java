@@ -53,4 +53,8 @@ public class Part extends BaseEntity{
 
         @OneToMany(mappedBy = "part", fetch = FetchType.LAZY)
         private List<PartCost> partCosts;
+
+        @OneToMany(mappedBy = "part", cascade = CascadeType.ALL, orphanRemoval = true)
+        private List<PartPartAttribute> partAttributes;
+
 }

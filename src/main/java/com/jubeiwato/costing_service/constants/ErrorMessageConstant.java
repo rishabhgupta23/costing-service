@@ -46,6 +46,7 @@ public class ErrorMessageConstant {
     public static final String ATTRIBUTE_ALREADY_EXISTS = "Attribute with the same name already exists.";
     public static final String TEMPLATE_NULL ="Template name must not be null or empty";
     public static final String UPDATE_NOT_ALLOWED_SOFT_DELETED = "Update not allowed. A soft-deleted part attribute with the name '%s' already exists.";
+    public static final String ATTRIBUTE_NULL="Attribute must not be null";
     public static final String VENDOR_NAME_NOT_NULL = "Vendor name must not be null or empty";
 
     public static final String CATEGORY_ALREADY_EXISTS_TEMPLATE = "Category with categoryName '%s' already exists";
@@ -69,10 +70,11 @@ public class ErrorMessageConstant {
     public static final String FILE_UPLOAD_FAILED= "File upload failed";
     public static final String FILE_ALREADY_EXISTS= "This File already exists for this part";
 
+
     private ErrorMessageConstant() {
 
     }
-
+    
     /**
      * Generic method to format error messages dynamically.
      * 

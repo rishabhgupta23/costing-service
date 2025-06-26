@@ -35,4 +35,7 @@ public class PartRequestDto {
     private List<VendorCostDto> vendorCostList;
 
     private List<BomDto> bom;
+
+    private List<AttributeValueDto> attributeValueList;
+
 }

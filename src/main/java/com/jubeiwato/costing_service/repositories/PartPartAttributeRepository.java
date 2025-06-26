@@ -1,0 +1,22 @@
+package com.jubeiwato.costing_service.repositories;
+
+import java.util.List;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import com.jubeiwato.costing_service.entities.Part;
+import com.jubeiwato.costing_service.entities.PartPartAttribute;
+
+import jakarta.transaction.Transactional;
+
+public interface PartPartAttributeRepository extends JpaRepository<PartPartAttribute, Long> {
+    void deleteByPart_PartId(Long partId);
+    List<PartPartAttribute> findByPart(Part part);
+
+
+    List<PartPartAttribute> findByPart_PartId(Long partId);
+}
+
