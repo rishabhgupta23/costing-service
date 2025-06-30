@@ -151,11 +151,12 @@ public TemplateResponseDto getTemplateById(Long templateId, Long companyId) {
 
         Template template = getValidatedTemplate(templateId, companyId);
 
-    List<PartAttributeDto> partAttributes = templatePartAttributeRepository.findByTemplate(template).stream()
-            .map(rel -> rel.getPartAttribute())
-            .filter(attr -> attr.getDeleteFlag() == DeleteFlag.NEGATIVE.getValue())
-            .map(PartAttributeDto::entityToDto)
-            .toList();
+        List<PartAttributeDto> partAttributes = templatePartAttributeRepository
+                .findByTemplateAndPartAttribute_DeleteFlag(template, DeleteFlag.NEGATIVE.getValue())
+                .stream()
+                .map(rel -> rel.getPartAttribute())
+                .map(PartAttributeDto::entityToDto)
+                .toList();
 
         return TemplateResponseDto.builder()
                 .templateId(template.getTemplateId())
