@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ProductionRequestDto {
+public class ProductionPlanRequestDto {
      @NotNull(message = "Part ID cannot be null")
     private Long partId;
 

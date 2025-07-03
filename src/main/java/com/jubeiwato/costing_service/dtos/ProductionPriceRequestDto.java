@@ -14,7 +14,7 @@ import java.util.List;
 @AllArgsConstructor
 public class ProductionPriceRequestDto {
     @NotEmpty(message = "Parts list cannot be empty")
-    private List<ProductionRequestDto> parts;
+    private List<ProductionPlanRequestDto> parts;
 
     @NotNull(message = "Pricing mode must be provided")
     private String priceMode;
