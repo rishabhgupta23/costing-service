@@ -41,17 +41,18 @@ public class ProductionCostServiceImpl implements ProductionCostService {
     }
 
     @Override
-    public ProductionCostResponseDto calculateProductionCost(List<ProductionRequestDto> parts, String priceMode, Long companyId) {
-        List<CostItemDto> allItems = new ArrayList<>();
-        double totalCost = 0.0;
+    public ProductionCostResponseDto calculateProductionCost(List<ProductionRequestDto> parts, String priceMode,
+            Long companyId) {
+        Map<Long, Double> unitPartQuantities = new java.util.HashMap<>();
 
         for (ProductionRequestDto requestDto : parts) {
             Long partId = requestDto.getPartId();
             Double quantity = requestDto.getQuantity();
 
-            Part part = partRepository.findById(partId).orElseThrow(() ->
-                    new AppException(
-                            ErrorMessageConstant.getFormattedMessage(ErrorMessageConstant.CHILD_PART_NOT_FOUND_TEMPLATE, partId),
+            Part part = partRepository.findById(partId)
+                    .orElseThrow(() -> new AppException(
+                            ErrorMessageConstant.getFormattedMessage(ErrorMessageConstant.CHILD_PART_NOT_FOUND_TEMPLATE,
+                                    partId),
                             HttpStatus.NOT_FOUND));
 
             if (!part.getCompany().getCompanyId().equals(companyId)) {
@@ -60,19 +61,20 @@ public class ProductionCostServiceImpl implements ProductionCostService {
                         HttpStatus.NOT_FOUND);
             }
 
-            List<CostItemDto> res;
             if (part.getType() == PartType.UNIT) {
-                CostItemDto item = calculateUnitPart(partId, priceMode, quantity);
-                res = List.of(item);
+                unitPartQuantities.merge(partId, quantity, Double::sum);
             } else {
-                res = calculateMasterPart(partId, priceMode);
-                for (CostItemDto item : res) {
-                    item.setSubTotal(item.getSubTotal() * quantity);
-                }
+                accumulateUnitPartsFromMaster(partId, quantity, unitPartQuantities);
             }
+        }
 
-            allItems.addAll(res);
-            totalCost += res.stream().mapToDouble(CostItemDto::getSubTotal).sum();
+        List<CostItemDto> allItems = new ArrayList<>();
+        double totalCost = 0.0;
+
+        for (Map.Entry<Long, Double> entry : unitPartQuantities.entrySet()) {
+            CostItemDto item = calculateUnitPart(entry.getKey(), priceMode, entry.getValue());
+            allItems.add(item);
+            totalCost += item.getSubTotal();
         }
 
         return ProductionCostResponseDto.builder()
@@ -81,35 +83,22 @@ public class ProductionCostServiceImpl implements ProductionCostService {
                 .build();
     }
 
-    private List<CostItemDto> calculateMasterPart(Long partId, String priceMode) {
-        double calculatedPrice = 0.0;
-        String vendorName = "";
 
-        List<CostItemDto> masterDto = new ArrayList<>();
-
+    private void accumulateUnitPartsFromMaster(Long partId, Double parentQty, Map<Long, Double> unitPartQuantities) {
         List<Bom> childParts = bomRepository.findByParentPart_PartId(partId);
 
         for (Bom childPart : childParts) {
-            Double quantity = childPart.getQuantity();
-            if (childPart.getChildPart().getType() == PartType.MASTER) {
-                List<CostItemDto> childCosts = calculateMasterPart(childPart.getChildPart().getPartId(), priceMode);
-                calculatedPrice = childCosts.stream().mapToDouble(CostItemDto::getSubTotal).sum();
-                masterDto.add(CostItemDto.builder()
-                        .partName(childPart.getChildPart().getPartName())
-                        .partNumber(childPart.getChildPart().getPartNumber())
-                        .quantity(quantity)
-                        .rate(calculatedPrice)
-                        .vendorName(vendorName)
-                        .subTotal(quantity * calculatedPrice)
-                        .build());
+            Part child = childPart.getChildPart();
+            Double childQty = childPart.getQuantity() * parentQty;
+
+            if (child.getType() == PartType.UNIT) {
+                unitPartQuantities.merge(child.getPartId(), childQty, Double::sum);
             } else {
-                CostItemDto unitDto = calculateUnitPart(childPart.getChildPart().getPartId(), priceMode, quantity);
-                masterDto.add(unitDto);
+                accumulateUnitPartsFromMaster(child.getPartId(), childQty, unitPartQuantities);
             }
         }
-
-        return masterDto;
     }
+
 
     private CostItemDto calculateUnitPart(Long partId, String priceMode, Double qt) {
         Part part = partRepository.findById(partId)
