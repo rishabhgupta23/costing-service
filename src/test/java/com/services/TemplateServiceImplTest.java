@@ -208,8 +208,9 @@ class TemplateServiceImplTest {
                                 .partAttribute(testPartAttributes.get(1))
                                 .build();
 
-                when(templatePartAttributeRepository.findByTemplate(testTemplate))
-                                .thenReturn(List.of(rel1, rel2));
+                when(templatePartAttributeRepository.findByTemplateAndPartAttribute_DeleteFlag(testTemplate, 0))
+                        .thenReturn(List.of(rel1, rel2));
+
 
                 TemplateResponseDto response = templateService.getTemplateById(100L, 1L);
 

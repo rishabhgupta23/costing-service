@@ -9,7 +9,7 @@ import com.jubeiwato.costing_service.entities.Template_PartAttribute;
 
 public interface TemplatePartAttributeRepository  extends JpaRepository<Template_PartAttribute, Long> {
 
-    List<Template_PartAttribute> findByTemplate(Template template);
+    List<Template_PartAttribute> findByTemplateAndPartAttribute_DeleteFlag(Template template, int deleteFlag);
     void deleteByTemplate(Template template);
 
 
