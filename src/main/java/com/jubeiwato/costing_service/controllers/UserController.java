@@ -1,5 +1,4 @@
 package com.jubeiwato.costing_service.controllers;
-
 import com.jubeiwato.costing_service.entities.User;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.security.access.prepost.PreAuthorize;
