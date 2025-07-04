@@ -18,6 +18,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import com.jubeiwato.costing_service.authentication.config.AppException;
 import com.jubeiwato.costing_service.constants.DateFormat;
+import com.jubeiwato.costing_service.constants.DeleteFlag;
 import com.jubeiwato.costing_service.constants.ErrorMessageConstant;
 import com.jubeiwato.costing_service.constants.FileExtension;
 import com.jubeiwato.costing_service.constants.PartType;
@@ -153,37 +154,44 @@ public class PartServiceImpl implements PartService {
         }
 
         
-        private void savePartAttributes(PartRequestDto request, Part part) {
-    if (request.getAttributeValueList() == null || request.getAttributeValueList().isEmpty()) {
-        return;
-    }
-
-    Set<Long> attributeIdSet = new HashSet<>();
-
-    List<PartPartAttribute> partAttributes = request.getAttributeValueList().stream().map(attrValDto -> {
-        Long attributeId = attrValDto.getAttributeId();
-
-        if (attributeId == null) {
-            throw new AppException(ErrorMessageConstant.ATTRIBUTE_NULL, HttpStatus.BAD_REQUEST);
+        public void savePartAttributes(PartRequestDto request, Part part) {
+        if (request.getAttributeValueList() == null || request.getAttributeValueList().isEmpty()) {
+                return;
         }
 
-        if (!attributeIdSet.add(attributeId)) {
-            throw new AppException(ErrorMessageConstant.ATTRIBUTE_ALREADY_EXISTS, HttpStatus.BAD_REQUEST);
+        Set<Long> attributeIdSet = new HashSet<>();
+        List<PartPartAttribute> partAttributes = new ArrayList<>();
+
+        for (AttributeValueDto attrValDto : request.getAttributeValueList()) {
+                Long attributeId = attrValDto.getAttributeId();
+
+                if (attributeId == null) {
+                throw new AppException(ErrorMessageConstant.ATTRIBUTE_NULL, HttpStatus.BAD_REQUEST);
+                }
+
+                if (!attributeIdSet.add(attributeId)) {
+                throw new AppException(ErrorMessageConstant.ATTRIBUTE_ALREADY_EXISTS, HttpStatus.BAD_REQUEST);
+                }
+
+                PartAttribute attribute = partAttributeRepository
+                .findByAttributeIdAndDeleteFlag(attributeId, DeleteFlag.NEGATIVE.getValue())
+                .orElseThrow(() -> new AppException(
+                        ErrorMessageConstant.ATTRIBUTE_NOT_FOUND,
+                        HttpStatus.NOT_FOUND
+                ));
+
+                PartPartAttribute ppa = new PartPartAttribute();
+                ppa.setPart(part);
+                ppa.setAttribute(attribute);
+                ppa.setAttributeValue(attrValDto.getValue());
+
+                partAttributes.add(ppa);
         }
 
-        PartAttribute attribute = partAttributeRepository.findById(attributeId)
-                .orElseThrow(() -> new AppException(ErrorMessageConstant.ATTRIBUTE_MARKED_DELETED, HttpStatus.NOT_FOUND));
+        partPartAttributeRepository.saveAll(partAttributes);
+        }
 
-        PartPartAttribute ppa = new PartPartAttribute();
-        ppa.setPart(part);
-        ppa.setAttribute(attribute);
-        ppa.setAttributeValue(attrValDto.getValue());
 
-        return ppa;
-    }).toList();
-
-    partPartAttributeRepository.saveAll(partAttributes);
-}
         private void validateCreatePartRequest(PartRequestDto request, Long companyId, Map<Long, Vendor> vendorMap,
                         Map<Long, CostFactor> costFactorMap) {
 

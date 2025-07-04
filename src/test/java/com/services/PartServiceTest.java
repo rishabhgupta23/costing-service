@@ -7,22 +7,27 @@ import java.time.ZonedDateTime;
 import com.jubeiwato.costing_service.authentication.config.AppException;
 
 import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
+import com.jubeiwato.costing_service.dtos.AttributeValueDto;
 import com.jubeiwato.costing_service.dtos.BomDto;
 import com.jubeiwato.costing_service.dtos.PartRequestDto;
 import com.jubeiwato.costing_service.dtos.PartUnitDto;
 import com.jubeiwato.costing_service.dtos.VendorCostDto;
 import com.jubeiwato.costing_service.entities.Part;
+import com.jubeiwato.costing_service.entities.PartAttribute;
 import com.jubeiwato.costing_service.entities.PartCost;
 import com.jubeiwato.costing_service.entities.PartCostCostFactor;
 import com.jubeiwato.costing_service.entities.PartFile;
+import com.jubeiwato.costing_service.entities.PartPartAttribute;
 import com.jubeiwato.costing_service.entities.PartUnit;
 import com.jubeiwato.costing_service.entities.Vendor;
 import com.jubeiwato.costing_service.repositories.BomRepository;
 import com.jubeiwato.costing_service.repositories.CategoryRepository;
 import com.jubeiwato.costing_service.repositories.CompanyRepository;
 import com.jubeiwato.costing_service.repositories.CostFactorRepository;
+import com.jubeiwato.costing_service.repositories.PartAttributeRepository;
 import com.jubeiwato.costing_service.repositories.PartCostRepository;
 import com.jubeiwato.costing_service.repositories.PartFileRepository;
+import com.jubeiwato.costing_service.repositories.PartPartAttributeRepository;
 import com.jubeiwato.costing_service.repositories.PartRepository;
 import com.jubeiwato.costing_service.repositories.PartUnitRepository;
 import com.jubeiwato.costing_service.repositories.VendorRepository;
@@ -118,6 +123,13 @@ public class PartServiceTest {
 
     @Mock
     private FileGeneratorService excelService;
+    
+    @Mock
+    private PartAttributeRepository partAttributeRepository;
+
+    @Mock
+    private PartPartAttributeRepository partPartAttributeRepository;
+
 
     @InjectMocks
     private S3ServiceImpl s3ServiceImpl;
@@ -213,6 +225,7 @@ public class PartServiceTest {
                 .partNumber("12345")
                 .category(category)
                 .unit("Unit")
+                .type(PartType.MASTER)
                 .build();
 
         // Simulate the part being found
@@ -684,6 +697,11 @@ public class PartServiceTest {
         when(costFactorRepository.findByFactorIdInAndCompany_CompanyId(Set.of(costFactorId), companyId))
                 .thenReturn(List.of(costFactor));
 
+        doNothing().when(partPartAttributeRepository).deleteByPart_PartId(partId);
+        doNothing().when(partPartAttributeRepository).flush();
+        when(partPartAttributeRepository.findByPart(existingPart)).thenReturn(Collections.emptyList());
+
+
         // ArgumentCaptor to inspect saved and deleted data
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<PartCost>> saveCaptor = ArgumentCaptor.forClass(List.class);
@@ -707,6 +725,11 @@ public class PartServiceTest {
 
         assertEquals(1, deletedCosts.size());
         assertEquals(vendorId2, deletedCosts.get(0).getVendor().getVendorId());
+
+        verify(partPartAttributeRepository).deleteByPart_PartId(partId);
+        verify(partPartAttributeRepository).flush();
+        verify(partPartAttributeRepository).findByPart(existingPart);
+
     }
 
     @Test
@@ -783,6 +806,114 @@ public class PartServiceTest {
         assertNotNull(updatedPartDto);
         assertEquals("Updated Part", updatedPartDto.getPartName());
     }
+
+@Test
+void savePartAttributes_shouldSaveAttributes_whenValidDataProvided() {
+    Part part = new Part();
+    PartAttribute attr = new PartAttribute();
+    attr.setAttributeId(1L);
+    attr.setDeleteFlag(0); // active
+
+    AttributeValueDto attrDto = new AttributeValueDto();
+    attrDto.setAttributeId(1L);
+    attrDto.setValue("Red");
+
+    PartRequestDto request = new PartRequestDto();
+    request.setAttributeValueList(List.of(attrDto));
+
+    when(partAttributeRepository.findByAttributeIdAndDeleteFlag(1L, 0)).thenReturn(Optional.of(attr));
+
+    partServiceImpl.savePartAttributes(request, part);
+
+    ArgumentCaptor<List<PartPartAttribute>> captor = ArgumentCaptor.forClass(List.class);
+    verify(partPartAttributeRepository).saveAll(captor.capture());
+
+    List<PartPartAttribute> savedAttributes = captor.getValue();
+    assertEquals(1, savedAttributes.size());
+    assertEquals("Red", savedAttributes.get(0).getAttributeValue());
+}
+
+@Test
+void savePartAttributes_shouldDoNothing_whenAttributeListIsNull() {
+    PartRequestDto request = new PartRequestDto();
+    request.setAttributeValueList(null);
+
+    partServiceImpl.savePartAttributes(request, new Part());
+
+    verifyNoInteractions(partAttributeRepository);
+    verifyNoInteractions(partPartAttributeRepository);
+}
+
+@Test
+void savePartAttributes_shouldDoNothing_whenAttributeListIsEmpty() {
+    PartRequestDto request = new PartRequestDto();
+    request.setAttributeValueList(Collections.emptyList());
+
+    partServiceImpl.savePartAttributes(request, new Part());
+
+    verifyNoInteractions(partAttributeRepository);
+    verifyNoInteractions(partPartAttributeRepository);
+}
+
+@Test
+void savePartAttributes_shouldThrowException_whenAttributeIdIsNull() {
+    AttributeValueDto attrDto = new AttributeValueDto();
+    attrDto.setAttributeId(null);
+    attrDto.setValue("Blue");
+
+    PartRequestDto request = new PartRequestDto();
+    request.setAttributeValueList(List.of(attrDto));
+
+    AppException exception = assertThrows(AppException.class, () ->
+        partServiceImpl.savePartAttributes(request, new Part())
+    );
+
+    assertEquals(ErrorMessageConstant.ATTRIBUTE_NULL, exception.getMessage());
+}
+
+@Test
+void savePartAttributes_shouldThrowException_whenDuplicateAttributeIdExists() {
+    AttributeValueDto attr1 = new AttributeValueDto();
+    attr1.setAttributeId(1L);
+    attr1.setValue("Red");
+
+    AttributeValueDto attr2 = new AttributeValueDto();
+    attr2.setAttributeId(1L);
+    attr2.setValue("Green");
+
+    PartRequestDto request = new PartRequestDto();
+    request.setAttributeValueList(List.of(attr1, attr2));
+
+    PartAttribute mockAttr = new PartAttribute();
+    mockAttr.setAttributeId(1L);
+    mockAttr.setDeleteFlag(0);
+    when(partAttributeRepository.findByAttributeIdAndDeleteFlag(1L, 0)).thenReturn(Optional.of(mockAttr));
+
+    AppException exception = assertThrows(AppException.class, () ->
+        partServiceImpl.savePartAttributes(request, new Part())
+    );
+
+    assertEquals(ErrorMessageConstant.ATTRIBUTE_ALREADY_EXISTS, exception.getMessage());
+}
+
+@Test
+void savePartAttributes_shouldThrowException_whenAttributeIsNotFoundOrSoftDeleted() {
+    AttributeValueDto attrDto = new AttributeValueDto();
+    attrDto.setAttributeId(1L);
+    attrDto.setValue("Yellow");
+
+    PartRequestDto request = new PartRequestDto();
+    request.setAttributeValueList(List.of(attrDto));
+
+    when(partAttributeRepository.findByAttributeIdAndDeleteFlag(1L, 0)).thenReturn(Optional.empty());
+
+    AppException exception = assertThrows(AppException.class, () ->
+        partServiceImpl.savePartAttributes(request, new Part())
+    );
+
+    assertEquals(ErrorMessageConstant.ATTRIBUTE_NOT_FOUND, exception.getMessage());
+}
+
 
     @Test
     void testGetPartsBasic() {
@@ -872,12 +1003,21 @@ public class PartServiceTest {
         Long partId = 1L;
         Long companyId = 100L;
 
+        validatedPart = new Part();
+        validatedPart.setPartId(partId);
+        validatedPart.setPartName("Test Part");
+        validatedPart.setPartNumber("TP-001");
+        validatedPart.setUnit("kg");
+        validatedPart.setType(PartType.MASTER);
+
+
         when(partRepository.findByPartIdAndCompany_CompanyId(partId, companyId))
                 .thenReturn(Optional.of(validatedPart));
 
         when(partCostRepository.getRecentByPartId(partId)).thenReturn(List.of());
 
         when(bomRepository.findByParentPart(validatedPart)).thenReturn(List.of());
+        when(partPartAttributeRepository.findByPart(validatedPart)).thenReturn(List.of());
 
         PartDto result = partServiceImpl.getPartById(partId, companyId);
 
