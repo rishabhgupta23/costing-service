@@ -149,53 +149,49 @@ public class PartServiceImpl implements PartService {
                                 && !request.getBom().isEmpty()) {
                         validateAndSaveBom(request, companyId, part);
                 }
-                savePartAttributes(request, part, false);
+                savePartAttributes(request, part);
                 return PartDto.entityToDto(part);
         }
 
         
-        public void savePartAttributes(PartRequestDto request, Part part, boolean isUpdate) {
-    if (request.getAttributeValueList() == null || request.getAttributeValueList().isEmpty()) {
-        return;
-    }
-
-    Set<Long> attributeIdSet = new HashSet<>();
-    for (AttributeValueDto attrValDto : request.getAttributeValueList()) {
-        Long attributeId = attrValDto.getAttributeId();
-
-        if (attributeId == null) {
-            throw new AppException(ErrorMessageConstant.ATTRIBUTE_NULL, HttpStatus.BAD_REQUEST);
+        public void savePartAttributes(PartRequestDto request, Part part) {
+        if (request.getAttributeValueList() == null || request.getAttributeValueList().isEmpty()) {
+                return;
         }
 
-        if (!attributeIdSet.add(attributeId)) {
-            throw new AppException(ErrorMessageConstant.ATTRIBUTE_ALREADY_EXISTS, HttpStatus.BAD_REQUEST);
+        Set<Long> attributeIdSet = new HashSet<>();
+        List<PartPartAttribute> partAttributes = new ArrayList<>();
+
+        for (AttributeValueDto attrValDto : request.getAttributeValueList()) {
+                Long attributeId = attrValDto.getAttributeId();
+
+                if (attributeId == null) {
+                throw new AppException(ErrorMessageConstant.ATTRIBUTE_NULL, HttpStatus.BAD_REQUEST);
+                }
+
+                if (!attributeIdSet.add(attributeId)) {
+                throw new AppException(ErrorMessageConstant.ATTRIBUTE_ALREADY_EXISTS, HttpStatus.BAD_REQUEST);
+                }
+
+                PartAttribute attribute = partAttributeRepository
+                .findByAttributeIdAndDeleteFlag(attributeId, DeleteFlag.NEGATIVE.getValue())
+                .orElseThrow(() -> new AppException(
+                        ErrorMessageConstant.ATTRIBUTE_NOT_FOUND,
+                        HttpStatus.NOT_FOUND
+                ));
+
+                PartPartAttribute ppa = new PartPartAttribute();
+                ppa.setPart(part);
+                ppa.setAttribute(attribute);
+                ppa.setAttributeValue(attrValDto.getValue());
+
+                partAttributes.add(ppa);
         }
-    }
 
-    List<PartPartAttribute> partAttributes = request.getAttributeValueList().stream().map(attrValDto -> {
-        Long attributeId = attrValDto.getAttributeId();
-
-        PartAttribute attribute;
-         if (isUpdate) {
-            attribute = partAttributeRepository.findById(attributeId)
-                    .orElseThrow(() -> new AppException(ErrorMessageConstant.ATTRIBUTE_NOT_FOUND, HttpStatus.NOT_FOUND));
-        } else {
-            attribute = partAttributeRepository
-                    .findByAttributeIdAndDeleteFlag(attributeId, DeleteFlag.NEGATIVE.getValue())
-                    .orElseThrow(() -> new AppException(ErrorMessageConstant.ATTRIBUTE_MARKED_DELETED, HttpStatus.BAD_REQUEST));
+        partPartAttributeRepository.saveAll(partAttributes);
         }
 
 
-        PartPartAttribute ppa = new PartPartAttribute();
-        ppa.setPart(part);
-        ppa.setAttribute(attribute);
-        ppa.setAttributeValue(attrValDto.getValue());
-
-        return ppa;
-    }).toList();
-
-    partPartAttributeRepository.saveAll(partAttributes);
-}
         private void validateCreatePartRequest(PartRequestDto request, Long companyId, Map<Long, Vendor> vendorMap,
                         Map<Long, CostFactor> costFactorMap) {
 
@@ -536,7 +532,7 @@ public PartDto updatePartById(Long partId, @Valid PartRequestDto request,Long co
                 }
                 partPartAttributeRepository.deleteByPart_PartId(existingPart.getPartId());
                 partPartAttributeRepository.flush();
-                savePartAttributes(request, existingPart, true);
+                savePartAttributes(request, existingPart);
                 return createPartResponseDto(existingPart,
                                 partCostRepository.getRecentByPartId(existingPart.getPartId()),
                                 bomRepository.findByParentPart(existingPart),partPartAttributeRepository.findByPart(existingPart));

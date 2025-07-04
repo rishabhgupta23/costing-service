@@ -823,7 +823,7 @@ void savePartAttributes_shouldSaveAttributes_whenValidDataProvided() {
 
     when(partAttributeRepository.findByAttributeIdAndDeleteFlag(1L, 0)).thenReturn(Optional.of(attr));
 
-    partServiceImpl.savePartAttributes(request, part, false); // false = create
+    partServiceImpl.savePartAttributes(request, part);
 
     ArgumentCaptor<List<PartPartAttribute>> captor = ArgumentCaptor.forClass(List.class);
     verify(partPartAttributeRepository).saveAll(captor.capture());
@@ -838,7 +838,7 @@ void savePartAttributes_shouldDoNothing_whenAttributeListIsNull() {
     PartRequestDto request = new PartRequestDto();
     request.setAttributeValueList(null);
 
-    partServiceImpl.savePartAttributes(request, new Part(), false);
+    partServiceImpl.savePartAttributes(request, new Part());
 
     verifyNoInteractions(partAttributeRepository);
     verifyNoInteractions(partPartAttributeRepository);
@@ -849,7 +849,7 @@ void savePartAttributes_shouldDoNothing_whenAttributeListIsEmpty() {
     PartRequestDto request = new PartRequestDto();
     request.setAttributeValueList(Collections.emptyList());
 
-    partServiceImpl.savePartAttributes(request, new Part(), false);
+    partServiceImpl.savePartAttributes(request, new Part());
 
     verifyNoInteractions(partAttributeRepository);
     verifyNoInteractions(partPartAttributeRepository);
@@ -865,7 +865,7 @@ void savePartAttributes_shouldThrowException_whenAttributeIdIsNull() {
     request.setAttributeValueList(List.of(attrDto));
 
     AppException exception = assertThrows(AppException.class, () ->
-        partServiceImpl.savePartAttributes(request, new Part(), false)
+        partServiceImpl.savePartAttributes(request, new Part())
     );
 
     assertEquals(ErrorMessageConstant.ATTRIBUTE_NULL, exception.getMessage());
@@ -878,21 +878,26 @@ void savePartAttributes_shouldThrowException_whenDuplicateAttributeIdExists() {
     attr1.setValue("Red");
 
     AttributeValueDto attr2 = new AttributeValueDto();
-    attr2.setAttributeId(1L); // duplicate
+    attr2.setAttributeId(1L);
     attr2.setValue("Green");
 
     PartRequestDto request = new PartRequestDto();
     request.setAttributeValueList(List.of(attr1, attr2));
 
+    PartAttribute mockAttr = new PartAttribute();
+    mockAttr.setAttributeId(1L);
+    mockAttr.setDeleteFlag(0);
+    when(partAttributeRepository.findByAttributeIdAndDeleteFlag(1L, 0)).thenReturn(Optional.of(mockAttr));
+
     AppException exception = assertThrows(AppException.class, () ->
-        partServiceImpl.savePartAttributes(request, new Part(), false)
+        partServiceImpl.savePartAttributes(request, new Part())
     );
 
     assertEquals(ErrorMessageConstant.ATTRIBUTE_ALREADY_EXISTS, exception.getMessage());
 }
 
 @Test
-void savePartAttributes_shouldThrowException_whenAttributeIsSoftDeleted_onCreate() {
+void savePartAttributes_shouldThrowException_whenAttributeIsNotFoundOrSoftDeleted() {
     AttributeValueDto attrDto = new AttributeValueDto();
     attrDto.setAttributeId(1L);
     attrDto.setValue("Yellow");
@@ -903,37 +908,12 @@ void savePartAttributes_shouldThrowException_whenAttributeIsSoftDeleted_onCreate
     when(partAttributeRepository.findByAttributeIdAndDeleteFlag(1L, 0)).thenReturn(Optional.empty());
 
     AppException exception = assertThrows(AppException.class, () ->
-        partServiceImpl.savePartAttributes(request, new Part(), false)
+        partServiceImpl.savePartAttributes(request, new Part())
     );
 
-    assertEquals(ErrorMessageConstant.ATTRIBUTE_MARKED_DELETED, exception.getMessage());
+    assertEquals(ErrorMessageConstant.ATTRIBUTE_NOT_FOUND, exception.getMessage());
 }
 
-@Test
-void savePartAttributes_shouldAllowSoftDeletedAttributes_onUpdate() {
-    Part part = new Part();
-    PartAttribute attr = new PartAttribute();
-    attr.setAttributeId(1L);
-    attr.setDeleteFlag(1); // soft-deleted
-
-    AttributeValueDto attrDto = new AttributeValueDto();
-    attrDto.setAttributeId(1L);
-    attrDto.setValue("Black");
-
-    PartRequestDto request = new PartRequestDto();
-    request.setAttributeValueList(List.of(attrDto));
-
-    when(partAttributeRepository.findById(1L)).thenReturn(Optional.of(attr));
-
-    partServiceImpl.savePartAttributes(request, part, true);
-
-    ArgumentCaptor<List<PartPartAttribute>> captor = ArgumentCaptor.forClass(List.class);
-    verify(partPartAttributeRepository).saveAll(captor.capture());
-
-    List<PartPartAttribute> savedAttributes = captor.getValue();
-    assertEquals(1, savedAttributes.size());
-    assertEquals("Black", savedAttributes.get(0).getAttributeValue());
-}
 
     @Test
     void testGetPartsBasic() {
