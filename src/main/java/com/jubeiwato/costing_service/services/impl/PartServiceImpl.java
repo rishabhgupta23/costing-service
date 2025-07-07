@@ -770,4 +770,18 @@ public class PartServiceImpl implements PartService {
                                 .collect(Collectors.toList());
         }
 
+        @Override
+        public void deletePartFile(Long partId, String s3FileKey, Long companyId) {
+        Part part = getValidatedPart(partId, companyId);
+
+        PartFile partFile = partFileRepository.findByS3FileKey(s3FileKey)
+                .filter(file -> file.getPart().getPartId().equals(part.getPartId()))
+                .orElseThrow(() -> new AppException(
+                        ErrorMessageConstant.FILE_NOT_FOUND_OR_UNAUTHORIZED,
+                        HttpStatus.NOT_FOUND));
+
+        s3Service.deleteFileFromS3(s3FileKey);
+        partFileRepository.delete(partFile);
+        }
+
 }

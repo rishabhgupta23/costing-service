@@ -21,6 +21,7 @@ import org.apache.tika.parser.AutoDetectParser;
 import lombok.RequiredArgsConstructor;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import java.util.Set;
@@ -131,5 +132,24 @@ public class S3ServiceImpl implements S3Service {
             throw new AppException(ErrorMessageConstant.UNEXPECTED_ERROR_OCCURED, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+@Override
+public void deleteFileFromS3(String s3FileKey) {
+    try {
+        DeleteObjectRequest deleteRequest =
+                software.amazon.awssdk.services.s3.model.DeleteObjectRequest.builder()
+                        .bucket(bucketName)
+                        .key(s3FileKey)
+                        .build();
+
+        s3Client.deleteObject(deleteRequest);
+
+    } catch (Exception e) {
+        throw new AppException(
+                ErrorMessageConstant.getFormattedMessage(ErrorMessageConstant.FILE_DELETE_FAILED, s3FileKey),
+                HttpStatus.INTERNAL_SERVER_ERROR
+        );
+    }
+}
+
 }
 

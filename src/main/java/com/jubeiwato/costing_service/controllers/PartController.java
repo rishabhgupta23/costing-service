@@ -169,5 +169,18 @@ public ResponseEntity<List<String>> getPartFileUrls(
     return ResponseEntity.ok(urls);
 }
 
+    @DeleteMapping("/file/delete")
+@PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "') or hasRole('" + MAINTAINER + "')")
+public ResponseEntity<GeneralResponseDto> deletePartFile(
+        @RequestParam Long partId,
+        @RequestParam String s3FileKey,
+        @AuthenticationPrincipal User user) {
+
+    Long companyId = user.getCompany().getCompanyId();
+    partService.deletePartFile(partId, s3FileKey, companyId);
+
+    GeneralResponseDto response = new GeneralResponseDto("File deleted successfully", HttpStatus.OK.value());
+    return ResponseEntity.ok(response);
+}
 
 }       
