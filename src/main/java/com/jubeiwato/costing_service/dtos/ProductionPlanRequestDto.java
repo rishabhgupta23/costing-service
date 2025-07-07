@@ -1,21 +1,21 @@
 package com.jubeiwato.costing_service.dtos;
 
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Min;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.util.List;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class ProductionPlanRequestDto {
-     @NotNull(message = "Part ID cannot be null")
-    private Long partId;
+    @NotEmpty(message = "Parts list cannot be empty")
+    private List<ProductionPlanPartDto> parts;
 
-    @NotNull(message = "Quantity cannot be null")
-    @Min(value = 0, message = "Quantity must be positive")
-    private Double quantity;
+    @NotNull(message = "Pricing mode must be provided")
+    private String priceMode;
 }

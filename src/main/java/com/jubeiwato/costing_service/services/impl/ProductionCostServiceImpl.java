@@ -14,7 +14,7 @@ import com.jubeiwato.costing_service.authentication.config.AppException;
 import com.jubeiwato.costing_service.constants.ErrorMessageConstant;
 import com.jubeiwato.costing_service.dtos.CostItemDto;
 import com.jubeiwato.costing_service.dtos.ProductionCostResponseDto;
-import com.jubeiwato.costing_service.dtos.ProductionPlanRequestDto;
+import com.jubeiwato.costing_service.dtos.ProductionPlanPartDto;
 import com.jubeiwato.costing_service.repositories.BomRepository;
 import com.jubeiwato.costing_service.repositories.PartRepository;
 import com.jubeiwato.costing_service.services.CostCalcService;
@@ -35,11 +35,11 @@ public class ProductionCostServiceImpl implements ProductionCostService {
     }
 
     @Override
-    public ProductionCostResponseDto calculateProductionCost(List<ProductionPlanRequestDto> parts, String priceMode,
-            Long companyId) {
+    public ProductionCostResponseDto calculateProductionCost(List<ProductionPlanPartDto> parts, String priceMode,
+                                                             Long companyId) {
         Map<Long, Double> unitPartQuantities = new java.util.HashMap<>();
 
-        for (ProductionPlanRequestDto requestDto : parts) {
+        for (ProductionPlanPartDto requestDto : parts) {
             Long partId = requestDto.getPartId();
             Double quantity = requestDto.getQuantity();
 

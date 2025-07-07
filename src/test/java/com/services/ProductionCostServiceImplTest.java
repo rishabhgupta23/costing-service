@@ -17,7 +17,7 @@ import org.mockito.MockitoAnnotations;
 import com.jubeiwato.costing_service.constants.PartType;
 import com.jubeiwato.costing_service.dtos.CostItemDto;
 import com.jubeiwato.costing_service.dtos.ProductionCostResponseDto;
-import com.jubeiwato.costing_service.dtos.ProductionPlanRequestDto;
+import com.jubeiwato.costing_service.dtos.ProductionPlanPartDto;
 import com.jubeiwato.costing_service.entities.Bom;
 import com.jubeiwato.costing_service.entities.Company;
 import com.jubeiwato.costing_service.entities.Part;
@@ -60,7 +60,7 @@ public class ProductionCostServiceImplTest {
         part.setType(PartType.UNIT);
         part.setCompany(company);
 
-        ProductionPlanRequestDto requestDto = ProductionPlanRequestDto.builder()
+        ProductionPlanPartDto requestDto = ProductionPlanPartDto.builder()
                 .partId(partId)
                 .quantity(quantity)
                 .build();
@@ -131,7 +131,7 @@ void testCalculateProductionCost_forMasterPart() {
     bom2.setChildPart(unitPart2);
     bom2.setQuantity(3.0); // quantity of unitPart2 used in master
 
-    ProductionPlanRequestDto requestDto = ProductionPlanRequestDto.builder()
+    ProductionPlanPartDto requestDto = ProductionPlanPartDto.builder()
             .partId(masterPartId)
             .quantity(masterQty)
             .build();
@@ -229,7 +229,7 @@ void testCalculateProductionCost_nestedMasterParts() {
     bomBtoU2.setChildPart(unit2);
     bomBtoU2.setQuantity(1.0);
 
-    ProductionPlanRequestDto request = ProductionPlanRequestDto.builder()
+    ProductionPlanPartDto request = ProductionPlanPartDto.builder()
             .partId(masterAId)
             .quantity(1.0)
             .build();

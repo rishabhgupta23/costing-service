@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.jubeiwato.costing_service.dtos.ProductionCostResponseDto;
-import com.jubeiwato.costing_service.dtos.ProductionPriceRequestDto;
+import com.jubeiwato.costing_service.dtos.ProductionPlanRequestDto;
 import com.jubeiwato.costing_service.entities.User;
 import com.jubeiwato.costing_service.services.ProductionCostService;
 
@@ -26,7 +26,7 @@ public class ProductionCostController {
 
 @PostMapping("/calculate")
 public ProductionCostResponseDto calculateProductionCost(
-        @RequestBody @Valid ProductionPriceRequestDto request,
+        @RequestBody @Valid ProductionPlanRequestDto request,
         @AuthenticationPrincipal User authenticatedUser) {
 
     Long companyId = authenticatedUser.getCompany().getCompanyId();

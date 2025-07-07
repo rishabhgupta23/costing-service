@@ -512,7 +512,6 @@ public class PartServiceImpl implements PartService {
 
                 // Update vendor cost map if present
                 updateVendorCosts(existingPart, request, vendorMap, costFactorMap);
-
                 // Update BOM if type is MASTER
                 if (oldType == PartType.MASTER && existingPart.getType() == PartType.UNIT) {
                         bomRepository.deleteByParentPart(existingPart);
