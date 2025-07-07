@@ -526,6 +526,14 @@ public PartDto updatePartById(Long partId, @Valid PartRequestDto request,Long co
                                 if (childPart.getPartId() == partId) {
                                         throw new AppException(ErrorMessageConstant.PART_CANNOT_BE_CHILD_OF_ITSELF, HttpStatus.BAD_REQUEST);
                                 }
+                                // Check for cyclic dependency if child is a MASTER part
+                                if (childPart.getType() == PartType.MASTER) {
+                                        if (doesPartContainChild(childPart, existingPart)) {
+                                                throw new AppException(
+                                                                "Cyclic dependency detected: The child part already contains the parent in its BOM.",
+                                                                HttpStatus.BAD_REQUEST);
+                                        }
+                                }
                                 return new Bom(existingPart, childPart, bomDto.getQuantity());
                         }).toList();
                         bomRepository.saveAll(newBom);
@@ -536,6 +544,23 @@ public PartDto updatePartById(Long partId, @Valid PartRequestDto request,Long co
                 return createPartResponseDto(existingPart,
                                 partCostRepository.getRecentByPartId(existingPart.getPartId()),
                                 bomRepository.findByParentPart(existingPart),partPartAttributeRepository.findByPart(existingPart));
+        }
+
+        private boolean doesPartContainChild(Part currentPart, Part targetPart) {
+                List<Bom> children = bomRepository.findByParentPart(currentPart);
+
+                for (Bom bom : children) {
+                        Part child = bom.getChildPart();
+
+                        if (child.getPartId().equals(targetPart.getPartId())) {
+                                return true;
+                        }
+                        if (child.getType() == PartType.MASTER && doesPartContainChild(child, targetPart)) {
+                                return true;
+                        }
+                }
+
+                return false;
         }
 
         private void updateVendorCosts(Part existingPart, PartRequestDto request,
