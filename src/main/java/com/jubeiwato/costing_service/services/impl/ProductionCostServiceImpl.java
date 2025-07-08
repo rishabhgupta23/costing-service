@@ -43,6 +43,12 @@ public class ProductionCostServiceImpl implements ProductionCostService {
             Long partId = requestDto.getPartId();
             Double quantity = requestDto.getQuantity();
 
+            if (partId == null) {
+                throw new AppException("Part ID cannot be null or empty", HttpStatus.BAD_REQUEST);
+            }
+            if (quantity == null || quantity <= 0) {
+                throw new AppException("Quantity must be greater than 0 and not null", HttpStatus.BAD_REQUEST);
+            }
             Part part = partRepository.findById(partId)
                     .orElseThrow(() -> new AppException(
                             ErrorMessageConstant.getFormattedMessage(ErrorMessageConstant.CHILD_PART_NOT_FOUND_TEMPLATE,
