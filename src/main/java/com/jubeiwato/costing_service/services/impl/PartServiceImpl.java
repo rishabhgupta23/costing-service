@@ -18,6 +18,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import com.jubeiwato.costing_service.authentication.config.AppException;
 import com.jubeiwato.costing_service.constants.DateFormat;
+import com.jubeiwato.costing_service.constants.DeleteFlag;
 import com.jubeiwato.costing_service.constants.ErrorMessageConstant;
 import com.jubeiwato.costing_service.constants.FileExtension;
 import com.jubeiwato.costing_service.constants.PartType;
@@ -153,81 +154,79 @@ public class PartServiceImpl implements PartService {
         }
 
         
-        private void savePartAttributes(PartRequestDto request, Part part) {
-    if (request.getAttributeValueList() == null || request.getAttributeValueList().isEmpty()) {
-        return;
-    }
-
-    Set<Long> attributeIdSet = new HashSet<>();
-
-    List<PartPartAttribute> partAttributes = request.getAttributeValueList().stream().map(attrValDto -> {
-        Long attributeId = attrValDto.getAttributeId();
-
-        if (attributeId == null) {
-            throw new AppException(ErrorMessageConstant.ATTRIBUTE_NULL, HttpStatus.BAD_REQUEST);
+        public void savePartAttributes(PartRequestDto request, Part part) {
+        if (request.getAttributeValueList() == null || request.getAttributeValueList().isEmpty()) {
+                return;
         }
 
-        if (!attributeIdSet.add(attributeId)) {
-            throw new AppException(ErrorMessageConstant.ATTRIBUTE_ALREADY_EXISTS, HttpStatus.BAD_REQUEST);
+        Set<Long> attributeIdSet = new HashSet<>();
+        List<PartPartAttribute> partAttributes = new ArrayList<>();
+
+        for (AttributeValueDto attrValDto : request.getAttributeValueList()) {
+                Long attributeId = attrValDto.getAttributeId();
+
+                if (attributeId == null) {
+                throw new AppException(ErrorMessageConstant.ATTRIBUTE_NULL, HttpStatus.BAD_REQUEST);
+                }
+
+                if (!attributeIdSet.add(attributeId)) {
+                throw new AppException(ErrorMessageConstant.ATTRIBUTE_ALREADY_EXISTS, HttpStatus.BAD_REQUEST);
+                }
+
+                PartAttribute attribute = partAttributeRepository
+                .findByAttributeIdAndDeleteFlag(attributeId, DeleteFlag.NEGATIVE.getValue())
+                .orElseThrow(() -> new AppException(
+                        ErrorMessageConstant.ATTRIBUTE_NOT_FOUND,
+                        HttpStatus.NOT_FOUND
+                ));
+
+                PartPartAttribute ppa = new PartPartAttribute();
+                ppa.setPart(part);
+                ppa.setAttribute(attribute);
+                ppa.setAttributeValue(attrValDto.getValue());
+
+                partAttributes.add(ppa);
         }
 
-        PartAttribute attribute = partAttributeRepository.findById(attributeId)
-                .orElseThrow(() -> new AppException(ErrorMessageConstant.ATTRIBUTE_MARKED_DELETED, HttpStatus.NOT_FOUND));
+        partPartAttributeRepository.saveAll(partAttributes);
+        }
 
-        PartPartAttribute ppa = new PartPartAttribute();
-        ppa.setPart(part);
-        ppa.setAttribute(attribute);
-        ppa.setAttributeValue(attrValDto.getValue());
 
-        return ppa;
-    }).toList();
-
-    partPartAttributeRepository.saveAll(partAttributes);
-}
         private void validateCreatePartRequest(PartRequestDto request, Long companyId, Map<Long, Vendor> vendorMap,
                         Map<Long, CostFactor> costFactorMap) {
 
-                // 1. Part Number Uniqueness Check
-                if (partRepository.existsByCompany_CompanyIdAndPartNumber(companyId, request.getPartNumber())) {
-                        throw new AppException(
-                                        ErrorMessageConstant.getFormattedMessage(
-                                                        ErrorMessageConstant.PART_NUMBER_ALREADY_EXISTS_TEMPLATE,
-                                                        request.getPartNumber()),
-                                        HttpStatus.CONFLICT);
-                }
-
-                validateCommonPartRequest(request, companyId, vendorMap, costFactorMap);
+            // 1. Part Number Uniqueness Check
+            if (partRepository.existsByCompany_CompanyIdAndPartNumber(companyId, request.getPartNumber())) {
+                throw new AppException(
+                    ErrorMessageConstant.getFormattedMessage(
+                        ErrorMessageConstant.PART_NUMBER_ALREADY_EXISTS_TEMPLATE,
+                        request.getPartNumber()),
+                    HttpStatus.CONFLICT);
+            }
+        
+            validateCommonPartRequest(request, companyId, vendorMap, costFactorMap,null);
         }
 
-        private void validateCommonPartRequest(PartRequestDto request, Long companyId, Map<Long, Vendor> vendorMap,
-                        Map<Long, CostFactor> costFactorMap) {
-                if (request.getCategoryId() != null) {
-                        categoryRepository.findByCategoryIdAndCompany_CompanyId(request.getCategoryId(), companyId)
-                                        .orElseThrow(() -> new AppException(ErrorMessageConstant.INVALID_CATEGORY,
-                                                        HttpStatus.NOT_FOUND));
-                }
-
-                if (request.getUnit() == null || request.getUnit().isEmpty()) {
-                        throw new AppException(ErrorMessageConstant.UNIT_CANNOT_BE_NULL_OR_EMPTY,
-                                        HttpStatus.BAD_REQUEST);
-                }
-
-                partUnitRepository.findByUnitName(request.getUnit())
-                                .orElseThrow(() -> new AppException(ErrorMessageConstant.INVALID_UNIT,
-                                                HttpStatus.BAD_REQUEST));
-
-                if (request.getVendorCostList() != null) {
-                        validateAndStoreVendors(request.getVendorCostList(), companyId, vendorMap);
-                        validateAndStoreCostFactors(request.getVendorCostList(), companyId, costFactorMap);
-                }
-
-                if (request.getBom() != null && !request.getBom().isEmpty()) {
-                        validateBomPartsExist(request, companyId);
-                }
-        }
-
-        private void validateAndStoreVendors(List<VendorCostDto> vendorCostList, Long companyId,
-                        Map<Long, Vendor> vendorMap) {
+        private void validateCommonPartRequest(PartRequestDto request, Long companyId, Map<Long, Vendor> vendorMap, Map<Long, CostFactor> costFactorMap, Long partId) {
+            if (request.getCategoryId() != null) {
+                categoryRepository.findByCategoryIdAndCompany_CompanyId(request.getCategoryId(), companyId)
+                    .orElseThrow(() -> new AppException(ErrorMessageConstant.INVALID_CATEGORY, HttpStatus.NOT_FOUND));
+            }
+        
+            if (request.getUnit() == null || request.getUnit().isEmpty()) {
+                throw new AppException(ErrorMessageConstant.UNIT_CANNOT_BE_NULL_OR_EMPTY, HttpStatus.BAD_REQUEST);
+            }
+        
+            partUnitRepository.findByUnitName(request.getUnit())
+                .orElseThrow(() -> new AppException(ErrorMessageConstant.INVALID_UNIT, HttpStatus.BAD_REQUEST));
+        
+            if (request.getVendorCostList() != null) {
+                validateAndStoreVendors(request.getVendorCostList(), companyId, vendorMap);
+                validateAndStoreCostFactors(request.getVendorCostList(), companyId, costFactorMap);
+            }
+    }
+        
+         private void validateAndStoreVendors(List<VendorCostDto> vendorCostList, Long companyId,Map<Long, Vendor> vendorMap) {
 
                 Set<Long> vendorIds = vendorCostList.stream()
                                 .map(VendorCostDto::getId)
@@ -257,51 +256,50 @@ public class PartServiceImpl implements PartService {
                         throw new AppException(ErrorMessageConstant.COST_FACTOR_DOES_NOT_EXIST, HttpStatus.NOT_FOUND);
                 }
 
-                costFactors.forEach(cf -> costFactorMap.put(cf.getFactorId(), cf));
+    costFactors.forEach(cf -> costFactorMap.put(cf.getFactorId(), cf));
+    }
+     
+    private List<Part> validateBomPartsExist(PartRequestDto request, Long companyId) {
+        Set<Long> childPartIds = request.getBom().stream()
+            .map(BomDto::getChildPartId)
+            .collect(Collectors.toSet());
+    
+        List<Part> validChildParts = partRepository.findByPartIdInAndCompany_CompanyId(childPartIds, companyId);
+    
+        Set<Long> foundIds = validChildParts.stream()
+            .map(Part::getPartId)
+            .collect(Collectors.toSet());
+    
+        List<Long> missingIds = childPartIds.stream()
+            .filter(id -> !foundIds.contains(id))
+            .toList();
+    
+        if (!missingIds.isEmpty()) {
+            String message = "Child Part(s) not found for ID(s): " + missingIds;
+            throw new AppException(message, HttpStatus.BAD_REQUEST);
         }
+    
+        return validChildParts;
+    }
 
-        private List<Part> validateBomPartsExist(PartRequestDto request, Long companyId) {
-                Set<Long> childPartIds = request.getBom().stream()
-                                .map(BomDto::getChildPartId)
-                                .collect(Collectors.toSet());
-
-                List<Part> validChildParts = partRepository.findByPartIdInAndCompany_CompanyId(childPartIds, companyId);
-
-                Set<Long> foundIds = validChildParts.stream()
-                                .map(Part::getPartId)
-                                .collect(Collectors.toSet());
-
-                List<Long> missingIds = childPartIds.stream()
-                                .filter(id -> !foundIds.contains(id))
-                                .toList();
-
-                if (!missingIds.isEmpty()) {
-                        String message = "Child Part(s) not found for ID(s): " + missingIds;
-                        throw new AppException(message, HttpStatus.BAD_REQUEST);
-                }
-
-                return validChildParts;
-        }
-
-        private void validateAndSaveBom(PartRequestDto request, Long companyId, Part part) {
-                List<Part> validChildParts = validateBomPartsExist(request, companyId);
-
-                Map<Long, Part> childPartMap = validChildParts.stream()
-                                .collect(Collectors.toMap(Part::getPartId, Function.identity()));
-
-                List<Bom> bomList = request.getBom().stream()
-                                .map(bomDto -> new Bom(part,
-                                                childPartMap.get(bomDto.getChildPartId()),
-                                                bomDto.getQuantity()))
-                                .toList();
-
-                bomRepository.saveAll(bomList);
-        }
-
-        private Part createPartEntity(PartRequestDto request, Long companyId) {
-                Company company = companyRepository.findById(companyId)
-                                .orElseThrow(() -> new AppException(ErrorMessageConstant.INVALID_COMPANY,
-                                                HttpStatus.BAD_REQUEST));
+    private void validateAndSaveBom(PartRequestDto request, Long companyId, Part part) {
+        List<Part> validChildParts = validateBomPartsExist(request, companyId);
+    
+        Map<Long, Part> childPartMap = validChildParts.stream()
+            .collect(Collectors.toMap(Part::getPartId, Function.identity()));
+    
+        List<Bom> bomList = request.getBom().stream()
+            .map(bomDto -> new Bom(part,
+                    childPartMap.get(bomDto.getChildPartId()),
+                    bomDto.getQuantity()))
+            .toList();
+    
+        bomRepository.saveAll(bomList);
+    }   
+    
+    private Part createPartEntity(PartRequestDto request, Long companyId) {
+     Company company =companyRepository.findById(companyId)
+            .orElseThrow(() -> new AppException(ErrorMessageConstant.INVALID_COMPANY, HttpStatus.BAD_REQUEST));
 
                 Part part = Part.builder()
                                 .partName(request.getPartName())
@@ -482,24 +480,25 @@ public class PartServiceImpl implements PartService {
                         vendorCostList.add(vendorCostDto);
                 }
 
-                return vendorCostList;
-        }
+        return vendorCostList;
+    }
 
-        @Override
-        @Transactional
-        public PartDto updatePartById(Long partId, @Valid PartRequestDto request, Long companyId) {
-                Part existingPart = getValidatedPart(partId, companyId);
-                Map<Long, Vendor> vendorMap = new HashMap<>();
-                Map<Long, CostFactor> costFactorMap = new HashMap<>();
-                PartType oldType = existingPart.getType();
-                // Validate and update fields
-                validateCommonPartRequest(request, companyId, vendorMap, costFactorMap);
-                existingPart.setPartName(request.getPartName());
-                existingPart.setType(PartType.valueOf(request.getType()));
-                existingPart.setUnit(partUnitRepository.findByUnitName(request.getUnit())
-                                .orElseThrow(() -> new AppException(ErrorMessageConstant.INVALID_UNIT,
-                                                HttpStatus.BAD_REQUEST))
-                                .getUnitName());
+    
+    
+@Override
+@Transactional
+public PartDto updatePartById(Long partId, @Valid PartRequestDto request,Long companyId) {
+    Part existingPart = getValidatedPart(partId, companyId);
+    Map<Long, Vendor> vendorMap = new HashMap<>();
+    Map<Long, CostFactor> costFactorMap = new HashMap<>(); 
+    PartType oldType = existingPart.getType();
+   // Validate and update fields
+    validateCommonPartRequest(request, companyId, vendorMap, costFactorMap, partId);
+    existingPart.setPartName(request.getPartName());
+    existingPart.setType(PartType.valueOf(request.getType()));
+    existingPart.setUnit(partUnitRepository.findByUnitName(request.getUnit())
+            .orElseThrow(() -> new AppException(ErrorMessageConstant.INVALID_UNIT, HttpStatus.BAD_REQUEST))
+            .getUnitName());
 
                 if (request.getCategoryId() != null) {
                         existingPart.setCategory(categoryRepository.findById(request.getCategoryId())
@@ -512,7 +511,6 @@ public class PartServiceImpl implements PartService {
 
                 // Update vendor cost map if present
                 updateVendorCosts(existingPart, request, vendorMap, costFactorMap);
-
                 // Update BOM if type is MASTER
                 if (oldType == PartType.MASTER && existingPart.getType() == PartType.UNIT) {
                         bomRepository.deleteByParentPart(existingPart);
@@ -524,6 +522,17 @@ public class PartServiceImpl implements PartService {
                                                 .orElseThrow(() -> new AppException(
                                                                 ErrorMessageConstant.INVALID_CHILD_PART,
                                                                 HttpStatus.BAD_REQUEST));
+                                if (childPart.getPartId() == partId) {
+                                        throw new AppException(ErrorMessageConstant.PART_CANNOT_BE_CHILD_OF_ITSELF, HttpStatus.BAD_REQUEST);
+                                }
+                                // Check for cyclic dependency if child is a MASTER part
+                                if (childPart.getType() == PartType.MASTER) {
+                                        if (doesPartContainChild(childPart, existingPart)) {
+                                                throw new AppException(
+                                                                "Cyclic dependency detected: The child part already contains the parent in its BOM.",
+                                                                HttpStatus.BAD_REQUEST);
+                                        }
+                                }
                                 return new Bom(existingPart, childPart, bomDto.getQuantity());
                         }).toList();
                         bomRepository.saveAll(newBom);
@@ -534,6 +543,23 @@ public class PartServiceImpl implements PartService {
                 return createPartResponseDto(existingPart,
                                 partCostRepository.getRecentByPartId(existingPart.getPartId()),
                                 bomRepository.findByParentPart(existingPart),partPartAttributeRepository.findByPart(existingPart));
+        }
+
+        private boolean doesPartContainChild(Part currentPart, Part targetPart) {
+                List<Bom> children = bomRepository.findByParentPart(currentPart);
+
+                for (Bom bom : children) {
+                        Part child = bom.getChildPart();
+
+                        if (child.getPartId().equals(targetPart.getPartId())) {
+                                return true;
+                        }
+                        if (child.getType() == PartType.MASTER && doesPartContainChild(child, targetPart)) {
+                                return true;
+                        }
+                }
+
+                return false;
         }
 
         private void updateVendorCosts(Part existingPart, PartRequestDto request,

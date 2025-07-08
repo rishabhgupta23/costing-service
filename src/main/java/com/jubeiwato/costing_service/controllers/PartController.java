@@ -81,7 +81,7 @@ public class PartController {
     
     @PostMapping("/{partId}")
     @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "') or hasRole('" + MAINTAINER + "')")
-    public ResponseEntity<PartDto> updatePartById(@PathVariable Long partId, @RequestBody PartRequestDto request, @AuthenticationPrincipal User authenticatedUser) {
+    public ResponseEntity<PartDto> updatePartById(@PathVariable Long partId, @RequestBody @Valid PartRequestDto request, @AuthenticationPrincipal User authenticatedUser) {
         Long companyId = authenticatedUser.getCompany().getCompanyId();
         PartDto updatedPart = this.partService.updatePartById(partId, request, companyId);
         return new ResponseEntity<>(updatedPart, HttpStatus.OK);
@@ -89,7 +89,7 @@ public class PartController {
 
     @PostMapping 
     @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "') or hasRole('" + MAINTAINER + "')")
-    public ResponseEntity<PartDto> createPart(@RequestBody PartRequestDto request, @AuthenticationPrincipal User authenticatedUser) {
+    public ResponseEntity<PartDto> createPart(@RequestBody @Valid PartRequestDto request, @AuthenticationPrincipal User authenticatedUser) {
         Long companyId = authenticatedUser.getCompany().getCompanyId();
         PartDto createdPart = partService.createPart(request, companyId);
         return new ResponseEntity<>(createdPart, HttpStatus.OK);

@@ -62,7 +62,7 @@ public class CostCalcServiceImpl implements CostCalcService {
         return masterDto;
     }
 
-    private CostItemDto calculateUnitPart(Long partId, String priceMode, Double qt) {
+    public CostItemDto calculateUnitPart(Long partId, String priceMode, Double qt) {
         Part part = partRepository.findById(partId)
                 .orElseThrow(() -> new AppException(
                         ErrorMessageConstant.getFormattedMessage(ErrorMessageConstant.CHILD_PART_NOT_FOUND_TEMPLATE,

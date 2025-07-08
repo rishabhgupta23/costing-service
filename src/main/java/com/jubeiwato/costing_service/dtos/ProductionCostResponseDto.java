@@ -1,18 +1,16 @@
 package com.jubeiwato.costing_service.dtos;
 
-import jakarta.validation.constraints.NotNull;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class BomDto {
-     @NotNull(message = "childPartId cannot be null or blank")
-    Long childPartId;
-    Double quantity;
+public class ProductionCostResponseDto {
+    private List<CostItemDto> items;
+    private Double totalCost;
 }
