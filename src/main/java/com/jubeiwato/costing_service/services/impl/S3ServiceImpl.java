@@ -136,7 +136,7 @@ public class S3ServiceImpl implements S3Service {
 public void deleteFileFromS3(String s3FileKey) {
     try {
         DeleteObjectRequest deleteRequest =
-                software.amazon.awssdk.services.s3.model.DeleteObjectRequest.builder()
+                DeleteObjectRequest.builder()
                         .bucket(bucketName)
                         .key(s3FileKey)
                         .build();
