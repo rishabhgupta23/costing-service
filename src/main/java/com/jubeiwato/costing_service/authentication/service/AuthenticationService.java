@@ -2,8 +2,10 @@ package com.jubeiwato.costing_service.authentication.service;
 
 import com.jubeiwato.costing_service.authentication.config.AppException;
 import com.jubeiwato.costing_service.constants.ErrorMessageConstant;
+import com.jubeiwato.costing_service.dtos.AdminResetPasswordDto;
 import com.jubeiwato.costing_service.dtos.LoginUserDto;
 import com.jubeiwato.costing_service.dtos.RegisterUserDto;
+import com.jubeiwato.costing_service.dtos.ResetPasswordDto;
 import com.jubeiwato.costing_service.entities.Company;
 import com.jubeiwato.costing_service.entities.User;
 import com.jubeiwato.costing_service.entities.UserRole;
@@ -66,12 +68,13 @@ public class AuthenticationService {
                 .password(passwordEncoder.encode(input.getPassword()))
                 .company(company)
                 .userRole(role)
+                .resetRequired(true)
                 .build();
         return userRepository.save(user);
     }
 
     public User authenticate(LoginUserDto input) {
-        userRepository.findByEmailId(input.getEmail())
+        User user= userRepository.findByEmailId(input.getEmail())
                 .orElseThrow(() -> new AppException(ErrorMessageConstant.USER_DOES_NOT_EXIST, HttpStatus.NOT_FOUND));
         try {
             authenticationManager.authenticate(
@@ -81,9 +84,41 @@ public class AuthenticationService {
         } catch (Exception ex) {
             throw new AppException(ErrorMessageConstant.PASSWORD_INCORRECT, HttpStatus.UNAUTHORIZED);
         }
+        
+    if (user.isResetRequired()) {
+        throw new AppException(ErrorMessageConstant.PASSWORD_RESET_REQUIRED, HttpStatus.FORBIDDEN);
+    }
 
         return userRepository.findByEmailId(input.getEmail())
                 .orElseThrow();
     }
+    
+    public void resetPassword(ResetPasswordDto input) {
+        User user = userRepository.findByEmailId(input.getEmail())
+            .orElseThrow(() -> new AppException(ErrorMessageConstant.USER_DOES_NOT_EXIST, HttpStatus.NOT_FOUND));
+
+    try {
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(input.getEmail(), input.getOldPassword()));/*If credentials are correct,it returns a fully 
+                authenticated object, else it throws an exception (like BadCredentialsException).  */
+
+    } catch (Exception ex) {
+        throw new AppException(ErrorMessageConstant.PASSWORD_INCORRECT, HttpStatus.UNAUTHORIZED);
+    }
+
+    // Update password and clear reset flag
+    user.setPassword(passwordEncoder.encode(input.getNewPassword()));
+    user.setResetRequired(false);
+    userRepository.save(user);
+}
+
+   public void adminResetUserPassword(AdminResetPasswordDto input) {
+    User user = userRepository.findByEmailId(input.getUserEmail())
+            .orElseThrow(() -> new AppException(ErrorMessageConstant.USER_DOES_NOT_EXIST, HttpStatus.NOT_FOUND));
+
+    user.setPassword(passwordEncoder.encode(input.getNewTempPassword()));
+    user.setResetRequired(true); // Require reset on next login
+    userRepository.save(user);
+} 
 
 }

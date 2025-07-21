@@ -2,11 +2,14 @@ package com.jubeiwato.costing_service.controllers;
 
 import com.jubeiwato.costing_service.authentication.service.AuthenticationService;
 import com.jubeiwato.costing_service.authentication.service.JwtService;
+import com.jubeiwato.costing_service.dtos.AdminResetPasswordDto;
 import com.jubeiwato.costing_service.dtos.LoginResponse;
 import com.jubeiwato.costing_service.dtos.LoginUserDto;
 import com.jubeiwato.costing_service.dtos.RegisterUserDto;
+import com.jubeiwato.costing_service.dtos.ResetPasswordDto;
 import com.jubeiwato.costing_service.dtos.UserDto;
 import com.jubeiwato.costing_service.entities.User;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -47,5 +50,19 @@ public class AuthenticationController {
                 .build();
 
         return ResponseEntity.ok(loginResponse);
+    } 
+     
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(@Valid @RequestBody ResetPasswordDto dto) {
+        authenticationService.resetPassword(dto);
+      return ResponseEntity.ok("Password reset successful.");
+   }
+   
+   @PreAuthorize("hasRole('SUPER_ADMIN')")
+   @PostMapping("/admin/reset-user-password")
+   public ResponseEntity<String> adminResetUserPassword(@RequestBody AdminResetPasswordDto dto) {
+       authenticationService.adminResetUserPassword(dto);
+     return ResponseEntity.ok("User password has been reset.");
     }
+
 }
