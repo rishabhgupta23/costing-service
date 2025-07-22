@@ -3,6 +3,7 @@ package com.jubeiwato.costing_service.authentication.service;
 import com.jubeiwato.costing_service.authentication.config.AppException;
 import com.jubeiwato.costing_service.constants.ErrorMessageConstant;
 import com.jubeiwato.costing_service.dtos.AdminResetPasswordDto;
+import com.jubeiwato.costing_service.dtos.LoginResponse;
 import com.jubeiwato.costing_service.dtos.LoginUserDto;
 import com.jubeiwato.costing_service.dtos.RegisterUserDto;
 import com.jubeiwato.costing_service.dtos.ResetPasswordDto;
@@ -22,6 +23,9 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class AuthenticationService {
+
+     private final JwtService jwtService;
+
     private final UserRepository userRepository;
 
     private final PasswordEncoder passwordEncoder;
@@ -31,12 +35,13 @@ public class AuthenticationService {
     private final UserRoleRepository userRoleRepository;
     private final CompanyRepository companyRepository;
 
-    public AuthenticationService(
+    public AuthenticationService(JwtService jwtService,
             UserRepository userRepository,
             AuthenticationManager authenticationManager,
             PasswordEncoder passwordEncoder,
             CompanyRepository companyRepository,
             UserRoleRepository userRoleRepository) {
+         this.jwtService = jwtService;        
         this.authenticationManager = authenticationManager;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -89,7 +94,7 @@ public class AuthenticationService {
        return user;
     }
     
-    public void resetPassword(ResetPasswordDto input) {
+    public LoginResponse resetPassword(ResetPasswordDto input) {
        
          if (!input.isPasswordConfirmed()) {
         throw new AppException(ErrorMessageConstant.PASSWORD_DO_NOT_MATCH, HttpStatus.BAD_REQUEST);
@@ -111,6 +116,15 @@ public class AuthenticationService {
     user.setPassword(passwordEncoder.encode(input.getNewPassword()));
     user.setResetRequired(false);
     userRepository.save(user);
+
+    String jwtToken = jwtService.generateToken(user);
+
+    // Return token and other info
+    return LoginResponse.builder()
+            .token(jwtToken)
+            .expiresIn(jwtService.getExpirationTime())
+            .resetRequired(user.isResetRequired())
+            .build();
 }
 
    public void adminResetUserPassword(AdminResetPasswordDto input , User currentUser) {

@@ -3,6 +3,7 @@ package com.jubeiwato.costing_service.controllers;
 import com.jubeiwato.costing_service.authentication.service.AuthenticationService;
 import com.jubeiwato.costing_service.authentication.service.JwtService;
 import com.jubeiwato.costing_service.dtos.AdminResetPasswordDto;
+import com.jubeiwato.costing_service.dtos.GeneralResponseDto;
 import com.jubeiwato.costing_service.dtos.LoginResponse;
 import com.jubeiwato.costing_service.dtos.LoginUserDto;
 import com.jubeiwato.costing_service.dtos.RegisterUserDto;
@@ -10,6 +11,8 @@ import com.jubeiwato.costing_service.dtos.ResetPasswordDto;
 import com.jubeiwato.costing_service.dtos.UserDto;
 import com.jubeiwato.costing_service.entities.User;
 import jakarta.validation.Valid;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -55,16 +58,18 @@ public class AuthenticationController {
     } 
      
     @PostMapping("/reset-password")
-    public ResponseEntity<String> resetPassword(@Valid @RequestBody ResetPasswordDto dto) {
-        authenticationService.resetPassword(dto);
-      return ResponseEntity.ok("Password reset successful.");
+    public ResponseEntity<LoginResponse> resetPassword(@Valid @RequestBody ResetPasswordDto dto) {
+             LoginResponse response = authenticationService.resetPassword(dto);
+      return ResponseEntity.ok(response);
    }
    
    @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "')")
    @PostMapping("/admin/reset-user-password")
-   public ResponseEntity<String> adminResetUserPassword(@Valid @RequestBody AdminResetPasswordDto dto, @AuthenticationPrincipal User authenticatedUser) {
-       authenticationService.adminResetUserPassword(dto, authenticatedUser );
-     return ResponseEntity.ok("User password has been reset.");
+   public ResponseEntity<GeneralResponseDto> adminResetUserPassword(@Valid @RequestBody AdminResetPasswordDto dto, @AuthenticationPrincipal User authenticatedUser) {
+    authenticationService.adminResetUserPassword(dto, authenticatedUser );
+         GeneralResponseDto response = new GeneralResponseDto("User password has been reset.", HttpStatus.OK.value());
+    return ResponseEntity.ok(response);
+
     }
 
 }
