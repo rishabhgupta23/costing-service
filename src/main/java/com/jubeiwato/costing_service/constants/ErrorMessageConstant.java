@@ -71,6 +71,7 @@ public class ErrorMessageConstant {
     public static final String FILE_ALREADY_EXISTS= "This File already exists for this part";
     public static final String PART_CANNOT_BE_CHILD_OF_ITSELF = "A part cannot include itself in BOM.";
     public static final String PASSWORD_RESET_REQUIRED= "Password reset required";
+    public static final String PASSWORD_DO_NOT_MATCH= "Password do not match";
 
 
     private ErrorMessageConstant() {

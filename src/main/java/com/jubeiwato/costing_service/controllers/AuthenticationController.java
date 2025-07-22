@@ -12,6 +12,7 @@ import com.jubeiwato.costing_service.entities.User;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -47,6 +48,7 @@ public class AuthenticationController {
         LoginResponse loginResponse = LoginResponse.builder()
                 .token(jwtToken)
                 .expiresIn(jwtService.getExpirationTime())
+                .resetRequired(authenticatedUser.isResetRequired()) 
                 .build();
 
         return ResponseEntity.ok(loginResponse);
@@ -58,10 +60,10 @@ public class AuthenticationController {
       return ResponseEntity.ok("Password reset successful.");
    }
    
-   @PreAuthorize("hasRole('SUPER_ADMIN')")
+   @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "')")
    @PostMapping("/admin/reset-user-password")
-   public ResponseEntity<String> adminResetUserPassword(@RequestBody AdminResetPasswordDto dto) {
-       authenticationService.adminResetUserPassword(dto);
+   public ResponseEntity<String> adminResetUserPassword(@Valid @RequestBody AdminResetPasswordDto dto, @AuthenticationPrincipal User authenticatedUser) {
+       authenticationService.adminResetUserPassword(dto, authenticatedUser );
      return ResponseEntity.ok("User password has been reset.");
     }
 

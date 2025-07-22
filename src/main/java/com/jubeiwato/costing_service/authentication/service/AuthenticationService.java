@@ -12,6 +12,7 @@ import com.jubeiwato.costing_service.entities.UserRole;
 import com.jubeiwato.costing_service.repositories.CompanyRepository;
 import com.jubeiwato.costing_service.repositories.UserRepository;
 import com.jubeiwato.costing_service.repositories.UserRoleRepository;
+import static com.jubeiwato.costing_service.constants.UserRoleConstants.*;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -84,16 +85,16 @@ public class AuthenticationService {
         } catch (Exception ex) {
             throw new AppException(ErrorMessageConstant.PASSWORD_INCORRECT, HttpStatus.UNAUTHORIZED);
         }
-        
-    if (user.isResetRequired()) {
-        throw new AppException(ErrorMessageConstant.PASSWORD_RESET_REQUIRED, HttpStatus.FORBIDDEN);
-    }
 
-        return userRepository.findByEmailId(input.getEmail())
-                .orElseThrow();
+       return user;
     }
     
     public void resetPassword(ResetPasswordDto input) {
+       
+         if (!input.isPasswordConfirmed()) {
+        throw new AppException(ErrorMessageConstant.PASSWORD_DO_NOT_MATCH, HttpStatus.BAD_REQUEST);
+    }
+
         User user = userRepository.findByEmailId(input.getEmail())
             .orElseThrow(() -> new AppException(ErrorMessageConstant.USER_DOES_NOT_EXIST, HttpStatus.NOT_FOUND));
 
@@ -112,13 +113,31 @@ public class AuthenticationService {
     userRepository.save(user);
 }
 
-   public void adminResetUserPassword(AdminResetPasswordDto input) {
-    User user = userRepository.findByEmailId(input.getUserEmail())
+   public void adminResetUserPassword(AdminResetPasswordDto input , User currentUser) {
+    
+    if (!input.isPasswordConfirmed()) {
+        throw new AppException(ErrorMessageConstant.PASSWORD_DO_NOT_MATCH, HttpStatus.BAD_REQUEST);
+    }
+
+    User userToReset = userRepository.findByEmailId(input.getUserEmail())
             .orElseThrow(() -> new AppException(ErrorMessageConstant.USER_DOES_NOT_EXIST, HttpStatus.NOT_FOUND));
 
-    user.setPassword(passwordEncoder.encode(input.getNewTempPassword()));
-    user.setResetRequired(true); // Require reset on next login
-    userRepository.save(user);
+
+    String currentUserRole = currentUser.getUserRole().getRoleName();
+
+    // If the logged-in user is ADMIN, enforce same-company restriction
+    if (currentUserRole.equals(ADMIN)) {
+        Long currentCompanyId = currentUser.getCompany().getCompanyId();
+        Long targetCompanyId = userToReset.getCompany().getCompanyId();
+
+        if (!currentCompanyId.equals(targetCompanyId)) {
+            throw new AppException(ErrorMessageConstant.USER_DOES_NOT_EXIST, HttpStatus.FORBIDDEN);
+        }
+    }
+
+    userToReset.setPassword(passwordEncoder.encode(input.getNewTempPassword()));
+    userToReset.setResetRequired(true);
+    userRepository.save(userToReset);
 } 
 
 }
