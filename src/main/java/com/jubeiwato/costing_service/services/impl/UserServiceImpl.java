@@ -67,15 +67,14 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    private void validateRoleAssignment(String currentUserRole, String targetUserRole) {
-        String currentAuthority = AuthUtil.normalizeRole(currentUserRole);
+    private void validateRoleAssignment(String targetUserRole) {
         String targetAuthority = AuthUtil.normalizeRole(targetUserRole);
 
         if (SUPER_ADMIN.equals(targetAuthority)) {
             throw new AppException(ErrorMessageConstant.SUPER_ADMIN_CREATION_ERROR, HttpStatus.FORBIDDEN);
         }
 
-        if (ADMIN.equals(targetAuthority) && !SUPER_ADMIN.equals(currentAuthority)) {
+        if (ADMIN.equals(targetAuthority)) {
             throw new AppException(ErrorMessageConstant.ADMIN_CREATION_RESTRICTED, HttpStatus.FORBIDDEN);
         }
     }
@@ -91,7 +90,7 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new AppException(ErrorMessageConstant.ROLE_NOT_FOUND, HttpStatus.NOT_FOUND));
 
         String newUserRole = role.getRoleName().toUpperCase();
-        validateRoleAssignment(currentUserRole, newUserRole);
+        validateRoleAssignment(newUserRole);
 
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new AppException("Company not found", HttpStatus.NOT_FOUND));
@@ -108,6 +107,7 @@ public class UserServiceImpl implements UserService {
                 .password(passwordEncoder.encode(user.getPassword()))
                 .company(Company.builder().companyId(companyId).build())
                 .userRole(role)
+                .resetRequired(true)
                 .build();
 
         userRepository.save(userEntity);
@@ -182,12 +182,8 @@ public class UserServiceImpl implements UserService {
         User userEntity = getAndValidateUser(userId, companyId);
         validateUserInput(userDto);
 
-        User currentUser = userRepository.findByUserIdAndCompany_CompanyId(currentUserId, companyId)
-                .orElseThrow(() -> new AppException(ErrorMessageConstant.UNAUTHORIZED_ACCESS, HttpStatus.NOT_FOUND));
-
-        String currentUserRole = currentUser.getUserRole().getRoleName().toUpperCase();
         String targetUserRole = userEntity.getUserRole().getRoleName().toUpperCase();
-        validateRoleAssignment(currentUserRole, targetUserRole);
+        validateRoleAssignment(targetUserRole);
         userEntity.setDisplayName(userDto.getDisplayName());
         userEntity.setEmailId(userDto.getEmailId());
 
