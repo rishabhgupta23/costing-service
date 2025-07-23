@@ -19,6 +19,7 @@ public class UserDto {
     private CompanyDto company;
     private Long roleId;
     private String roleName;   
+    private boolean resetRequired;  
     
 
 

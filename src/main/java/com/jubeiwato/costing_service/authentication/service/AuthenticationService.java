@@ -123,7 +123,6 @@ public class AuthenticationService {
     return LoginResponse.builder()
             .token(jwtToken)
             .expiresIn(jwtService.getExpirationTime())
-            .resetRequired(user.isResetRequired())
             .build();
 }
 

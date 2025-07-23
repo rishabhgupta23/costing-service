@@ -77,6 +77,7 @@ public class UserController {
     @GetMapping("/whoami")
     public ResponseEntity<UserDto> getCurrentUser(@AuthenticationPrincipal User authenticatedUser) {
         UserDto userDto = UserDto.entityToDto(authenticatedUser);
+        userDto.setResetRequired(authenticatedUser.isResetRequired());
         return ResponseEntity.ok(userDto);
     }
 
