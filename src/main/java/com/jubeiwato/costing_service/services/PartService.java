@@ -35,4 +35,7 @@ public interface PartService {
     public FileResponseDto downloadFileFromS3(String fileUrl, Long companyId);
     
     List<String> getPartFileUrls(Long partId, Long companyId);
+
+    public void deletePartFile(Long partId, String s3FileKey, Long companyId);
+
 }
