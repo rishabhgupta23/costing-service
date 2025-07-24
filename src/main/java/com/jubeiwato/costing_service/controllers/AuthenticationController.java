@@ -62,13 +62,5 @@ public class AuthenticationController {
       return ResponseEntity.ok(response);
    }
    
-   @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "')")
-   @PostMapping("/admin/reset-user-password")
-   public ResponseEntity<GeneralResponseDto> adminResetUserPassword(@Valid @RequestBody AdminResetPasswordDto dto, @AuthenticationPrincipal User authenticatedUser) {
-    authenticationService.adminResetUserPassword(dto, authenticatedUser );
-         GeneralResponseDto response = new GeneralResponseDto("User password has been reset.", HttpStatus.OK.value());
-    return ResponseEntity.ok(response);
-
-    }
 
 }

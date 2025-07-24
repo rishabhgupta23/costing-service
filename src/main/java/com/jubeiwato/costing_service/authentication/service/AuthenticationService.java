@@ -2,7 +2,6 @@ package com.jubeiwato.costing_service.authentication.service;
 
 import com.jubeiwato.costing_service.authentication.config.AppException;
 import com.jubeiwato.costing_service.constants.ErrorMessageConstant;
-import com.jubeiwato.costing_service.dtos.AdminResetPasswordDto;
 import com.jubeiwato.costing_service.dtos.LoginResponse;
 import com.jubeiwato.costing_service.dtos.LoginUserDto;
 import com.jubeiwato.costing_service.dtos.RegisterUserDto;
@@ -13,7 +12,6 @@ import com.jubeiwato.costing_service.entities.UserRole;
 import com.jubeiwato.costing_service.repositories.CompanyRepository;
 import com.jubeiwato.costing_service.repositories.UserRepository;
 import com.jubeiwato.costing_service.repositories.UserRoleRepository;
-import static com.jubeiwato.costing_service.constants.UserRoleConstants.*;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -125,32 +123,5 @@ public class AuthenticationService {
             .expiresIn(jwtService.getExpirationTime())
             .build();
 }
-
-   public void adminResetUserPassword(AdminResetPasswordDto input , User currentUser) {
-    
-    if (!input.isPasswordConfirmed()) {
-        throw new AppException(ErrorMessageConstant.PASSWORD_DO_NOT_MATCH, HttpStatus.BAD_REQUEST);
-    }
-
-    User userToReset = userRepository.findByEmailId(input.getUserEmail())
-            .orElseThrow(() -> new AppException(ErrorMessageConstant.USER_DOES_NOT_EXIST, HttpStatus.NOT_FOUND));
-
-
-    String currentUserRole = currentUser.getUserRole().getRoleName();
-
-    // If the logged-in user is ADMIN, enforce same-company restriction
-    if (currentUserRole.equals(ADMIN)) {
-        Long currentCompanyId = currentUser.getCompany().getCompanyId();
-        Long targetCompanyId = userToReset.getCompany().getCompanyId();
-
-        if (!currentCompanyId.equals(targetCompanyId)) {
-            throw new AppException(ErrorMessageConstant.USER_DOES_NOT_EXIST, HttpStatus.FORBIDDEN);
-        }
-    }
-
-    userToReset.setPassword(passwordEncoder.encode(input.getNewTempPassword()));
-    userToReset.setResetRequired(true);
-    userRepository.save(userToReset);
-} 
 
 }

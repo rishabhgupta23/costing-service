@@ -16,6 +16,7 @@ import com.jubeiwato.costing_service.authentication.config.AppException;
 import com.jubeiwato.costing_service.constants.ErrorMessageConstant;
 import com.jubeiwato.costing_service.constants.Sorting;
 import static com.jubeiwato.costing_service.constants.UserRoleConstants.*;
+import com.jubeiwato.costing_service.dtos.AdminResetPasswordDto;
 import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
 import com.jubeiwato.costing_service.dtos.CreateUserDto;
 import com.jubeiwato.costing_service.dtos.PageInfoDto;
@@ -228,5 +229,33 @@ public class UserServiceImpl implements UserService {
         User user = getAndValidateUser(userId, companyId);
         return UserDto.entityToDto(user);
     }
+    
+    @Override
+    public void adminResetUserPassword(AdminResetPasswordDto input , User currentUser) {
+    
+    if (!input.isPasswordConfirmed()) {
+        throw new AppException(ErrorMessageConstant.PASSWORD_DO_NOT_MATCH, HttpStatus.BAD_REQUEST);
+    }
+
+    User userToReset = userRepository.findByEmailId(input.getUserEmail())
+            .orElseThrow(() -> new AppException(ErrorMessageConstant.USER_DOES_NOT_EXIST, HttpStatus.NOT_FOUND));
+
+
+    String currentUserRole = currentUser.getUserRole().getRoleName();
+
+    // If the logged-in user is ADMIN, enforce same-company restriction
+    if (currentUserRole.equals(ADMIN)) {
+        Long currentCompanyId = currentUser.getCompany().getCompanyId();
+        Long targetCompanyId = userToReset.getCompany().getCompanyId();
+
+        if (!currentCompanyId.equals(targetCompanyId)) {
+            throw new AppException(ErrorMessageConstant.USER_DOES_NOT_EXIST, HttpStatus.FORBIDDEN);
+        }
+    }
+
+    userToReset.setPassword(passwordEncoder.encode(input.getNewTempPassword()));
+    userToReset.setResetRequired(true);
+    userRepository.save(userToReset);
+} 
 
 }
