@@ -2,20 +2,17 @@ package com.jubeiwato.costing_service.controllers;
 
 import com.jubeiwato.costing_service.authentication.service.AuthenticationService;
 import com.jubeiwato.costing_service.authentication.service.JwtService;
-import com.jubeiwato.costing_service.dtos.AdminResetPasswordDto;
-import com.jubeiwato.costing_service.dtos.GeneralResponseDto;
 import com.jubeiwato.costing_service.dtos.LoginResponse;
 import com.jubeiwato.costing_service.dtos.LoginUserDto;
 import com.jubeiwato.costing_service.dtos.RegisterUserDto;
 import com.jubeiwato.costing_service.dtos.ResetPasswordDto;
 import com.jubeiwato.costing_service.dtos.UserDto;
 import com.jubeiwato.costing_service.entities.User;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -57,8 +54,8 @@ public class AuthenticationController {
     } 
      
     @PostMapping("/reset-password")
-    public ResponseEntity<LoginResponse> resetPassword(@Valid @RequestBody ResetPasswordDto dto) {
-             LoginResponse response = authenticationService.resetPassword(dto);
+    public ResponseEntity<LoginResponse> resetPassword(@Valid @RequestBody ResetPasswordDto dto, HttpServletRequest request) {
+             LoginResponse response = authenticationService.resetPassword(dto,request);
       return ResponseEntity.ok(response);
    }
    

@@ -76,15 +76,29 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 // this.userDetailsService.loadUserByUsername(userEmail);
 
                 if (jwtService.isTokenValid(jwt, user)) {
-                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            user,
-                            null,
-                            user.getAuthorities()
-                    );
 
-                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
-                }
+        //Throw 401 if reset flag is true and path is NOT /auth/reset-password
+        if (user.isResetRequired() && !requestPath.equals("/auth/reset-password")) {
+             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+             response.setContentType("application/json");
+
+        ErrorResponseDto errorResponse = ErrorResponseDto.of(ErrorMessageConstant.PASSWORD_RESET_REQUIRED, HttpStatus.UNAUTHORIZED);
+        String jsonResponse = new ObjectMapper().writeValueAsString(errorResponse);
+
+        response.getWriter().write(jsonResponse);
+        response.getWriter().flush();
+        return;
+        }
+
+        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+            user,
+            null,
+            user.getAuthorities()
+        );
+
+        authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+        SecurityContextHolder.getContext().setAuthentication(authToken);
+    }
             }
 
             filterChain.doFilter(request, response);
