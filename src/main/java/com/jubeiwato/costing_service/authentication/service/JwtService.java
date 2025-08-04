@@ -46,10 +46,7 @@ public class JwtService {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
     }
-      // 1. Used when no extra claims are passed
-    public String generateToken(UserDetails userDetails){
-        return generateToken(new HashMap<>(), userDetails); 
-    }
+     
      // 2. Used internally to build with extra claims
     private String generateToken(HashMap<String, Object> extraClaims, UserDetails userDetails) {
         return buildToken(extraClaims, userDetails, jwtExpiration);

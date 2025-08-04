@@ -7,15 +7,13 @@
       
 
         <changeSet id="20250717" author="Anusha">
-             <sql>
-                ALTER TABLE app.app_user
-                ADD COLUMN reset_required BOOLEAN NOT NULL DEFAULT FALSE;
-             </sql>
-   
         <sql>
-            UPDATE app.app_user
-            SET reset_required = TRUE
-            WHERE reset_required = FALSE;
+            ALTER TABLE app.app_user
+            ADD COLUMN reset_required BOOLEAN NOT NULL DEFAULT FALSE;
+
+           UPDATE app.app_user
+           SET reset_required = TRUE
+           WHERE reset_required = FALSE;
         </sql>
 
          <rollback>

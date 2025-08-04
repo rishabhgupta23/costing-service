@@ -12,7 +12,6 @@ import com.jubeiwato.costing_service.entities.UserRole;
 import com.jubeiwato.costing_service.repositories.CompanyRepository;
 import com.jubeiwato.costing_service.repositories.UserRepository;
 import com.jubeiwato.costing_service.repositories.UserRoleRepository;
-import jakarta.servlet.http.HttpServletRequest;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -93,28 +92,12 @@ public class AuthenticationService {
        return user;
     }
     
-public LoginResponse resetPassword(ResetPasswordDto input, HttpServletRequest request) {
+public LoginResponse resetPassword(User user, ResetPasswordDto input) {
     
     // 1. Validate passwords match
     if (!input.isPasswordConfirmed()) {
         throw new AppException(ErrorMessageConstant.PASSWORD_DO_NOT_MATCH, HttpStatus.BAD_REQUEST);
     }
-
-    // 2. Extract token from header
-    String authHeader = request.getHeader("Authorization");
-    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-        throw new AppException(ErrorMessageConstant.MISSING_AUTHORIZATION_HEADER, HttpStatus.UNAUTHORIZED);
-    }
-    String token = authHeader.substring(7);
-
-    // 3. Extract reset flag from token
-    Boolean resetRequired = jwtService.extractResetRequired(token);
-    if (Boolean.FALSE.equals(resetRequired)) {
-        throw new AppException(ErrorMessageConstant.PASSWORD_RESET_NOT_REQUIRED, HttpStatus.BAD_REQUEST);
-    }
-
-    User user = userRepository.findByEmailId(input.getEmail())
-        .orElseThrow(() -> new AppException(ErrorMessageConstant.USER_DOES_NOT_EXIST, HttpStatus.NOT_FOUND));
 
     try {
         authenticationManager.authenticate(

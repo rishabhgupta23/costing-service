@@ -183,6 +183,9 @@ public class UserServiceImpl implements UserService {
         User userEntity = getAndValidateUser(userId, companyId);
         validateUserInput(userDto);
 
+        userRepository.findByUserIdAndCompany_CompanyId(currentUserId, companyId)
+          .orElseThrow(() -> new AppException(ErrorMessageConstant.UNAUTHORIZED_ACCESS, HttpStatus.NOT_FOUND));  
+
         String targetUserRole = userEntity.getUserRole().getRoleName().toUpperCase();
         validateRoleAssignment(targetUserRole);
         userEntity.setDisplayName(userDto.getDisplayName());
