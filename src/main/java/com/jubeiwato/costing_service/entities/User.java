@@ -48,6 +48,9 @@ public class User extends BaseEntity implements UserDetails {
     @JoinColumn(name = "role_id", referencedColumnName = "role_id", nullable = false)
     private UserRole userRole;
 
+    @Column(name = "reset_required", nullable = false)
+    private boolean resetRequired;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of((new SimpleGrantedAuthority( userRole.getAuthority())));

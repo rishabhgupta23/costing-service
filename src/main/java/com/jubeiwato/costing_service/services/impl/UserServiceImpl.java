@@ -16,6 +16,7 @@ import com.jubeiwato.costing_service.authentication.config.AppException;
 import com.jubeiwato.costing_service.constants.ErrorMessageConstant;
 import com.jubeiwato.costing_service.constants.Sorting;
 import static com.jubeiwato.costing_service.constants.UserRoleConstants.*;
+import com.jubeiwato.costing_service.dtos.AdminResetPasswordDto;
 import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
 import com.jubeiwato.costing_service.dtos.CreateUserDto;
 import com.jubeiwato.costing_service.dtos.PageInfoDto;
@@ -67,15 +68,14 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    private void validateRoleAssignment(String currentUserRole, String targetUserRole) {
-        String currentAuthority = AuthUtil.normalizeRole(currentUserRole);
+    private void validateRoleAssignment(String targetUserRole) {
         String targetAuthority = AuthUtil.normalizeRole(targetUserRole);
 
         if (SUPER_ADMIN.equals(targetAuthority)) {
             throw new AppException(ErrorMessageConstant.SUPER_ADMIN_CREATION_ERROR, HttpStatus.FORBIDDEN);
         }
 
-        if (ADMIN.equals(targetAuthority) && !SUPER_ADMIN.equals(currentAuthority)) {
+        if (ADMIN.equals(targetAuthority)) {
             throw new AppException(ErrorMessageConstant.ADMIN_CREATION_RESTRICTED, HttpStatus.FORBIDDEN);
         }
     }
@@ -91,7 +91,7 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new AppException(ErrorMessageConstant.ROLE_NOT_FOUND, HttpStatus.NOT_FOUND));
 
         String newUserRole = role.getRoleName().toUpperCase();
-        validateRoleAssignment(currentUserRole, newUserRole);
+        validateRoleAssignment(newUserRole);
 
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new AppException("Company not found", HttpStatus.NOT_FOUND));
@@ -108,6 +108,7 @@ public class UserServiceImpl implements UserService {
                 .password(passwordEncoder.encode(user.getPassword()))
                 .company(Company.builder().companyId(companyId).build())
                 .userRole(role)
+                .resetRequired(true)
                 .build();
 
         userRepository.save(userEntity);
@@ -182,12 +183,11 @@ public class UserServiceImpl implements UserService {
         User userEntity = getAndValidateUser(userId, companyId);
         validateUserInput(userDto);
 
-        User currentUser = userRepository.findByUserIdAndCompany_CompanyId(currentUserId, companyId)
-                .orElseThrow(() -> new AppException(ErrorMessageConstant.UNAUTHORIZED_ACCESS, HttpStatus.NOT_FOUND));
+        userRepository.findByUserIdAndCompany_CompanyId(currentUserId, companyId)
+          .orElseThrow(() -> new AppException(ErrorMessageConstant.UNAUTHORIZED_ACCESS, HttpStatus.NOT_FOUND));  
 
-        String currentUserRole = currentUser.getUserRole().getRoleName().toUpperCase();
         String targetUserRole = userEntity.getUserRole().getRoleName().toUpperCase();
-        validateRoleAssignment(currentUserRole, targetUserRole);
+        validateRoleAssignment(targetUserRole);
         userEntity.setDisplayName(userDto.getDisplayName());
         userEntity.setEmailId(userDto.getEmailId());
 
@@ -232,5 +232,33 @@ public class UserServiceImpl implements UserService {
         User user = getAndValidateUser(userId, companyId);
         return UserDto.entityToDto(user);
     }
+    
+    @Override
+    public void adminResetUserPassword(AdminResetPasswordDto input , User currentUser) {
+    
+    if (!input.isPasswordConfirmed()) {
+        throw new AppException(ErrorMessageConstant.PASSWORD_DO_NOT_MATCH, HttpStatus.BAD_REQUEST);
+    }
+
+    User userToReset = userRepository.findByEmailId(input.getUserEmail())
+            .orElseThrow(() -> new AppException(ErrorMessageConstant.USER_DOES_NOT_EXIST, HttpStatus.NOT_FOUND));
+
+
+    String currentUserRole = currentUser.getUserRole().getRoleName();
+
+    // If the logged-in user is ADMIN, enforce same-company restriction
+    if (currentUserRole.equals(ADMIN)) {
+        Long currentCompanyId = currentUser.getCompany().getCompanyId();
+        Long targetCompanyId = userToReset.getCompany().getCompanyId();
+
+        if (!currentCompanyId.equals(targetCompanyId)) {
+            throw new AppException(ErrorMessageConstant.USER_DOES_NOT_EXIST, HttpStatus.FORBIDDEN);
+        }
+    }
+
+    userToReset.setPassword(passwordEncoder.encode(input.getNewTempPassword()));
+    userToReset.setResetRequired(true);
+    userRepository.save(userToReset);
+} 
 
 }
