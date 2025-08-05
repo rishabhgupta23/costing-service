@@ -94,16 +94,15 @@ public class AuthenticationService {
     
 public LoginResponse resetPassword(User user, ResetPasswordDto input) {
     
-    // 1. Validate passwords match
-    if (!input.isPasswordConfirmed()) {
-        throw new AppException(ErrorMessageConstant.PASSWORD_DO_NOT_MATCH, HttpStatus.BAD_REQUEST);
-    }
-
     try {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(input.getEmail(), input.getOldPassword()));
     } catch (Exception ex) {
         throw new AppException(ErrorMessageConstant.PASSWORD_INCORRECT, HttpStatus.UNAUTHORIZED);
+    }
+
+    if (!input.isPasswordConfirmed()) {
+        throw new AppException(ErrorMessageConstant.PASSWORD_DO_NOT_MATCH, HttpStatus.BAD_REQUEST);
     }
 
     user.setPassword(passwordEncoder.encode(input.getNewPassword()));
