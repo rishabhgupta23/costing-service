@@ -749,7 +749,7 @@ public class PartServiceTest {
         PartRequestDto partRequestDto = PartRequestDto.builder()
                 .partName("Updated Part")
                 .partNumber("P12345")
-                .type("UNIT")
+                .type("MASTER")
                 .unit("kg")
                 .vendorCostList(new ArrayList<>()) // Mock an empty list
                 .bom(bomList) // Ensure BOM list is provided
@@ -764,6 +764,7 @@ public class PartServiceTest {
         // Mock child part used in BOM
         Part childPart = new Part();
         childPart.setPartId(2L);
+        childPart.setPartName("Child Part");
 
         // Mock repository behavior
         when(partRepository.findByPartIdAndCompany_CompanyId(partId, companyId))
@@ -773,8 +774,8 @@ public class PartServiceTest {
                 .thenReturn(Optional.of(new PartUnit()));
 
         // Ensure child part exists for BOM validation
-        when(partRepository.findAllById(List.of(2L)))
-                .thenReturn(List.of(childPart));
+         when(partRepository.findByPartIdAndCompany_CompanyId(2L, companyId))
+        .thenReturn(Optional.of(childPart));
 
         // Mock BOM save
         Bom newBom = new Bom(existingPart, childPart, bomDto.getQuantity());
@@ -785,9 +786,6 @@ public class PartServiceTest {
         when(partRepository.save(existingPart))
                 .thenReturn(existingPart);
 
-        // Mock part cost repository save
-        when(partCostRepository.saveAll(anyList()))
-                .thenReturn(Collections.emptyList());
 
         // Mock BOM delete
         doNothing().when(bomRepository).deleteByParentPart(existingPart);
@@ -797,10 +795,9 @@ public class PartServiceTest {
 
         // Verify interactions
         verify(partRepository, times(1)).save(existingPart);
-        verify(partCostRepository, times(1)).saveAll(anyList());
+        verify(partCostRepository, never()).saveAll(anyList());
         verify(bomRepository, times(1)).deleteByParentPart(existingPart);
         verify(bomRepository, times(1)).saveAll(anyList());
-        verify(partRepository, times(1)).findAllById(List.of(2L));
 
         // Assert result
         assertNotNull(updatedPartDto);
@@ -1046,16 +1043,18 @@ void savePartAttributes_shouldThrowException_whenAttributeIsNotFoundOrSoftDelete
         Part part = new Part();
         part.setPartId(1L);
         part.setPartName("Screw");
+        part.setType(PartType.UNIT);
         // Other properties
 
         List<PartCost> partCostList = new ArrayList<>();
         List<Bom> bomList = new ArrayList<>();
+        List<PartPartAttribute> attributeList = new ArrayList<>();
 
         Method method = PartServiceImpl.class.getDeclaredMethod("createPartResponseDto", Part.class, List.class,
-                List.class);
-        method.setAccessible(true);
+                List.class, List.class);
+        method.setAccessible(true);//overrides Java's access control checks at runtime.
 
-        PartResponseDto dto = (PartResponseDto) method.invoke(partServiceImpl, part, partCostList, bomList);
+        PartResponseDto dto = (PartResponseDto) method.invoke(partServiceImpl, part, partCostList, bomList, attributeList);
 
         assertNotNull(dto);
         assertEquals(1L, dto.getPartId());
@@ -1460,5 +1459,21 @@ void savePartAttributes_shouldThrowException_whenAttributeIsNotFoundOrSoftDelete
 
         assertTrue(exception.getMessage().contains(ErrorMessageConstant.FILE_SIZE_EXCEEDS_LIMIT));
     }
+  @Test
+void updatePartById_shouldThrowWhenUnitInvalid() {
+    Long partId = 1L, companyId = 1L;
+        PartRequestDto request = PartRequestDto.builder() // Using Lombok's builder
+                .unit("invalid")
+                .build();
+
+    when(partRepository.findByPartIdAndCompany_CompanyId(partId, companyId))
+        .thenReturn(Optional.of(new Part()));
+    when(partUnitRepository.findByUnitName("invalid"))
+        .thenReturn(Optional.empty());
+
+    assertThrows(AppException.class, () -> {
+        partServiceImpl.updatePartById(partId, request, companyId);
+    });
+}
 
 }
