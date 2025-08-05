@@ -5,10 +5,14 @@ import com.jubeiwato.costing_service.authentication.service.JwtService;
 import com.jubeiwato.costing_service.dtos.LoginResponse;
 import com.jubeiwato.costing_service.dtos.LoginUserDto;
 import com.jubeiwato.costing_service.dtos.RegisterUserDto;
+import com.jubeiwato.costing_service.dtos.ResetPasswordDto;
 import com.jubeiwato.costing_service.dtos.UserDto;
 import com.jubeiwato.costing_service.entities.User;
+import jakarta.validation.Valid;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -43,9 +47,17 @@ public class AuthenticationController {
 
         LoginResponse loginResponse = LoginResponse.builder()
                 .token(jwtToken)
-                .expiresIn(jwtService.getExpirationTime())
+                .expiresIn(jwtService.getExpirationTime()) 
                 .build();
 
         return ResponseEntity.ok(loginResponse);
-    }
+    } 
+     
+    @PostMapping("/reset-password")
+    public ResponseEntity<LoginResponse> resetPassword(@AuthenticationPrincipal User user, @Valid @RequestBody ResetPasswordDto dto) {
+             LoginResponse response = authenticationService.resetPassword(user, dto);
+      return ResponseEntity.ok(response);
+   }
+
+
 }

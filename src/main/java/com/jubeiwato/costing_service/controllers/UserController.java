@@ -5,12 +5,14 @@ import org.springframework.security.access.prepost.PreAuthorize;
 
 import com.jubeiwato.costing_service.constants.AppConstants;
 import com.jubeiwato.costing_service.constants.Sorting;
+import com.jubeiwato.costing_service.dtos.AdminResetPasswordDto;
 import com.jubeiwato.costing_service.dtos.ApiPageResponseDto;
 import com.jubeiwato.costing_service.dtos.CreateUserDto;
 import com.jubeiwato.costing_service.dtos.GeneralResponseDto;
 import com.jubeiwato.costing_service.dtos.UserDto;
 import com.jubeiwato.costing_service.dtos.UserRoleDto;
 import com.jubeiwato.costing_service.services.UserService;
+import jakarta.validation.Valid;
 import static com.jubeiwato.costing_service.constants.UserRoleConstants.*;
 
 import java.util.List;
@@ -77,6 +79,7 @@ public class UserController {
     @GetMapping("/whoami")
     public ResponseEntity<UserDto> getCurrentUser(@AuthenticationPrincipal User authenticatedUser) {
         UserDto userDto = UserDto.entityToDto(authenticatedUser);
+        userDto.setResetRequired(authenticatedUser.isResetRequired());
         return ResponseEntity.ok(userDto);
     }
 
@@ -111,5 +114,14 @@ public class UserController {
         Long companyId = authenticatedUser.getCompany().getCompanyId();
         UserDto user = userService.getUserById(userId, companyId);
         return ResponseEntity.ok(user);
+    }
+
+   @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "')")
+   @PostMapping("/users/reset-password")
+   public ResponseEntity<GeneralResponseDto> adminResetUserPassword(@Valid @RequestBody AdminResetPasswordDto dto, @AuthenticationPrincipal User authenticatedUser) {
+         userService.adminResetUserPassword(dto, authenticatedUser );
+         GeneralResponseDto response = new GeneralResponseDto("User password has been reset.", HttpStatus.OK.value());
+        return ResponseEntity.ok(response);
+
     }
 }

@@ -2,8 +2,10 @@ package com.jubeiwato.costing_service.authentication.service;
 
 import com.jubeiwato.costing_service.authentication.config.AppException;
 import com.jubeiwato.costing_service.constants.ErrorMessageConstant;
+import com.jubeiwato.costing_service.dtos.LoginResponse;
 import com.jubeiwato.costing_service.dtos.LoginUserDto;
 import com.jubeiwato.costing_service.dtos.RegisterUserDto;
+import com.jubeiwato.costing_service.dtos.ResetPasswordDto;
 import com.jubeiwato.costing_service.entities.Company;
 import com.jubeiwato.costing_service.entities.User;
 import com.jubeiwato.costing_service.entities.UserRole;
@@ -19,6 +21,9 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class AuthenticationService {
+
+     private final JwtService jwtService;
+
     private final UserRepository userRepository;
 
     private final PasswordEncoder passwordEncoder;
@@ -28,12 +33,13 @@ public class AuthenticationService {
     private final UserRoleRepository userRoleRepository;
     private final CompanyRepository companyRepository;
 
-    public AuthenticationService(
+    public AuthenticationService(JwtService jwtService,
             UserRepository userRepository,
             AuthenticationManager authenticationManager,
             PasswordEncoder passwordEncoder,
             CompanyRepository companyRepository,
             UserRoleRepository userRoleRepository) {
+         this.jwtService = jwtService;        
         this.authenticationManager = authenticationManager;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -66,12 +72,13 @@ public class AuthenticationService {
                 .password(passwordEncoder.encode(input.getPassword()))
                 .company(company)
                 .userRole(role)
+                .resetRequired(true)
                 .build();
         return userRepository.save(user);
     }
 
     public User authenticate(LoginUserDto input) {
-        userRepository.findByEmailId(input.getEmail())
+        User user= userRepository.findByEmailId(input.getEmail())
                 .orElseThrow(() -> new AppException(ErrorMessageConstant.USER_DOES_NOT_EXIST, HttpStatus.NOT_FOUND));
         try {
             authenticationManager.authenticate(
@@ -82,8 +89,33 @@ public class AuthenticationService {
             throw new AppException(ErrorMessageConstant.PASSWORD_INCORRECT, HttpStatus.UNAUTHORIZED);
         }
 
-        return userRepository.findByEmailId(input.getEmail())
-                .orElseThrow();
+       return user;
     }
+    
+public LoginResponse resetPassword(User user, ResetPasswordDto input) {
+    
+    // 1. Validate passwords match
+    if (!input.isPasswordConfirmed()) {
+        throw new AppException(ErrorMessageConstant.PASSWORD_DO_NOT_MATCH, HttpStatus.BAD_REQUEST);
+    }
+
+    try {
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(input.getEmail(), input.getOldPassword()));
+    } catch (Exception ex) {
+        throw new AppException(ErrorMessageConstant.PASSWORD_INCORRECT, HttpStatus.UNAUTHORIZED);
+    }
+
+    user.setPassword(passwordEncoder.encode(input.getNewPassword()));
+    user.setResetRequired(false);
+    userRepository.save(user);
+
+    String newToken = jwtService.generateToken(user);
+
+    return LoginResponse.builder()
+            .token(newToken)
+            .expiresIn(jwtService.getExpirationTime())
+            .build();
+}
 
 }
