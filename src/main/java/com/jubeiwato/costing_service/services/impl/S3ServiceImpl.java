@@ -16,6 +16,7 @@ import com.jubeiwato.costing_service.authentication.config.AppException;
 import com.jubeiwato.costing_service.constants.ErrorMessageConstant;
 import com.jubeiwato.costing_service.dtos.PartFileUploadDto;
 import com.jubeiwato.costing_service.services.S3Service;
+import com.jubeiwato.costing_service.utils.S3KeyUtil;
 import org.apache.tika.parser.AutoDetectParser;
 
 import lombok.RequiredArgsConstructor;
@@ -47,13 +48,15 @@ public class S3ServiceImpl implements S3Service {
     );
 
     @Override
-    public void uploadFile(Long partId, PartFileUploadDto partFileUploadDto, Long companyId, String key){
+    public void uploadFile(Long partId, PartFileUploadDto partFileUploadDto, Long companyId){
         try {
             byte[] imageBytes = decodeAndValidateFile(partFileUploadDto.getFileData());
     
             String detectedMimeType = detectMimeType(imageBytes);
     
             validateFileType(detectedMimeType);
+
+             String key = S3KeyUtil.generatePartFileKey(companyId, partId, partFileUploadDto.getFileName());
     
             uploadToS3(imageBytes, key, detectedMimeType);
     

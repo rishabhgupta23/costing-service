@@ -4,7 +4,7 @@ import com.jubeiwato.costing_service.dtos.PartFileUploadDto;
 
 public interface S3Service {
 
-    void uploadFile(Long partId, PartFileUploadDto imageUploadDto, Long companyId, String key) throws IOException;
+    void uploadFile(Long partId, PartFileUploadDto imageUploadDto, Long companyId) throws IOException;
 
     byte[] downloadFile(String s3Key);
 
