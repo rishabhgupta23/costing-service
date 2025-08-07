@@ -1,7 +1,6 @@
 package com.jubeiwato.costing_service.services;
 
 import java.util.List;
-import org.springframework.dao.DataIntegrityViolationException;
 
 import com.jubeiwato.costing_service.constants.Sorting;
 import com.jubeiwato.costing_service.dtos.*;
@@ -30,7 +29,7 @@ public interface PartService {
 
     FileResponseDto downloadBomPartListToExcel(Long parentPartId,Long companyId) throws IOException;
 
-    String uploadPartFile(Long partId, PartFileUploadDto partFileUploadDto, Long companyId) throws DataIntegrityViolationException, IOException;
+    String uploadPartFile(Long partId, PartFileUploadDto partFileUploadDto, Long companyId) throws IOException;
 
     public FileResponseDto downloadFileFromS3(String fileUrl, Long companyId);
     

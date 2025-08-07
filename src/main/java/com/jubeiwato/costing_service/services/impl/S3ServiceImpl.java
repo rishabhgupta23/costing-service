@@ -47,7 +47,7 @@ public class S3ServiceImpl implements S3Service {
     );
 
     @Override
-    public String uploadFile(Long partId, PartFileUploadDto partFileUploadDto, Long companyId){
+    public void uploadFile(Long partId, PartFileUploadDto partFileUploadDto, Long companyId, String key){
         try {
             byte[] imageBytes = decodeAndValidateFile(partFileUploadDto.getFileData());
     
@@ -55,12 +55,7 @@ public class S3ServiceImpl implements S3Service {
     
             validateFileType(detectedMimeType);
     
-            String fileName = partFileUploadDto.getFileName();
-            String key = companyId + "/parts/" + partId + "/" + fileName;
-    
             uploadToS3(imageBytes, key, detectedMimeType);
-    
-            return key;
     
         } catch (Exception e) {
             throw new AppException(ErrorMessageConstant.IMAGE_UPLOAD_FAILED + ": " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);

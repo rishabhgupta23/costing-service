@@ -8,7 +8,6 @@ import com.jubeiwato.costing_service.constants.Sorting;
 import com.jubeiwato.costing_service.dtos.*;
 import com.jubeiwato.costing_service.services.FileGeneratorService;
 import jakarta.transaction.Transactional;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -734,7 +733,7 @@ public PartDto updatePartById(Long partId, @Valid PartRequestDto request,Long co
 
         @Override
         public String uploadPartFile(Long partId, PartFileUploadDto partFileUploadDto, Long companyId)
-                        throws DataIntegrityViolationException, IOException {
+                        throws IOException {
                 Part part = getValidatedPart(partId, companyId);
 
                 int imageCount = partFileRepository.countByPart(part);
@@ -743,26 +742,22 @@ public PartDto updatePartById(Long partId, @Valid PartRequestDto request,Long co
                                         HttpStatus.BAD_REQUEST);
                 }
 
-                String s3Key = s3Service.uploadFile(partId, partFileUploadDto, companyId);
+               String key = companyId + "/parts/" + partId + "/" + partFileUploadDto.getFileName();
+
+                //Check if the file already exists BEFORE uploading to S3
+               boolean fileExists = partFileRepository.existsByPartAndS3FileKey(part, key);
+               if (fileExists) {
+               throw new AppException(ErrorMessageConstant.FILE_ALREADY_EXISTS, HttpStatus.BAD_REQUEST);
+               }
+
+                s3Service.uploadFile(partId, partFileUploadDto, companyId, key);
 
                 PartFile partFile = PartFile.builder()
                                 .part(part)
-                                .s3FileKey(s3Key)
+                                .s3FileKey(key)
                                 .build();
 
-                try {
                         partFileRepository.save(partFile);
-                } catch (DataIntegrityViolationException ex) {
-                        // Catch unique constraint violation (like duplicate file for part)
-                        throw new AppException(ErrorMessageConstant.FILE_ALREADY_EXISTS, HttpStatus.BAD_REQUEST); // note
-                                                                                                                  // that
-                                                                                                                  // we
-                                                                                                                  // will
-                                                                                                                  // change
-                                                                                                                  // this
-                                                                                                                  // logic
-                                                                                                                  // later
-                }
 
                 return "File uploaded successfully";
         }
