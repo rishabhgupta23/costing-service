@@ -529,8 +529,7 @@ public PartDto updatePartById(Long partId, @Valid PartRequestDto request,Long co
                                 if (childPart.getType() == PartType.MASTER) {
                                         if (doesPartContainChild(childPart, existingPart)) {
                                                 throw new AppException(
-                                                                "Cyclic dependency detected: The child part already contains the parent in its BOM.",
-                                                                HttpStatus.BAD_REQUEST);
+                                                                ErrorMessageConstant.CYCLIC_DEPENDENCY_DETECTED, HttpStatus.BAD_REQUEST);
                                         }
                                 }
                                 return new Bom(existingPart, childPart, bomDto.getQuantity());

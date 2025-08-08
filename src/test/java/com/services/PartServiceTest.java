@@ -804,6 +804,47 @@ public class PartServiceTest {
         assertEquals("Updated Part", updatedPartDto.getPartName());
     }
 
+    @Test
+   void updatePartById_shouldThrowWhenPartIsChildOfItself() {
+    Long partId = 1L;
+    Long companyId = 1L;
+
+    // BOM contains a childPartId SAME as parent partId → triggers exception
+    BomDto bomDto = BomDto.builder()
+            .childPartId(partId)
+            .quantity(5.0)
+            .build();
+
+    PartRequestDto request = PartRequestDto.builder()
+            .partName("Parent Part")
+            .type("MASTER")
+            .unit("kg")
+            .bom(List.of(bomDto))
+            .build();
+
+    // Mock existing part (parent)
+    Part existingPart = new Part();
+    existingPart.setPartId(partId);
+    existingPart.setType(PartType.MASTER);
+
+    when(partUnitRepository.findByUnitName(request.getUnit()))
+            .thenReturn(Optional.of(new PartUnit()));
+
+    // Mock finding the "child" — same ID as parent
+    Part childPart = new Part();
+    childPart.setPartId(partId); // same ID → triggers exception
+    when(partRepository.findByPartIdAndCompany_CompanyId(partId, companyId))
+            .thenReturn(Optional.of(existingPart)) // first call for parent
+            .thenReturn(Optional.of(childPart));   // second call for child in BOM
+
+    AppException ex = assertThrows(AppException.class, () -> {
+        partServiceImpl.updatePartById(partId, request, companyId);
+    });
+
+    assertEquals(ErrorMessageConstant.PART_CANNOT_BE_CHILD_OF_ITSELF, ex.getMessage());
+    assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+}
+
 @Test
 void savePartAttributes_shouldSaveAttributes_whenValidDataProvided() {
     Part part = new Part();
