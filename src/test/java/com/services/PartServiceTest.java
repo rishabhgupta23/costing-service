@@ -36,6 +36,7 @@ import com.jubeiwato.costing_service.services.S3Service;
 import com.jubeiwato.costing_service.services.impl.PartServiceImpl;
 import com.jubeiwato.costing_service.services.impl.S3ServiceImpl;
 import com.jubeiwato.costing_service.services.impl.VendorServiceImpl;
+import com.jubeiwato.costing_service.utils.S3KeyUtil;
 import com.jubeiwato.costing_service.dtos.CostFactorDto;
 import com.jubeiwato.costing_service.dtos.CostHistoryDto;
 import com.jubeiwato.costing_service.dtos.CostHistoryResponseDto;
@@ -47,7 +48,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -1410,7 +1410,7 @@ void savePartAttributes_shouldThrowException_whenAttributeIsNotFoundOrSoftDelete
 
         when(partRepository.findByPartIdAndCompany_CompanyId(partId, companyId)).thenReturn(Optional.of(part));
         when(partFileRepository.countByPart(part)).thenReturn(1);
-        when(s3Service.uploadFile(partId, dto, companyId)).thenReturn("companyId/parts/1/test.png");
+        doNothing().when(s3Service).uploadFile(partId, dto, companyId);
 
         String result = partServiceImpl.uploadPartFile(partId, dto, companyId);
 
@@ -1434,8 +1434,10 @@ void savePartAttributes_shouldThrowException_whenAttributeIsNotFoundOrSoftDelete
 
         when(partRepository.findByPartIdAndCompany_CompanyId(partId, companyId)).thenReturn(Optional.of(part));
         when(partFileRepository.countByPart(part)).thenReturn(1);
-        when(s3Service.uploadFile(partId, dto, companyId)).thenReturn("companyId/parts/1/duplicate.png");
-        doThrow(new DataIntegrityViolationException("Unique constraint")).when(partFileRepository).save(any());
+        when(partFileRepository.existsByPartAndS3FileKey(part,
+        S3KeyUtil.generatePartFileKey(companyId, partId, dto.getFileName())))
+        .thenReturn(true);
+
 
         AppException exception = assertThrows(AppException.class, () -> {
             partServiceImpl.uploadPartFile(partId, dto, companyId);
