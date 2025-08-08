@@ -36,7 +36,7 @@ import com.jubeiwato.costing_service.services.S3Service;
 import com.jubeiwato.costing_service.services.impl.PartServiceImpl;
 import com.jubeiwato.costing_service.services.impl.S3ServiceImpl;
 import com.jubeiwato.costing_service.services.impl.VendorServiceImpl;
-import com.jubeiwato.costing_service.utils.S3KeyUtil;
+import com.jubeiwato.costing_service.utils.S3Util;
 import com.jubeiwato.costing_service.dtos.CostFactorDto;
 import com.jubeiwato.costing_service.dtos.CostHistoryDto;
 import com.jubeiwato.costing_service.dtos.CostHistoryResponseDto;
@@ -1435,7 +1435,7 @@ void savePartAttributes_shouldThrowException_whenAttributeIsNotFoundOrSoftDelete
         when(partRepository.findByPartIdAndCompany_CompanyId(partId, companyId)).thenReturn(Optional.of(part));
         when(partFileRepository.countByPart(part)).thenReturn(1);
         when(partFileRepository.existsByPartAndS3FileKey(part,
-        S3KeyUtil.generatePartFileKey(companyId, partId, dto.getFileName())))
+        S3Util.generatePartFileKey(companyId, partId, dto.getFileName())))
         .thenReturn(true);
 
 

@@ -45,7 +45,7 @@ import com.jubeiwato.costing_service.repositories.VendorRepository;
 import com.jubeiwato.costing_service.repositories.PartUnitRepository;
 import com.jubeiwato.costing_service.services.PartService;
 import com.jubeiwato.costing_service.services.S3Service;
-import com.jubeiwato.costing_service.utils.S3KeyUtil;
+import com.jubeiwato.costing_service.utils.S3Util;
 import com.jubeiwato.costing_service.utils.ValidationUtil;
 
 import java.io.IOException;
@@ -743,7 +743,7 @@ public PartDto updatePartById(Long partId, @Valid PartRequestDto request,Long co
                                         HttpStatus.BAD_REQUEST);
                 }
 
-               String key = S3KeyUtil.generatePartFileKey( companyId, partId, partFileUploadDto.getFileName());
+               String key = S3Util.generatePartFileKey( companyId, partId, partFileUploadDto.getFileName());
 
                 //Check if the file already exists BEFORE uploading to S3
                boolean fileExists = partFileRepository.existsByPartAndS3FileKey(part, key);

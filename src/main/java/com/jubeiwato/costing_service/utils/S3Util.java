@@ -1,8 +1,8 @@
 package com.jubeiwato.costing_service.utils;
 
-public class S3KeyUtil {
+public class S3Util {
     
-    private S3KeyUtil() {
+    private S3Util() {
         // private constructor to prevent instantiation
     }
 
