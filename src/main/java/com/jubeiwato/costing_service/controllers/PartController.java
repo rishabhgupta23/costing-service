@@ -8,7 +8,6 @@ import java.util.List;
 import com.jubeiwato.costing_service.constants.*;
 import com.jubeiwato.costing_service.dtos.*;
 import com.jubeiwato.costing_service.entities.User;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -143,7 +142,7 @@ public class PartController {
     public ResponseEntity<GeneralResponseDto> uploadPartFile(
         @RequestParam Long partId,
         @RequestBody @Valid PartFileUploadDto partFileUploadDto,
-        @AuthenticationPrincipal User user) throws DataIntegrityViolationException, IOException{
+        @AuthenticationPrincipal User user) throws IOException{
     
         Long companyId = user.getCompany().getCompanyId();
         String result = partService.uploadPartFile(partId, partFileUploadDto, companyId);

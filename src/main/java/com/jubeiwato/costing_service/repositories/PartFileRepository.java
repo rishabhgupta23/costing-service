@@ -12,4 +12,5 @@ public interface PartFileRepository extends JpaRepository<PartFile, Long> {
 
     List<PartFile> findByPart(Part part);
     Optional<PartFile> findByS3FileKey(String fileUrl);
+    boolean existsByPartAndS3FileKey(Part part, String s3FileKey);
 }
