@@ -243,11 +243,14 @@ public class UserServiceImpl implements UserService {
     User userToReset = userRepository.findByEmailId(input.getUserEmail())
             .orElseThrow(() -> new AppException(ErrorMessageConstant.USER_DOES_NOT_EXIST, HttpStatus.NOT_FOUND));
 
+     if (currentUser.getUserId().equals(userToReset.getUserId())) {
+        throw new AppException(ErrorMessageConstant.PASSWORD_CANNOT_BE_CHANGED, HttpStatus.FORBIDDEN);
+    }
 
     String currentUserRole = currentUser.getUserRole().getRoleName();
 
     // If the logged-in user is ADMIN, enforce same-company restriction
-    if (currentUserRole.equals(ADMIN)) {
+    if (currentUserRole.equalsIgnoreCase(ADMIN)) {
         Long currentCompanyId = currentUser.getCompany().getCompanyId();
         Long targetCompanyId = userToReset.getCompany().getCompanyId();
 
