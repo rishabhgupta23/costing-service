@@ -76,6 +76,7 @@ public class ErrorMessageConstant {
     public static final String MISSING_AUTHORIZATION_HEADER= "Missing or invalid Authorization header";
     public static final String PASSWORD_RESET_NOT_REQUIRED= "Password reset not required";
     public static final String CYCLIC_DEPENDENCY_DETECTED= "Cyclic dependency detected: The child part already contains the parent in its BOM.";
+    public static final String PASSWORD_CANNOT_BE_CHANGED= "Cannot reset your own password";
 
     private ErrorMessageConstant() {
 
