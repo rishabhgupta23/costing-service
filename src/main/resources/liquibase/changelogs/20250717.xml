@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+      
+
+        <changeSet id="20250717" author="Anusha">
+        <sql>
+            ALTER TABLE app.app_user
+            ADD COLUMN reset_required BOOLEAN NOT NULL DEFAULT FALSE;
+
+           UPDATE app.app_user
+           SET reset_required = TRUE
+           WHERE reset_required = FALSE;
+        </sql>
+
+         <rollback>
+        <sql>
+                ALTER TABLE app.app_user
+                 DROP COLUMN reset_required;
+        </sql>
+    </rollback>
+</changeSet>
+  
+
+</databaseChangeLog>

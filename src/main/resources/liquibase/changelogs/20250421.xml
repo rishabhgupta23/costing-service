@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog 
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog 
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <changeSet id="20250422" author="Anusha">
+
+        <sql>
+            ALTER TABLE app.part 
+                DROP COLUMN IF EXISTS category_name,
+                ADD COLUMN IF NOT EXISTS category_id BIGINT,
+                ADD CONSTRAINT fk_part_category_id 
+                FOREIGN KEY (category_id)
+                REFERENCES app.part_category (category_id)
+                ON DELETE SET NULL;
+        </sql>
+
+        <rollback>
+            ALTER TABLE app.part 
+                DROP CONSTRAINT IF EXISTS fk_part_category_id,
+                DROP COLUMN IF EXISTS category_id,
+                ADD COLUMN category_name VARCHAR(50);
+        </rollback>
+    </changeSet>
+
+    <changeSet id="20250423" author="Anusha">
+        <sql>
+            ALTER TABLE app.part_category 
+            DROP CONSTRAINT IF EXISTS part_category_name_key;
+    
+            ALTER TABLE app.part_category 
+            ADD CONSTRAINT part_category_company_name_unique UNIQUE (company_id, name);
+        </sql>
+    
+        <rollback>
+            ALTER TABLE app.part_category 
+            DROP CONSTRAINT IF EXISTS part_category_company_name_unique;
+    
+            ALTER TABLE app.part_category 
+            ADD CONSTRAINT part_category_name_key UNIQUE (name);
+        </rollback>
+    </changeSet>
+</databaseChangeLog>

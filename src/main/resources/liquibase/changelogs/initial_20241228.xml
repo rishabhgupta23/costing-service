@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!-- Tagging the database initialization -->
+    <changeSet id="20241228-1" author="Rishabh">
+        <tagDatabase tag="init"/>
+    </changeSet>
+
+    <!-- Create schema -->
+    <changeSet id="20241228-2" author="Rishabh">
+        <sql>
+            CREATE SCHEMA app;
+        </sql>
+        <rollback>
+            <sql>DROP SCHEMA app;</sql>
+        </rollback>
+    </changeSet>
+
+    <!-- Create tables -->
+    <changeSet id="20241228-3" author="Rishabh">
+        <sql>
+            CREATE TABLE IF NOT EXISTS app.app_user (
+            delete_flag INTEGER DEFAULT 0,
+            created_by BIGINT,
+            created_date_time TIMESTAMPTZ(6),
+            updated_by BIGINT,
+            updated_date_time TIMESTAMPTZ(6),
+            user_id BIGSERIAL NOT NULL,
+            email_id VARCHAR(50) NOT NULL,
+            name VARCHAR(50) NOT NULL,
+            password VARCHAR(100) NOT NULL,
+            CONSTRAINT app_user_pkey PRIMARY KEY (user_id),
+            CONSTRAINT app_user_email_id_key UNIQUE (email_id)
+            );
+
+            CREATE TABLE IF NOT EXISTS app.vendor (
+            delete_flag INTEGER DEFAULT 0,
+            created_by BIGINT,
+            created_date_time TIMESTAMPTZ(6),
+            updated_by BIGINT,
+            updated_date_time TIMESTAMPTZ(6),
+            vendor_id BIGSERIAL NOT NULL,
+            address VARCHAR(255),
+            contact_number VARCHAR(15),
+            email_id VARCHAR(50) NOT NULL,
+            name VARCHAR(50) NOT NULL,
+            CONSTRAINT vendor_pkey PRIMARY KEY (vendor_id),
+            CONSTRAINT vendor_name_key UNIQUE (name)
+            );
+
+            CREATE TABLE IF NOT EXISTS app.part (
+            delete_flag INTEGER DEFAULT 0,
+            created_by BIGINT,
+            created_date_time TIMESTAMPTZ(6),
+            part_id BIGSERIAL NOT NULL,
+            updated_by BIGINT,
+            updated_date_time TIMESTAMPTZ(6),
+            category_name VARCHAR(50),
+            part_name VARCHAR(200),
+            part_number VARCHAR(50),
+            type VARCHAR(10),
+            unit VARCHAR(10),
+            CONSTRAINT part_pkey PRIMARY KEY (part_id),
+            CONSTRAINT part_part_number_key UNIQUE (part_number)
+            );
+
+            CREATE TABLE IF NOT EXISTS app.part_category (
+            delete_flag INTEGER DEFAULT 0,
+            category_id BIGSERIAL NOT NULL,
+            created_by BIGINT,
+            created_date_time TIMESTAMPTZ(6),
+            updated_by BIGINT,
+            updated_date_time TIMESTAMPTZ(6),
+            name VARCHAR(50) NOT NULL,
+            CONSTRAINT part_category_pkey PRIMARY KEY (category_id),
+            CONSTRAINT part_category_name_key UNIQUE (name)
+            );
+
+            CREATE TABLE IF NOT EXISTS app.cost_factor (
+            delete_flag INTEGER DEFAULT 0,
+            created_by BIGINT,
+            created_date_time TIMESTAMPTZ(6),
+            factor_id BIGSERIAL NOT NULL,
+            updated_by BIGINT,
+            updated_date_time TIMESTAMPTZ(6),
+            factor_name VARCHAR(50),
+            CONSTRAINT cost_factor_pkey PRIMARY KEY (factor_id)
+            );
+
+            CREATE TABLE IF NOT EXISTS app.part_cost (
+            delete_flag INTEGER DEFAULT 0,
+            created_by BIGINT,
+            created_date_time TIMESTAMPTZ(6),
+            part_cost_id BIGSERIAL NOT NULL,
+            part_id BIGINT,
+            updated_by BIGINT,
+            updated_date_time TIMESTAMPTZ(6),
+            vendor_id BIGINT,
+            CONSTRAINT part_cost_pkey PRIMARY KEY (part_cost_id),
+            CONSTRAINT part_cost_vendor_id_fkey FOREIGN KEY (vendor_id)
+            REFERENCES app.vendor (vendor_id) ON DELETE CASCADE,
+            CONSTRAINT part_cost_part_id_fkey FOREIGN KEY (part_id)
+            REFERENCES app.part (part_id) ON DELETE CASCADE
+            );
+
+            CREATE TABLE IF NOT EXISTS app.part_cost_cost_factor (
+            delete_flag INTEGER DEFAULT 0,
+            value DOUBLE PRECISION NOT NULL,
+            created_by BIGINT,
+            created_date_time TIMESTAMPTZ(6),
+            factor_id BIGINT,
+            part_cost_cost_factor_id BIGSERIAL NOT NULL,
+            part_cost_id BIGINT,
+            updated_by BIGINT,
+            updated_date_time TIMESTAMPTZ(6),
+            CONSTRAINT part_cost_cost_factor_pkey PRIMARY KEY (part_cost_cost_factor_id),
+            CONSTRAINT part_cost_cost_factor_part_cost_id_fkey FOREIGN KEY (part_cost_id)
+            REFERENCES app.part_cost (part_cost_id) ON DELETE CASCADE,
+            CONSTRAINT part_cost_cost_factor_factor_id_fkey FOREIGN KEY (factor_id)
+            REFERENCES app.cost_factor (factor_id)
+            );
+
+            CREATE TABLE IF NOT EXISTS app.part_unit (
+            delete_flag INTEGER DEFAULT 0,
+            created_by BIGINT,
+            created_date_time TIMESTAMPTZ(6),
+            unit_id BIGSERIAL NOT NULL,
+            updated_by BIGINT,
+            updated_date_time TIMESTAMPTZ(6),
+            unit_name VARCHAR(50),
+            CONSTRAINT part_unit_pkey PRIMARY KEY (unit_id),
+            CONSTRAINT part_unit_unit_id_key UNIQUE (unit_name)
+            );
+
+            CREATE TABLE IF NOT EXISTS app.bom (
+            delete_flag INTEGER DEFAULT 0,
+            quantity DOUBLE PRECISION,
+            created_by BIGINT,
+            created_date_time TIMESTAMPTZ(6),
+            parent_part_id BIGINT NOT NULL,
+            part_id BIGINT NOT NULL,
+            updated_by BIGINT,
+            updated_date_time TIMESTAMPTZ(6) ,
+            CONSTRAINT bom_pkey PRIMARY KEY (parent_part_id, part_id),
+            CONSTRAINT bom_parent_part_id_fkey FOREIGN KEY (parent_part_id)
+            REFERENCES app.part (part_id) ON DELETE CASCADE,
+            CONSTRAINT bom_part_id_fkey FOREIGN KEY (part_id)
+            REFERENCES app.part (part_id)
+            );
+        </sql>
+        <rollback>
+            <sql>
+                DROP TABLE app.app_user CASCADE;
+                DROP TABLE app.vendor CASCADE;
+                DROP TABLE app.part CASCADE;
+                DROP TABLE app.part_category CASCADE;
+                DROP TABLE app.cost_factor CASCADE;
+                DROP TABLE app.part_cost CASCADE;
+                DROP TABLE app.part_cost_cost_factor CASCADE;
+                DROP TABLE app.part_unit CASCADE;
+                DROP TABLE app.bom CASCADE;
+            </sql>
+        </rollback>
+
+    </changeSet>
+    <!-- Insert vendor data -->
+    <changeSet id="20241228-4" author="Rishabh">
+        <sql>
+            INSERT INTO app.vendor (delete_flag, created_by, created_date_time, updated_by, updated_date_time, address, contact_number, email_id, name)
+            VALUES (0, -9, now(), -9, now(), 'XYZ Company, Patna, Bihar', '9999999999', 'xyz@gmail.com', 'XYZ Company');
+
+            INSERT INTO app.vendor (delete_flag, created_by, created_date_time, updated_by, updated_date_time, address, contact_number, email_id, name)
+            VALUES (0, -9, now(), -9, now(), 'ABC Company, Patna, Bihar', '9999999999', 'abc@gmail.com', 'ABC Company');
+        </sql>
+        <rollback>
+            <sql>TRUNCATE app.vendor CASCADE;</sql>
+        </rollback>
+    </changeSet>
+
+    <!-- Insert cost factors -->
+    <changeSet id="20241228-5" author="Rishabh">
+        <sql>
+            INSERT INTO app.cost_factor (delete_flag, created_by, created_date_time, updated_by, updated_date_time, factor_name)
+            VALUES (0, -9, now(), -9, now(), 'Labor Cost');
+
+            INSERT INTO app.cost_factor (delete_flag, created_by, created_date_time, updated_by, updated_date_time, factor_name)
+            VALUES (0, -9, now(), -9, now(), 'Cost Price');
+        </sql>
+        <rollback>
+            <sql>TRUNCATE app.cost_factor CASCADE;</sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
