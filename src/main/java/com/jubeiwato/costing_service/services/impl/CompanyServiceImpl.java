@@ -1,9 +1,9 @@
 package com.jubeiwato.costing_service.services.impl;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.jubeiwato.costing_service.authentication.config.AppException;
@@ -12,10 +12,7 @@ import com.jubeiwato.costing_service.constants.UserRoleConstants;
 import com.jubeiwato.costing_service.dtos.CompanyDto;
 import com.jubeiwato.costing_service.entities.Company;
 import com.jubeiwato.costing_service.repositories.CompanyRepository;
-import com.jubeiwato.costing_service.repositories.UserRepository;
-import com.jubeiwato.costing_service.repositories.UserRoleRepository;
 import com.jubeiwato.costing_service.services.CompanyService;
-import com.jubeiwato.costing_service.services.UserService;
 import com.jubeiwato.costing_service.entities.User;
 
 import lombok.RequiredArgsConstructor;
@@ -25,11 +22,19 @@ import lombok.RequiredArgsConstructor;
 public class CompanyServiceImpl implements CompanyService {
 
     private final CompanyRepository companyRepository;
-    private final UserRepository userRepository;
-    private final UserRoleRepository userRoleRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final UserService userService;
-
+    
+private void validateCompanyEmailUnique(String emailId) {
+    Optional<Company> existingCompany = companyRepository.findByCompanyEmailId(emailId);
+    if (existingCompany.isPresent()) {
+        throw new AppException(
+            ErrorMessageConstant.getFormattedMessage(
+                ErrorMessageConstant.COMPANY_ALREADY_EXISTS_TEMPLATE,
+                emailId
+            ),
+            HttpStatus.BAD_REQUEST
+        );
+    }
+}
     @Override
     public List<CompanyDto> getAllCompanies() {
         List<Company> companies = companyRepository.findAll();
@@ -40,6 +45,8 @@ public class CompanyServiceImpl implements CompanyService {
 
     @Override
     public CompanyDto createCompany(CompanyDto companyDto) {
+
+        validateCompanyEmailUnique(companyDto.getCompanyEmailId());
         Company company = new Company();
         company.setCompanyName(companyDto.getCompanyName());
         company.setCompanyEmailId(companyDto.getCompanyEmailId());
@@ -56,7 +63,7 @@ public class CompanyServiceImpl implements CompanyService {
         if (currentUser.getUserRole().getRoleName().equalsIgnoreCase(UserRoleConstants.ADMIN)) {
             Long adminCompanyId = currentUser.getCompany().getCompanyId();
             if (!adminCompanyId.equals(companyId)) {
-                throw new AppException("You are not authorized to view details of this company", HttpStatus.FORBIDDEN);
+                throw new AppException(ErrorMessageConstant.UNAUTHORIZED_TO_VIEW_COMPANY, HttpStatus.FORBIDDEN);
             }
         }
         Company company = companyRepository.findById(companyId)
@@ -71,7 +78,7 @@ public class CompanyServiceImpl implements CompanyService {
         if (currentUser.getUserRole().getRoleName().equalsIgnoreCase(UserRoleConstants.ADMIN)) {
             Long adminCompanyId = currentUser.getCompany().getCompanyId();
             if (!adminCompanyId.equals(companyId)) {
-                throw new AppException("You are not authorized to update this company", HttpStatus.FORBIDDEN);
+                throw new AppException(ErrorMessageConstant.UNAUTHORIZED_TO_UPDATE_COMPANY, HttpStatus.FORBIDDEN);
             }
         }
 
