@@ -80,6 +80,7 @@ public class ErrorMessageConstant {
     public static final String COMPANY_ALREADY_EXISTS_TEMPLATE = "Company with email '%s' already exists";
     public static final String UNAUTHORIZED_TO_VIEW_COMPANY = "You are not authorized to view details of this company";
     public static final String UNAUTHORIZED_TO_UPDATE_COMPANY = "You are not authorized to view details of this company";
+    public static final String INVALID_EMAIL_FORMAT = "Invalid email format";
     private ErrorMessageConstant() {
 
     }

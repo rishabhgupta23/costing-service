@@ -13,6 +13,7 @@ import com.jubeiwato.costing_service.dtos.CompanyDto;
 import com.jubeiwato.costing_service.entities.Company;
 import com.jubeiwato.costing_service.repositories.CompanyRepository;
 import com.jubeiwato.costing_service.services.CompanyService;
+import com.jubeiwato.costing_service.utils.ValidationUtil;
 import com.jubeiwato.costing_service.entities.User;
 
 import lombok.RequiredArgsConstructor;
@@ -47,11 +48,15 @@ private void validateCompanyEmailUnique(String emailId) {
     public CompanyDto createCompany(CompanyDto companyDto) {
 
         validateCompanyEmailUnique(companyDto.getCompanyEmailId());
+        
+             if (!ValidationUtil.isValidEmail(companyDto.getCompanyEmailId())) {
+                        throw new AppException(ErrorMessageConstant.INVALID_EMAIL_FORMAT, HttpStatus.BAD_REQUEST);
+                    }
         Company company = new Company();
         company.setCompanyName(companyDto.getCompanyName());
         company.setCompanyEmailId(companyDto.getCompanyEmailId());
         company.setCompanyAddress(companyDto.getCompanyAddress());
-        company.setMaxUsers(6);
+        company.setMaxUsers(companyDto.getMaxUsers());
 
         Company savedCompany = companyRepository.save(company);
 
@@ -85,9 +90,20 @@ private void validateCompanyEmailUnique(String emailId) {
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new AppException(ErrorMessageConstant.COMPANY_DOES_NOT_EXIST, HttpStatus.NOT_FOUND));
 
-        if (companyDto.getCompanyName() != null && !companyDto.getCompanyName().isBlank()) {
-            company.setCompanyName(companyDto.getCompanyName());
-        }
+    // Only run email uniqueness check if the email is changing
+    if (companyDto.getCompanyEmailId() != null &&
+        !companyDto.getCompanyEmailId().equalsIgnoreCase(company.getCompanyEmailId())) {
+
+         validateCompanyEmailUnique(companyDto.getCompanyEmailId());
+    }
+
+     if (!ValidationUtil.isValidEmail(companyDto.getCompanyEmailId())) {
+                        throw new AppException(ErrorMessageConstant.INVALID_EMAIL_FORMAT, HttpStatus.BAD_REQUEST);
+                    }
+
+    if (companyDto.getCompanyName() != null && !companyDto.getCompanyName().isBlank()) {
+        company.setCompanyName(companyDto.getCompanyName());
+    }
 
         if (companyDto.getCompanyEmailId() != null && !companyDto.getCompanyEmailId().isBlank()) {
             company.setCompanyEmailId(companyDto.getCompanyEmailId());

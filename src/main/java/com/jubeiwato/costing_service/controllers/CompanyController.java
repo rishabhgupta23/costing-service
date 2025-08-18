@@ -20,6 +20,7 @@ import com.jubeiwato.costing_service.entities.User;
 import com.jubeiwato.costing_service.dtos.CompanyDto;
 import com.jubeiwato.costing_service.services.CompanyService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -31,7 +32,7 @@ public class CompanyController {
 
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     @PostMapping()
-    public ResponseEntity<String> createCompany(@RequestBody CompanyDto companyDto) {
+    public ResponseEntity<String> createCompany(@RequestBody @Valid CompanyDto companyDto) {
         companyService.createCompany(companyDto);
         return new ResponseEntity<>("Company created successfully!", HttpStatus.CREATED);
     }
@@ -50,7 +51,7 @@ public class CompanyController {
 
     @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "')")
     @PutMapping("/{companyId}")
-    public ResponseEntity<String> updateCompanybyId(@PathVariable Long companyId, @RequestBody CompanyDto companyDto,
+    public ResponseEntity<String> updateCompanybyId(@PathVariable Long companyId, @RequestBody @Valid CompanyDto companyDto,
             @AuthenticationPrincipal User currentUser) {
         companyService.updateCompanybyId(companyId, companyDto, currentUser);
         return new ResponseEntity<>("Company updated successfully!", HttpStatus.OK);

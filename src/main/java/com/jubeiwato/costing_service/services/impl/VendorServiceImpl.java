@@ -73,11 +73,11 @@ public class VendorServiceImpl implements VendorService {
                 }
 
                 if (emailId == null || !ValidationUtil.isValidEmail(emailId)) {
-                        throw new AppException("Invalid email format", HttpStatus.BAD_REQUEST);
+                        throw new AppException(ErrorMessageConstant.INVALID_EMAIL_FORMAT, HttpStatus.BAD_REQUEST);
                     }
                     
                 Company company = companyRepository.findById(companyId)
-                                .orElseThrow(() -> new AppException("Company not found", HttpStatus.BAD_REQUEST));
+                                .orElseThrow(() -> new AppException(ErrorMessageConstant.COMPANY_NOT_FOUND, HttpStatus.BAD_REQUEST));
                 validateDuplicateVendor(companyId, vendorName);
                 Vendor vendor = Vendor.builder()
 
