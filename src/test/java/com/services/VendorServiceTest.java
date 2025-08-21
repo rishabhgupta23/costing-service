@@ -74,7 +74,7 @@ class VendorServiceTest {
                 AppException exception = assertThrows(AppException.class, () -> vendorService.createVendor(companyId,
                                 "Test", "test@mail.com", "9999999999", "Nowhere"));
 
-                assertEquals("Company not found", exception.getMessage());
+                assertEquals("Company does not exist", exception.getMessage());
         }
 
         @Test

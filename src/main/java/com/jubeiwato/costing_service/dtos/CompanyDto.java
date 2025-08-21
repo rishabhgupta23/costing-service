@@ -27,7 +27,7 @@ public class CompanyDto {
     private String companyEmailId;
     
     @Min(value = 1, message = "Max users must be greater than zero.")
-    @NotNull(message = "Max users ID cannot be null or blank.")
+    @NotNull(message = "Max users cannot be null or blank.")
     private Integer maxUsers;
 
     public static CompanyDto entityToDto(Company company) {

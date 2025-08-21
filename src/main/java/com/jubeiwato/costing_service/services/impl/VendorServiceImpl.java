@@ -77,7 +77,7 @@ public class VendorServiceImpl implements VendorService {
                     }
                     
                 Company company = companyRepository.findById(companyId)
-                                .orElseThrow(() -> new AppException(ErrorMessageConstant.COMPANY_NOT_FOUND, HttpStatus.BAD_REQUEST));
+                                .orElseThrow(() -> new AppException(ErrorMessageConstant.COMPANY_DOES_NOT_EXIST, HttpStatus.BAD_REQUEST));
                 validateDuplicateVendor(companyId, vendorName);
                 Vendor vendor = Vendor.builder()
 
