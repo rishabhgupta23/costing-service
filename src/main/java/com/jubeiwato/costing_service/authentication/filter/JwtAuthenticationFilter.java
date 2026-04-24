@@ -45,7 +45,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     @NonNull FilterChain filterChain) throws ServletException, IOException {
 
         String requestPath = request.getServletPath();
-        if (requestPath.equals("/api/auth/login")) {
+        if (requestPath.equals("/auth/login")) {
             filterChain.doFilter(request, response);
             return;
             }
@@ -78,7 +78,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 if (jwtService.isTokenValid(jwt, user)) {
 
         //Throw 401 if reset flag is true and path is NOT /auth/reset-password
-        if (user.isResetRequired() && !requestPath.equals("/api/auth/reset-password")) {
+        if (user.isResetRequired() && !requestPath.equals("/auth/reset-password")) {
              response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
              response.setContentType("application/json");
 
