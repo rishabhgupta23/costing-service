@@ -24,9 +24,15 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.io.IOException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    private static final Logger log =
+            LoggerFactory.getLogger(JwtAuthenticationFilter.class);
+
 
     private final UserRepository userRepository;
     private final JwtService jwtService;
@@ -45,7 +51,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     @NonNull FilterChain filterChain) throws ServletException, IOException {
 
         String requestPath = request.getServletPath();
+        log.info("Incoming Request Path: {}", requestPath);
         if (requestPath.equals("/auth/login")) {
+            log.debug("Skipping JWT filter for login endpoint");
             filterChain.doFilter(request, response);
             return;
             }
@@ -55,10 +63,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType("application/json");
-        
+
             ErrorResponseDto errorResponse = ErrorResponseDto.of(ErrorMessageConstant.JWT_TOKEN_MISSING, HttpStatus.UNAUTHORIZED);
             String jsonResponse = new ObjectMapper().writeValueAsString(errorResponse);
-        
+
             response.getWriter().write(jsonResponse);
             response.getWriter().flush();
             return;
@@ -67,6 +75,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             final String jwt = authHeader.substring(7);
             final String userEmail = jwtService.extractUsername(jwt);
+            log.debug("Extracted userEmail: {}", userEmail);
 
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
@@ -103,14 +112,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             filterChain.doFilter(request, response);
         } catch (Exception exception) {
-            
+
             if (exception instanceof io.jsonwebtoken.ExpiredJwtException) {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.setContentType("application/json");           
+                response.setContentType("application/json");
                 ErrorResponseDto errorResponse = ErrorResponseDto.of(ErrorMessageConstant.JWT_TOKEN_EXPIRED, HttpStatus.UNAUTHORIZED);
-        
+
                 String jsonResponse = new ObjectMapper().writeValueAsString(errorResponse);
-                
+
                 response.getWriter().write(jsonResponse);
                 response.getWriter().flush();
                 return;
