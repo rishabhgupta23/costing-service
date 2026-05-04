@@ -57,7 +57,7 @@ jobs:
             mv *.jar costing.jar
 
             # 4. Start service
-            sudo systemctl start wnw.service
+            sudo systemctl start costing-app.service
 
             # 5. Verify service
-            sudo systemctl status wnw.service
+            sudo systemctl status costing-app.service
