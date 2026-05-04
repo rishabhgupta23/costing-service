@@ -1,7 +1,9 @@
 name: Deploy Spring Boot to EC2
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - release
 
 jobs:
   build-and-deploy:
