@@ -63,9 +63,7 @@ public class PartController {
     @PreAuthorize("hasRole('" + SUPER_ADMIN + "')")
     public ResponseEntity<GeneralResponseDto> uploadExcel(
             @RequestParam("file") MultipartFile file,
-            @AuthenticationPrincipal User authenticatedUser) throws IOException {
-
-        Long companyId = authenticatedUser.getCompany().getCompanyId();
+            @RequestParam("companyId") Long companyId) throws IOException {
 
         partService.uploadBomExcel(file, companyId);
 
