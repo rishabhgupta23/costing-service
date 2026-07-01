@@ -8,6 +8,10 @@ import com.jubeiwato.costing_service.constants.Sorting;
 import com.jubeiwato.costing_service.dtos.*;
 import com.jubeiwato.costing_service.services.FileGeneratorService;
 import jakarta.transaction.Transactional;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -45,6 +49,9 @@ import com.jubeiwato.costing_service.repositories.VendorRepository;
 import com.jubeiwato.costing_service.repositories.PartUnitRepository;
 import com.jubeiwato.costing_service.services.PartService;
 import com.jubeiwato.costing_service.services.S3Service;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.DataFormatter;
 import com.jubeiwato.costing_service.utils.S3Util;
 import com.jubeiwato.costing_service.utils.ValidationUtil;
 
@@ -52,6 +59,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 
 import jakarta.validation.Valid;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class PartServiceImpl implements PartService {
@@ -90,6 +98,292 @@ public class PartServiceImpl implements PartService {
         this.partAttributeRepository=partAttributeRepository;
                 this.partFileRepository = partFileRepository;
                 this.s3Service = s3Service;
+        }
+
+        @Transactional
+        @Override
+        public void uploadBomExcel(MultipartFile file, Long companyId) throws IOException {
+
+            Company company = getCompany(companyId);
+
+            try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
+
+            Sheet sheet = workbook.getSheetAt(0);
+
+            Iterator<Row> iterator = sheet.iterator();
+
+            if(iterator.hasNext()){
+                iterator.next();
+                iterator.next();
+            }
+
+            List<Part> partsToSave = new ArrayList<>();
+            List<BomUploadDto> bomRows = new ArrayList<>();
+
+            parseExcel(
+                    iterator,
+                    company,
+                    companyId,
+                    partsToSave,
+                    bomRows
+            );
+
+            partRepository.saveAll(partsToSave);
+
+            createBomEntries(bomRows);
+
+            }
+        }
+
+        private void parseExcel(
+                Iterator<Row> iterator,
+                Company company,
+                Long companyId,
+                List<Part> partsToSave,
+                List<BomUploadDto> bomRows) {
+
+            Part currentMaster = null;
+
+            Set<String> excelPartNumbers = new HashSet<>();
+
+            while (iterator.hasNext()) {
+
+                Row row = iterator.next();
+
+                if (isRowEmpty(row)) {
+                    continue;
+                }
+
+                int rowNumber = row.getRowNum() + 1;
+
+                String partNumber = getString(row.getCell(1));
+                String partName   = getString(row.getCell(2));
+                String type       = getString(row.getCell(3));
+                String unit = getString(row.getCell(4)).toUpperCase().trim();
+                Double quantity   = getDouble(row.getCell(5));
+
+                validateRow(
+                        rowNumber,
+                        type,
+                        partNumber,
+                        partName,
+                        unit,
+                        quantity,
+                        companyId,
+                        excelPartNumbers,
+                        currentMaster
+                );
+
+                if ("MASTER".equalsIgnoreCase(type)) {
+
+                    currentMaster = createPart(
+                            company,
+                            partNumber,
+                            partName,
+                            unit,
+                            PartType.MASTER
+                    );
+
+                    partsToSave.add(currentMaster);
+
+                } else {
+
+                    Part child = createPart(
+                            company,
+                            partNumber,
+                            partName,
+                            unit,
+                            PartType.UNIT
+                    );
+
+                    partsToSave.add(child);
+
+                    bomRows.add(
+                            new BomUploadDto(
+                                    currentMaster,
+                                    child,
+                                    quantity
+                            )
+                    );
+                }
+            }
+        }
+
+        private Part createPart(
+                Company company,
+                String partNumber,
+                String partName,
+                String unit,
+                PartType type) {
+
+            return Part.builder()
+                    .company(company)
+                    .partNumber(partNumber)
+                    .partName(partName)
+                    .unit(unit)
+                    .type(type)
+                    .build();
+        }
+
+        private void createBomEntries(List<BomUploadDto> bomRows) {
+
+            List<Bom> bomList = new ArrayList<>();
+
+            for (BomUploadDto row : bomRows) {
+
+                bomList.add(
+                        new Bom(
+                                row.getParent(),
+                                row.getChild(),
+                                row.getQuantity()
+                        )
+                );
+            }
+
+            bomRepository.saveAll(bomList);
+        }
+
+        private void validateRow(
+                int rowNumber,
+                String type,
+                String partNumber,
+                String partName,
+                String unit,
+                Double quantity,
+                Long companyId,
+                Set<String> excelPartNumbers,
+                Part currentMaster) {
+
+            if (type == null || type.isBlank()) {
+                throw new AppException("Type is mandatory", HttpStatus.BAD_REQUEST);
+            }
+
+            if (!type.equalsIgnoreCase("MASTER")
+                    && !type.equalsIgnoreCase("CHILD")) {
+                throw new AppException(
+                        "Row " + rowNumber + ": Type must be MASTER or CHILD",
+                        HttpStatus.BAD_REQUEST);
+            }
+
+            if (partNumber == null || partNumber.isBlank()) {
+                throw new AppException(
+                        "Row " + rowNumber + ": Part Number is mandatory",
+                        HttpStatus.BAD_REQUEST);
+            }
+
+            if (partName == null || partName.isBlank()) {
+                throw new AppException(
+                        "Row " + rowNumber + ": Part Name is mandatory",
+                        HttpStatus.BAD_REQUEST);
+            }
+
+            if (unit == null || unit.isBlank()) {
+                throw new AppException(
+                        "Row " + rowNumber + ": Unit is mandatory",
+                        HttpStatus.BAD_REQUEST);
+            }
+
+            partUnitRepository.findByUnitName(unit)
+                    .orElseThrow(() ->
+                            new AppException(
+                                    "Row " + rowNumber + ": Invalid Unit : " + unit,
+                                    HttpStatus.BAD_REQUEST));
+
+            if (!excelPartNumbers.add(partNumber)) {
+                throw new AppException(
+                        "Row " + rowNumber + ": Duplicate Part Number in Excel : " + partNumber,
+                        HttpStatus.BAD_REQUEST);
+            }
+
+            if (partRepository.existsByCompany_CompanyIdAndPartNumber(companyId, partNumber)) {
+                throw new AppException(
+                        "Row " + rowNumber + ": Part Number already exists : " + partNumber,
+                        HttpStatus.BAD_REQUEST);
+            }
+
+            if (type.equalsIgnoreCase("CHILD")) {
+
+                if (currentMaster == null) {
+                    throw new AppException(
+                            "Row " + rowNumber + ": Child Part found before Master",
+                            HttpStatus.BAD_REQUEST);
+                }
+
+                if (quantity == null || quantity <= 0) {
+                    throw new AppException(
+                            "Row " + rowNumber + ": Quantity must be greater than zero",
+                            HttpStatus.BAD_REQUEST);
+                }
+            }
+        }
+
+        private Company getCompany(Long companyId) {
+
+            return companyRepository.findById(companyId)
+                    .orElseThrow(() ->
+                            new AppException(
+                                    ErrorMessageConstant.INVALID_COMPANY,
+                                    HttpStatus.BAD_REQUEST));
+        }
+
+        private boolean isRowEmpty(Row row) {
+
+            if (row == null) {
+                return true;
+            }
+
+            for (int i = 0; i < row.getLastCellNum(); i++) {
+
+                if (row.getCell(i) != null &&
+                        !getString(row.getCell(i)).isBlank()) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private String getString(Cell cell) {
+
+            if(cell == null){
+                return "";
+            }
+
+            DataFormatter formatter = new DataFormatter();
+
+            return formatter.formatCellValue(cell).trim();
+        }
+
+        private Double getDouble(Cell cell) {
+
+            if (cell == null) {
+                return null;
+            }
+
+            if (cell.getCellType() == CellType.NUMERIC) {
+                return cell.getNumericCellValue();
+            }
+
+            if (cell.getCellType() == CellType.STRING) {
+
+                String value = cell.getStringCellValue().trim();
+
+                if (value.isBlank()) {
+                    return null;
+                }
+
+                try{
+                    return Double.parseDouble(value);
+                }
+                catch(NumberFormatException e){
+                    throw new AppException(
+                            "Invalid Quantity : " + value,
+                            HttpStatus.BAD_REQUEST
+                    );
+                }
+            }
+
+            return null;
         }
 
         private Part getValidatedPart(Long partId, Long companyId) {

@@ -4,9 +4,12 @@ import java.util.List;
 
 import com.jubeiwato.costing_service.constants.Sorting;
 import com.jubeiwato.costing_service.dtos.*;
+import org.springframework.web.multipart.MultipartFile;
+
 import java.io.IOException;
 
 public interface PartService {
+    void uploadBomExcel(MultipartFile file, Long companyId) throws IOException;
 
     public ApiPageResponseDto<PartDataDto> getParts(PartDto filter,long companyId, int pageNo, int pageSize, String sortBy, Sorting sortDir);
 
