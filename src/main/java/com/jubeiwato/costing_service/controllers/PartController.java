@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.*;
 import static com.jubeiwato.costing_service.constants.UserRoleConstants.*;
 import com.jubeiwato.costing_service.services.PartService;
 import jakarta.validation.Valid;
+import org.springframework.web.multipart.MultipartFile;
+
 import java.io.IOException;
 
 
@@ -57,7 +59,17 @@ public class PartController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/upload-excel")
+    @PreAuthorize("hasRole('" + SUPER_ADMIN + "')")
+    public ResponseEntity<GeneralResponseDto> uploadExcel(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("companyId") Long companyId) throws IOException {
 
+        partService.uploadBomExcel(file, companyId);
+
+        return ResponseEntity.ok(
+                new GeneralResponseDto("Excel uploaded successfully", HttpStatus.OK.value()));
+    }
 
     @GetMapping("/types")
     public ResponseEntity<List<String>> getPartTypes() {
