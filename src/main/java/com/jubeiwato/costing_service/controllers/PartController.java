@@ -59,7 +59,7 @@ public class PartController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/upload-excel")
+    @PostMapping("/excel/upload")
     @PreAuthorize("hasRole('" + SUPER_ADMIN + "')")
     public ResponseEntity<GeneralResponseDto> uploadExcel(
             @RequestParam("file") MultipartFile file,
@@ -90,7 +90,7 @@ public class PartController {
         return new ResponseEntity<>(part, HttpStatus.OK);
     }
     
-    @PutMapping("/{partId}")
+    @PostMapping("/{partId}")
     @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "') or hasRole('" + MAINTAINER + "')")
     public ResponseEntity<PartDto> updatePartById(@PathVariable Long partId, @RequestBody @Valid PartRequestDto request, @AuthenticationPrincipal User authenticatedUser) {
         Long companyId = authenticatedUser.getCompany().getCompanyId();
