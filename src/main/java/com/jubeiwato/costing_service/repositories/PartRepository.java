@@ -25,4 +25,6 @@ public interface PartRepository extends JpaRepository<Part, Long>, JpaSpecificat
    @EntityGraph(attributePaths = {"category"})
    @Override
    Page<Part> findAll(Specification<Part> spec, Pageable pageable);
+
+    Optional<Part> findByCompany_CompanyIdAndPartNumber(Long companyId, String partNumber);
 }

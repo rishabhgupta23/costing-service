@@ -110,23 +110,58 @@ public class PartServiceImpl implements PartService {
 
             Sheet sheet = workbook.getSheetAt(0);
 
-            Iterator<Row> iterator = sheet.iterator();
+                Iterator<Row> iterator = sheet.iterator();
 
-            if(iterator.hasNext()){
-                iterator.next();
-                iterator.next();
-            }
+                while (iterator.hasNext()) {
+
+                    Row row = iterator.next();
+
+                    String firstCell = getString(row.getCell(0));
+                    String secondCell = getString(row.getCell(1));
+
+                    if (firstCell.contains("Sr.")
+                            && secondCell.contains("Part No.")) {
+
+                        System.out.println("Header found at row " + row.getRowNum());
+                        break;
+                    }
+                }
+
+                System.out.println("Has next = " + iterator.hasNext());
 
             List<Part> partsToSave = new ArrayList<>();
             List<BomUploadDto> bomRows = new ArrayList<>();
+            List<BomUploadErrorDto> errors = new ArrayList<>();
 
             parseExcel(
                     iterator,
                     company,
-                    companyId,
                     partsToSave,
-                    bomRows
+                    bomRows,
+                    errors
             );
+
+                if (!errors.isEmpty()) {
+
+                    StringBuilder builder = new StringBuilder();
+
+                    for (BomUploadErrorDto error : errors) {
+
+                        builder.append("Row ")
+                                .append(error.getRowNumber())
+                                .append(": ")
+                                .append(error.getMessage())
+                                .append("\n");
+                    }
+
+                    throw new AppException(
+                            builder.toString(),
+                            HttpStatus.BAD_REQUEST
+                    );
+                }
+
+                System.out.println("Parts to save = " + partsToSave.size());
+                System.out.println("BOM rows = " + bomRows.size());
 
             partRepository.saveAll(partsToSave);
 
@@ -135,73 +170,122 @@ public class PartServiceImpl implements PartService {
             }
         }
 
-        private void parseExcel(
-                Iterator<Row> iterator,
-                Company company,
-                Long companyId,
-                List<Part> partsToSave,
-                List<BomUploadDto> bomRows) {
+    private void parseExcel(
+            Iterator<Row> iterator,
+            Company company,
+            List<Part> partsToSave,
+            List<BomUploadDto> bomRows,
+            List<BomUploadErrorDto> errors) {
 
-            Part currentMaster = null;
+        System.out.println("Entered parseExcel()");
+
+            Part rootMaster = null;
+
+            // Stores parts already processed in this Excel
+            Map<String, Part> excelPartMap = new HashMap<>();
 
             Set<String> excelPartNumbers = new HashSet<>();
 
             while (iterator.hasNext()) {
 
+                System.out.println("Reading next row...");
+
                 Row row = iterator.next();
 
                 if (isRowEmpty(row)) {
+                    System.out.println("Skipping empty row " + row.getRowNum());
                     continue;
                 }
 
                 int rowNumber = row.getRowNum() + 1;
 
+                System.out.println("Excel Row = " + row.getRowNum());
+
                 String partNumber = getString(row.getCell(1));
-                String partName   = getString(row.getCell(2));
-                String type       = getString(row.getCell(3));
-                String unit = getString(row.getCell(4)).toUpperCase().trim();
-                Double quantity   = getDouble(row.getCell(5));
+                String partName = getString(row.getCell(2));
+                String type = getString(row.getCell(3));
+                String unit = getString(row.getCell(4)).trim().toUpperCase();
+                Double quantity = getDouble(row.getCell(5));
 
-                validateRow(
-                        rowNumber,
-                        type,
-                        partNumber,
-                        partName,
-                        unit,
-                        quantity,
-                        companyId,
-                        excelPartNumbers,
-                        currentMaster
-                );
+                try {
+                    validateRow(
+                            rowNumber,
+                            type,
+                            partNumber,
+                            partName,
+                            unit,
+                            quantity,
+                            company,
+                            excelPartNumbers,
+                            rootMaster
+                    );
+                }
+                catch (AppException ex) {
 
-                if ("MASTER".equalsIgnoreCase(type)) {
+                    errors.add(
+                            new BomUploadErrorDto(
+                                    rowNumber,
+                                    ex.getMessage()
+                            )
+                    );
 
-                    currentMaster = createPart(
+                    continue;
+                }
+
+                // Check database first
+                Part part = partRepository
+                        .findByCompany_CompanyIdAndPartNumber(
+                                company.getCompanyId(),
+                                partNumber)
+                        .orElse(null);
+
+
+                // Create only if not found
+                if (part == null) {
+
+                    PartType partType = type.equalsIgnoreCase("MASTER")
+                            ? PartType.MASTER
+                            : PartType.UNIT;
+
+                    part = createPartEntity(
                             company,
                             partNumber,
                             partName,
                             unit,
-                            PartType.MASTER
+                            partType
                     );
 
-                    partsToSave.add(currentMaster);
+                    partsToSave.add(part);
+                }
+
+                excelPartMap.put(partNumber, part);
+
+                // First MASTER becomes root
+                if (type.equalsIgnoreCase("MASTER")) {
+
+                    if (rootMaster == null) {
+
+                        rootMaster = part;
+
+                    } else {
+
+                        // Every other MASTER becomes child of first MASTER
+                        bomRows.add(
+                                new BomUploadDto(
+                                        rootMaster,
+                                        part,
+                                        quantity == null ? 1 : quantity
+                                )
+                        );
+                    }
 
                 } else {
 
-                    Part child = createPart(
-                            company,
-                            partNumber,
-                            partName,
-                            unit,
-                            PartType.UNIT
-                    );
-
-                    partsToSave.add(child);
-
+                    // CHILD always belongs to first MASTER
                     bomRows.add(
                             new BomUploadDto(
-                                    currentMaster,
-                                    child,
+                                    rootMaster,
+                                    part,
                                     quantity
                             )
                     );
@@ -209,7 +293,7 @@ public class PartServiceImpl implements PartService {
             }
         }
 
-        private Part createPart(
+        private Part createPartEntity(
                 Company company,
                 String partNumber,
                 String partName,
@@ -250,9 +334,16 @@ public class PartServiceImpl implements PartService {
                 String partName,
                 String unit,
                 Double quantity,
-                Long companyId,
+                Company company,
                 Set<String> excelPartNumbers,
                 Part currentMaster) {
+
+            if (excelPartNumbers.contains(partNumber)) {
+                throw new AppException(
+                        "Row " + rowNumber + ": Duplicate Part Number in Excel: " + partNumber,
+                        HttpStatus.BAD_REQUEST
+                );
+            }
 
             if (type == null || type.isBlank()) {
                 throw new AppException("Type is mandatory", HttpStatus.BAD_REQUEST);
@@ -295,7 +386,10 @@ public class PartServiceImpl implements PartService {
                         HttpStatus.BAD_REQUEST);
             }
 
-            if (partRepository.existsByCompany_CompanyIdAndPartNumber(companyId, partNumber)) {
+            if (partRepository.existsByCompany_CompanyIdAndPartNumber(
+                    company.getCompanyId(),
+                    partNumber
+            )) {
                 throw new AppException(
                         "Row " + rowNumber + ": Part Number already exists : " + partNumber,
                         HttpStatus.BAD_REQUEST);
@@ -332,7 +426,7 @@ public class PartServiceImpl implements PartService {
                 return true;
             }
 
-            for (int i = 0; i < row.getLastCellNum(); i++) {
+            for (int i = 0; i <= 5; i++) {
 
                 if (row.getCell(i) != null &&
                         !getString(row.getCell(i)).isBlank()) {
