@@ -90,7 +90,7 @@ public class PartController {
         return new ResponseEntity<>(part, HttpStatus.OK);
     }
     
-    @PostMapping("/{partId}")
+    @PutMapping("/{partId}")
     @PreAuthorize("hasRole('" + ADMIN + "') or hasRole('" + SUPER_ADMIN + "') or hasRole('" + MAINTAINER + "')")
     public ResponseEntity<PartDto> updatePartById(@PathVariable Long partId, @RequestBody @Valid PartRequestDto request, @AuthenticationPrincipal User authenticatedUser) {
         Long companyId = authenticatedUser.getCompany().getCompanyId();
