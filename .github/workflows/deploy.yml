@@ -10,32 +10,37 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout code
+      # Checkout code
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      # 2. Setup Java
+      # Setup Java
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          distribution: temurin
+          java-version: 17
 
-      # 3. Build JAR
+      # Build project
       - name: Build with Maven
-        run: mvn clean install -DskipTests
+        run: mvn clean package -DskipTests
 
-      # 4. Copy JAR to EC2
+      # Rename generated jar to a fixed name
+      - name: Rename JAR
+        run: |
+          cp target/*.jar target/costing.jar
+
+      # Upload only one jar
       - name: Upload JAR to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "target/*.jar"
+          source: "target/costing.jar"
           target: "/home/ec2-user"
 
-      # 5. SSH and restart service
+      # Deploy
       - name: Deploy on EC2
         uses: appleboy/ssh-action@v1
         with:
@@ -43,21 +48,25 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            sudo systemctl stop wnw.service
+            set -e
+
+            echo "Stopping service..."
+            sudo systemctl stop costing-app.service
 
             cd /home/ec2-user
 
-            # 1. Create timestamp backup (if costing.jar exists)
-            cp costing.jar costing_backup_$(date +%s).jar || true
+            # Backup current jar
+            if [ -f costing.jar ]; then
+              cp costing.jar costing_backup_$(date +%s).jar
+            fi
 
-            # 2. Keep only last 3 backups
-            ls -t costing_backup_*.jar 2>/dev/null | tail -n +4 | xargs rm -f || true
+            # Keep only latest 3 backups
+            ls -t costing_backup_*.jar 2>/dev/null | tail -n +4 | xargs -r rm -f
 
-            # 3. Replace with new JAR
-            mv *.jar costing.jar
+            # Replace jar uploaded by SCP
+            mv target/costing.jar costing.jar
 
-            # 4. Start service
+            echo "Starting service..."
             sudo systemctl start costing-app.service
 
-            # 5. Verify service
-            sudo systemctl status costing-app.service
+            sudo systemctl status costing-app.service --no-pager
