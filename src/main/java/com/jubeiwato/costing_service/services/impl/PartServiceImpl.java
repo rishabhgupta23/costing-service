@@ -12,6 +12,8 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -63,6 +65,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class PartServiceImpl implements PartService {
+    private static final Logger logger = LoggerFactory.getLogger(PartServiceImpl.class);
 
         private PartRepository partRepository;
         private CategoryRepository categoryRepository;
@@ -77,6 +80,7 @@ public class PartServiceImpl implements PartService {
         private PartAttributeRepository partAttributeRepository;
         private final PartFileRepository partFileRepository;
         private final S3Service s3Service;
+        private static final int LAST_REQUIRED_CELL_INDEX = 5;
 
         public PartServiceImpl(PartRepository partRepository, CategoryRepository categoryRepository,PartPartAttributeRepository partPartAttributeRepository,
     PartAttributeRepository partAttributeRepository,
@@ -100,34 +104,15 @@ public class PartServiceImpl implements PartService {
                 this.s3Service = s3Service;
         }
 
-        @Transactional
-        @Override
-        public void uploadBomExcel(MultipartFile file, Long companyId) throws IOException {
+    @Transactional
+    @Override
+    public void uploadBomExcel(MultipartFile file, Long companyId) throws IOException {
 
-            Company company = getCompany(companyId);
+        Company company = getCompany(companyId);
 
-            try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
+        try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
 
-            Sheet sheet = workbook.getSheetAt(0);
-
-                Iterator<Row> iterator = sheet.iterator();
-
-                while (iterator.hasNext()) {
-
-                    Row row = iterator.next();
-
-                    String firstCell = getString(row.getCell(0));
-                    String secondCell = getString(row.getCell(1));
-
-                    if (firstCell.contains("Sr.")
-                            && secondCell.contains("Part No.")) {
-
-                        System.out.println("Header found at row " + row.getRowNum());
-                        break;
-                    }
-                }
-
-                System.out.println("Has next = " + iterator.hasNext());
+            Iterator<Row> iterator = getDataRowIterator(workbook);
 
             List<Part> partsToSave = new ArrayList<>();
             List<BomUploadDto> bomRows = new ArrayList<>();
@@ -141,34 +126,16 @@ public class PartServiceImpl implements PartService {
                     errors
             );
 
-                if (!errors.isEmpty()) {
+            throwIfValidationFailed(errors);
 
-                    StringBuilder builder = new StringBuilder();
-
-                    for (BomUploadErrorDto error : errors) {
-
-                        builder.append("Row ")
-                                .append(error.getRowNumber())
-                                .append(": ")
-                                .append(error.getMessage())
-                                .append("\n");
-                    }
-
-                    throw new AppException(
-                            builder.toString(),
-                            HttpStatus.BAD_REQUEST
-                    );
-                }
-
-                System.out.println("Parts to save = " + partsToSave.size());
-                System.out.println("BOM rows = " + bomRows.size());
+            logger.info("Total Parts to save: {}", partsToSave.size());
+            logger.info("Total BOM entries to save: {}", bomRows.size());
 
             partRepository.saveAll(partsToSave);
 
             createBomEntries(bomRows);
-
-            }
         }
+    }
 
     private void parseExcel(
             Iterator<Row> iterator,
@@ -177,137 +144,138 @@ public class PartServiceImpl implements PartService {
             List<BomUploadDto> bomRows,
             List<BomUploadErrorDto> errors) {
 
-        System.out.println("Entered parseExcel()");
+        logger.debug("Started parsing BOM Excel.");
 
-            Part rootMaster = null;
+        Part rootMaster = null;
+        Set<String> excelPartNumbers = new HashSet<>();
 
-            // Stores parts already processed in this Excel
-            Map<String, Part> excelPartMap = new HashMap<>();
+        while (iterator.hasNext()) {
 
-            Set<String> excelPartNumbers = new HashSet<>();
+            Row row = iterator.next();
 
-            while (iterator.hasNext()) {
-
-                System.out.println("Reading next row...");
-
-                Row row = iterator.next();
-
-                if (isRowEmpty(row)) {
-                    System.out.println("Skipping empty row " + row.getRowNum());
-                    continue;
-                }
-
-                int rowNumber = row.getRowNum() + 1;
-
-                System.out.println("Excel Row = " + row.getRowNum());
-
-                String partNumber = getString(row.getCell(1));
-                String partName = getString(row.getCell(2));
-                String type = getString(row.getCell(3));
-                String unit = getString(row.getCell(4)).trim().toUpperCase();
-                Double quantity = getDouble(row.getCell(5));
-
-                try {
-                    validateRow(
-                            rowNumber,
-                            type,
-                            partNumber,
-                            partName,
-                            unit,
-                            quantity,
-                            company,
-                            excelPartNumbers,
-                            rootMaster
-                    );
-                }
-                catch (AppException ex) {
-
-                    errors.add(
-                            new BomUploadErrorDto(
-                                    rowNumber,
-                                    ex.getMessage()
-                            )
-                    );
-
-                    continue;
-                }
-
-                // Check database first
-                Part part = partRepository
-                        .findByCompany_CompanyIdAndPartNumber(
-                                company.getCompanyId(),
-                                partNumber)
-                        .orElse(null);
-
-
-                // Create only if not found
-                if (part == null) {
-
-                    PartType partType = type.equalsIgnoreCase("MASTER")
-                            ? PartType.MASTER
-                            : PartType.UNIT;
-
-                    part = createPartEntity(
-                            company,
-                            partNumber,
-                            partName,
-                            unit,
-                            partType
-                    );
-
-                    partsToSave.add(part);
-                }
-
-                excelPartMap.put(partNumber, part);
-
-                // First MASTER becomes root
-                if (type.equalsIgnoreCase("MASTER")) {
-
-                    if (rootMaster == null) {
-
-                        rootMaster = part;
-
-                    } else {
-
-                        // Every other MASTER becomes child of first MASTER
-                        bomRows.add(
-                                new BomUploadDto(
-                                        rootMaster,
-                                        part,
-                                        quantity == null ? 1 : quantity
-                                )
-                        );
-                    }
-
-                } else {
-
-                    // CHILD always belongs to first MASTER
-                    bomRows.add(
-                            new BomUploadDto(
-                                    rootMaster,
-                                    part,
-                                    quantity
-                            )
-                    );
-                }
+            if (isRowEmpty(row)) {
+                logger.debug("Skipping empty row {}", row.getRowNum() + 1);
+                continue;
             }
+
+            ExcelBomRow excelRow = extractRow(row);
+
+            if (!validateExcelRow(
+                    excelRow,
+                    company,
+                    excelPartNumbers,
+                    rootMaster,
+                    errors)) {
+                continue;
+            }
+
+            Part part = getOrCreatePart(
+                    excelRow,
+                    company,
+                    partsToSave
+            );
+
+            rootMaster = processBomRelationship(
+                    excelRow,
+                    part,
+                    rootMaster,
+                    bomRows
+            );
+        }
+    }
+
+    private Part getOrCreatePart(
+            ExcelBomRow row,
+            Company company,
+            List<Part> partsToSave) {
+
+        Part part = partRepository
+                .findByCompany_CompanyIdAndPartNumber(
+                        company.getCompanyId(),
+                        row.getPartNumber())
+                .orElse(null);
+
+        if (part == null) {
+
+            PartType type = row.getType().equalsIgnoreCase("MASTER")
+                    ? PartType.MASTER
+                    : PartType.UNIT;
+
+            part = createPartEntity(
+                    company,
+                    row.getPartNumber(),
+                    row.getPartName(),
+                    row.getUnit(),
+                    type
+            );
+
+            partsToSave.add(part);
         }
 
-        private Part createPartEntity(
-                Company company,
-                String partNumber,
-                String partName,
-                String unit,
-                PartType type) {
+        return part;
+    }
 
-            return Part.builder()
-                    .company(company)
-                    .partNumber(partNumber)
-                    .partName(partName)
-                    .unit(unit)
-                    .type(type)
-                    .build();
+    private Part createPartEntity(
+            Company company,
+            String partNumber,
+            String partName,
+            String unit,
+            PartType type) {
+
+        return Part.builder()
+                .company(company)
+                .partNumber(partNumber)
+                .partName(partName)
+                .unit(unit)
+                .type(type)
+                .build();
+    }
+
+    private Part processBomRelationship(
+            ExcelBomRow row,
+            Part part,
+            Part rootMaster,
+            List<BomUploadDto> bomRows) {
+
+        if (row.getType().equalsIgnoreCase("MASTER")) {
+
+            if (rootMaster == null) {
+                return part;
+            }
+
+            bomRows.add(
+                    new BomUploadDto(
+                            rootMaster,
+                            part,
+                            row.getQuantity() == null ? 1 : row.getQuantity()
+                    )
+            );
+
+            return rootMaster;
         }
+
+        bomRows.add(
+                new BomUploadDto(
+                        rootMaster,
+                        part,
+                        row.getQuantity()
+                )
+        );
+
+        return rootMaster;
+    }
+
+    private ExcelBomRow extractRow(Row row) {
+
+        return new ExcelBomRow(
+                row.getRowNum() + 1,
+                getString(row.getCell(1)),
+                getString(row.getCell(2)),
+                getString(row.getCell(3)),
+                getString(row.getCell(4)).trim().toUpperCase(),
+                getDouble(row.getCell(5))
+        );
+    }
 
         private void createBomEntries(List<BomUploadDto> bomRows) {
 
@@ -326,6 +294,42 @@ public class PartServiceImpl implements PartService {
 
             bomRepository.saveAll(bomList);
         }
+
+    private boolean validateExcelRow(
+            ExcelBomRow row,
+            Company company,
+            Set<String> excelPartNumbers,
+            Part rootMaster,
+            List<BomUploadErrorDto> errors) {
+
+        try {
+
+            validateRow(
+                    row.getRowNumber(),
+                    row.getType(),
+                    row.getPartNumber(),
+                    row.getPartName(),
+                    row.getUnit(),
+                    row.getQuantity(),
+                    company,
+                    excelPartNumbers,
+                    rootMaster
+            );
+
+            return true;
+
+        } catch (AppException ex) {
+
+            errors.add(
+                    new BomUploadErrorDto(
+                            row.getRowNumber(),
+                            ex.getMessage()
+                    )
+            );
+
+            return false;
+        }
+    }
 
         private void validateRow(
                 int rowNumber,
@@ -411,6 +415,55 @@ public class PartServiceImpl implements PartService {
             }
         }
 
+    private Iterator<Row> getDataRowIterator(Workbook workbook) {
+
+        Sheet sheet = workbook.getSheetAt(0);
+
+        Iterator<Row> iterator = sheet.iterator();
+
+        while (iterator.hasNext()) {
+
+            Row row = iterator.next();
+
+            String firstCell = getString(row.getCell(0));
+            String secondCell = getString(row.getCell(1));
+
+            if (firstCell.contains("Sr.")
+                    && secondCell.contains("Part No.")) {
+
+                logger.info("Header found at row {}", row.getRowNum() + 1);
+                break;
+            }
+        }
+
+        logger.debug("Has next after header: {}", iterator.hasNext());
+
+        return iterator;
+    }
+
+    private void throwIfValidationFailed(List<BomUploadErrorDto> errors) {
+
+        if (errors.isEmpty()) {
+            return;
+        }
+
+        StringBuilder builder = new StringBuilder();
+
+        for (BomUploadErrorDto error : errors) {
+
+            builder.append("Row ")
+                    .append(error.getRowNumber())
+                    .append(": ")
+                    .append(error.getMessage())
+                    .append("\n");
+        }
+
+        throw new AppException(
+                builder.toString(),
+                HttpStatus.BAD_REQUEST
+        );
+    }
+
         private Company getCompany(Long companyId) {
 
             return companyRepository.findById(companyId)
@@ -426,7 +479,7 @@ public class PartServiceImpl implements PartService {
                 return true;
             }
 
-            for (int i = 0; i <= 5; i++) {
+            for (int i = 0; i <= LAST_REQUIRED_CELL_INDEX; i++) {
 
                 if (row.getCell(i) != null &&
                         !getString(row.getCell(i)).isBlank()) {
