@@ -106,7 +106,7 @@ public class PartServiceImpl implements PartService {
 
     @Transactional
     @Override
-    public void uploadBomExcel(MultipartFile file, Long companyId) throws IOException {
+    public String uploadBomExcel(MultipartFile file, Long companyId) throws IOException {
 
         Company company = getCompany(companyId);
 
@@ -134,6 +134,12 @@ public class PartServiceImpl implements PartService {
             partRepository.saveAll(partsToSave);
 
             createBomEntries(bomRows);
+
+            return String.format(
+                    "Excel uploaded successfully. Total Parts saved: %d, Total BOM entries saved: %d",
+                    partsToSave.size(),
+                    bomRows.size()
+            );
         }
     }
 
