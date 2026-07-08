@@ -344,7 +344,7 @@ public class PartServiceImpl implements PartService {
 
             if (excelPartNumbers.contains(partNumber)) {
                 throw new AppException(
-                        "Row " + rowNumber + ": Duplicate Part Number in Excel: " + partNumber,
+                        "Duplicate Part Number in Excel: " + partNumber,
                         HttpStatus.BAD_REQUEST
                 );
             }
@@ -356,46 +356,37 @@ public class PartServiceImpl implements PartService {
             if (!type.equalsIgnoreCase("MASTER")
                     && !type.equalsIgnoreCase("CHILD")) {
                 throw new AppException(
-                        "Row " + rowNumber + ": Type must be MASTER or CHILD",
+                        "Type must be MASTER or CHILD",
                         HttpStatus.BAD_REQUEST);
             }
 
             if (partNumber == null || partNumber.isBlank()) {
                 throw new AppException(
-                        "Row " + rowNumber + ": Part Number is mandatory",
+                        "Part Number is mandatory",
                         HttpStatus.BAD_REQUEST);
             }
 
             if (partName == null || partName.isBlank()) {
                 throw new AppException(
-                        "Row " + rowNumber + ": Part Name is mandatory",
+                        "Part Name is mandatory",
                         HttpStatus.BAD_REQUEST);
             }
 
             if (unit == null || unit.isBlank()) {
                 throw new AppException(
-                        "Row " + rowNumber + ": Unit is mandatory",
+                        "Unit is mandatory",
                         HttpStatus.BAD_REQUEST);
             }
 
             partUnitRepository.findByUnitName(unit)
                     .orElseThrow(() ->
                             new AppException(
-                                    "Row " + rowNumber + ": Invalid Unit : " + unit,
+                                    "Invalid Unit : " + unit,
                                     HttpStatus.BAD_REQUEST));
 
             if (!excelPartNumbers.add(partNumber)) {
                 throw new AppException(
-                        "Row " + rowNumber + ": Duplicate Part Number in Excel : " + partNumber,
-                        HttpStatus.BAD_REQUEST);
-            }
-
-            if (partRepository.existsByCompany_CompanyIdAndPartNumber(
-                    company.getCompanyId(),
-                    partNumber
-            )) {
-                throw new AppException(
-                        "Row " + rowNumber + ": Part Number already exists : " + partNumber,
+                        "Duplicate Part Number in Excel : " + partNumber,
                         HttpStatus.BAD_REQUEST);
             }
 
@@ -403,13 +394,13 @@ public class PartServiceImpl implements PartService {
 
                 if (currentMaster == null) {
                     throw new AppException(
-                            "Row " + rowNumber + ": Child Part found before Master",
+                            "Child Part found before Master",
                             HttpStatus.BAD_REQUEST);
                 }
 
                 if (quantity == null || quantity <= 0) {
                     throw new AppException(
-                            "Row " + rowNumber + ": Quantity must be greater than zero",
+                            "Quantity must be greater than zero",
                             HttpStatus.BAD_REQUEST);
                 }
             }
