@@ -28,7 +28,26 @@ public class PartAttributeSpecification implements Specification<PartAttribute> 
         }
 
         if (attributeName != null && !attributeName.trim().isEmpty()) {
-            predicates.add(cb.like(cb.lower(root.get("attributeName")), "%" + attributeName.toLowerCase() + "%"));
+            String search = attributeName.trim().toLowerCase();
+
+            predicates.add(
+                    cb.like(
+                            cb.lower(root.get("attributeName")),
+                            "%" + search + "%"
+                    )
+            );
+
+            query.orderBy(
+                    cb.asc(
+                            cb.selectCase()
+                                    .when(
+                                            cb.like(cb.lower(root.get("attributeName")), search + "%"),
+                                            0
+                                    )
+                                    .otherwise(1)
+                    ),
+                    cb.asc(root.get("attributeName"))
+            );
         }
 
         if (root.get("deleteFlag") != null) {

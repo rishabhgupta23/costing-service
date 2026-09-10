@@ -24,9 +24,28 @@ public class CategorySpecification implements Specification<Category> {
         if (companyId != null) {
         predicates.add(cb.equal(root.get("company").get("companyId"), companyId));
         }
-        
+
         if (categoryName != null && !categoryName.trim().isEmpty()) {
-            predicates.add(cb.like(cb.lower(root.get("categoryName")), "%" + categoryName.toLowerCase() + "%"));
+            String search = categoryName.trim().toLowerCase();
+
+            predicates.add(
+                    cb.like(
+                            cb.lower(root.get("categoryName")),
+                            "%" + search + "%"
+                    )
+            );
+
+            query.orderBy(
+                    cb.asc(
+                            cb.selectCase()
+                                    .when(
+                                            cb.like(cb.lower(root.get("categoryName")), search + "%"),
+                                            0
+                                    )
+                                    .otherwise(1)
+                    ),
+                    cb.asc(root.get("categoryName"))
+            );
         }
 
         query.distinct(true);
