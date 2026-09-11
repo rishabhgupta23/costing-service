@@ -27,4 +27,10 @@ public interface PartRepository extends JpaRepository<Part, Long>, JpaSpecificat
    Page<Part> findAll(Specification<Part> spec, Pageable pageable);
 
     Optional<Part> findByCompany_CompanyIdAndPartNumber(Long companyId, String partNumber);
+
+    boolean existsByCompany_CompanyIdAndPartNumberAndPartIdNot(
+            Long companyId,
+            String partNumber,
+            Long partId
+    );
 }
