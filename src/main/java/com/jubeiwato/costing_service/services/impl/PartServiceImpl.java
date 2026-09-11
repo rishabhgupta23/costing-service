@@ -636,10 +636,10 @@ public class PartServiceImpl implements PartService {
                     HttpStatus.CONFLICT);
             }
         
-            validateCommonPartRequest(request, companyId, vendorMap, costFactorMap,null);
+            validateCommonPartRequest(request, companyId, vendorMap, costFactorMap);
         }
 
-        private void validateCommonPartRequest(PartRequestDto request, Long companyId, Map<Long, Vendor> vendorMap, Map<Long, CostFactor> costFactorMap, Long partId) {
+        private void validateCommonPartRequest(PartRequestDto request, Long companyId, Map<Long, Vendor> vendorMap, Map<Long, CostFactor> costFactorMap) {
             if (request.getCategoryId() != null) {
                 categoryRepository.findByCategoryIdAndCompany_CompanyId(request.getCategoryId(), companyId)
                     .orElseThrow(() -> new AppException(ErrorMessageConstant.INVALID_CATEGORY, HttpStatus.NOT_FOUND));
@@ -924,8 +924,31 @@ public PartDto updatePartById(Long partId, @Valid PartRequestDto request,Long co
     Map<Long, Vendor> vendorMap = new HashMap<>();
     Map<Long, CostFactor> costFactorMap = new HashMap<>(); 
     PartType oldType = existingPart.getType();
+
+    // Validate the requested part number only when it is changed.
+    if (!Objects.equals(existingPart.getPartNumber(), request.getPartNumber())) {
+
+        boolean partNumberExists =
+                partRepository.existsByCompany_CompanyIdAndPartNumberAndPartIdNot(
+                        companyId,
+                        request.getPartNumber(),
+                        partId
+                );
+
+        if (partNumberExists) {
+            throw new AppException(
+                    ErrorMessageConstant.getFormattedMessage(
+                            ErrorMessageConstant.PART_NUMBER_ALREADY_EXISTS_TEMPLATE,
+                            request.getPartNumber()
+                    ),
+                    HttpStatus.CONFLICT
+            );
+        }
+    }
+
    // Validate and update fields
-    validateCommonPartRequest(request, companyId, vendorMap, costFactorMap, partId);
+    validateCommonPartRequest(request, companyId, vendorMap, costFactorMap);
+    existingPart.setPartNumber(request.getPartNumber());
     existingPart.setPartName(request.getPartName());
     existingPart.setType(PartType.valueOf(request.getType()));
     existingPart.setUnit(partUnitRepository.findByUnitName(request.getUnit())
@@ -933,7 +956,10 @@ public PartDto updatePartById(Long partId, @Valid PartRequestDto request,Long co
             .getUnitName());
 
                 if (request.getCategoryId() != null) {
-                        existingPart.setCategory(categoryRepository.findById(request.getCategoryId())
+                        existingPart.setCategory(categoryRepository.findByCategoryIdAndCompany_CompanyId(
+                                        request.getCategoryId(),
+                                        companyId
+                                )
                                         .orElseThrow(
                                                         () -> new AppException(ErrorMessageConstant.INVALID_CATEGORY,
                                                                         HttpStatus.BAD_REQUEST)));
