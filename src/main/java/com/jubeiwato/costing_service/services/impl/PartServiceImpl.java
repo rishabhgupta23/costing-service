@@ -4,7 +4,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.function.Function;
 
-import com.jubeiwato.costing_service.constants.Sorting;
+import com.jubeiwato.costing_service.constants.*;
 import com.jubeiwato.costing_service.dtos.*;
 import com.jubeiwato.costing_service.services.FileGeneratorService;
 import jakarta.transaction.Transactional;
@@ -22,11 +22,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import com.jubeiwato.costing_service.authentication.config.AppException;
-import com.jubeiwato.costing_service.constants.DateFormat;
-import com.jubeiwato.costing_service.constants.DeleteFlag;
-import com.jubeiwato.costing_service.constants.ErrorMessageConstant;
-import com.jubeiwato.costing_service.constants.FileExtension;
-import com.jubeiwato.costing_service.constants.PartType;
 import com.jubeiwato.costing_service.entities.PartUnit;
 import com.jubeiwato.costing_service.entities.Bom;
 import com.jubeiwato.costing_service.entities.Company;
@@ -749,30 +744,81 @@ public class PartServiceImpl implements PartService {
                 return part;
         }
 
-        private PartCost createPartCostEntity(Part part, VendorCostDto vendorCost, Map<Long, Vendor> vendorMap,
-                        Map<Long, CostFactor> costFactorMap) {
-                PartCost partCost = PartCost.builder()
-                                .part(part)
-                                .vendor(vendorMap.get(vendorCost.getId()))
-                                .costFactorList(vendorCost.getCostFactorValues().stream()
-                                                .map(cf -> createPartCostCostFactor(cf.getId(), cf.getValue(),
-                                                                costFactorMap))
-                                                .toList())
-                                .build();
+    private PartCost createPartCostEntity(
+            Part part,
+            VendorCostDto vendorCost,
+            Map<Long, Vendor> vendorMap,
+            Map<Long, CostFactor> costFactorMap) {
 
-                for (PartCostCostFactor costFactor : partCost.getCostFactorList()) {
-                        costFactor.setPartCost(partCost);
-                }
-                return partCost;
+        PartCost partCost = PartCost.builder()
+                .part(part)
+                .vendor(vendorMap.get(vendorCost.getId()))
+                .costFactorList(
+                        vendorCost.getCostFactorValues()
+                                .stream()
+                                .map(cf -> createPartCostCostFactor(
+                                        cf,
+                                        costFactorMap
+                                ))
+                                .toList()
+                )
+                .build();
+
+        for (PartCostCostFactor costFactor : partCost.getCostFactorList()) {
+            costFactor.setPartCost(partCost);
         }
 
-        private PartCostCostFactor createPartCostCostFactor(Long costFactorId, Double value,
-                        Map<Long, CostFactor> costFactorMap) {
-                return PartCostCostFactor.builder()
-                                .costFactor(costFactorMap.get(costFactorId))
-                                .value(value != null ? value : 0.0)
-                                .build();
+        return partCost;
+    }
+
+    private PartCostCostFactor createPartCostCostFactor(
+            CostFactorDto costFactorDto,
+            Map<Long, CostFactor> costFactorMap) {
+
+        CostFactor costFactor = costFactorMap.get(costFactorDto.getId());
+
+        if (costFactor == null) {
+            throw new AppException(
+                    ErrorMessageConstant.COST_FACTOR_DOES_NOT_EXIST,
+                    HttpStatus.NOT_FOUND
+            );
         }
+
+        String comments = validateCostFactorComments(
+                costFactor,
+                costFactorDto.getComments()
+        );
+
+        return PartCostCostFactor.builder()
+                .costFactor(costFactor)
+                .value(
+                        costFactorDto.getValue() != null
+                                ? costFactorDto.getValue()
+                                : 0.0
+                )
+                .comments(comments)
+                .build();
+    }
+
+    private String validateCostFactorComments(
+            CostFactor costFactor,
+            String comments) {
+
+        if (costFactor.getFactorType() == CostFactorType.CALCULATED) {
+
+            if (comments == null || comments.isBlank()) {
+                throw new AppException(
+                        "Comments are required for calculated cost factors",
+                        HttpStatus.BAD_REQUEST
+                );
+            }
+
+            return comments.trim();
+        }
+
+        // SIMPLE cost factors do not need comments
+        return null;
+    }
 
         @Override
         public ApiPageResponseDto<PartDataDto> getParts(PartDto filter, long companyId, int pageNo, int pageSize,
@@ -879,38 +925,48 @@ public class PartServiceImpl implements PartService {
 
         }
 
-        public List<VendorCostDto> createVendorCostList(List<PartCost> partCostList) {
-                // Since each vendor has at most one PartCost, use toMap instead of groupingBy
-                Map<Vendor, PartCost> vendorToPartCostMap = partCostList.stream()
-                                .collect(Collectors.toMap(PartCost::getVendor, Function.identity()));
+    public List<VendorCostDto> createVendorCostList(
+            List<PartCost> partCostList) {
 
-                List<VendorCostDto> vendorCostList = new ArrayList<>();
+        Map<Vendor, PartCost> vendorToPartCostMap =
+                partCostList.stream()
+                        .collect(Collectors.toMap(
+                                PartCost::getVendor,
+                                Function.identity()
+                        ));
 
-                // Iterate through each vendor and their corresponding PartCost
-                for (Map.Entry<Vendor, PartCost> entry : vendorToPartCostMap.entrySet()) {
-                        Vendor vendor = entry.getKey();
-                        PartCost partCost = entry.getValue();
+        List<VendorCostDto> vendorCostList = new ArrayList<>();
 
-                        // Extract cost factor values for the vendor
-                        List<CostFactorDto> costFactorValues = partCost.getCostFactorList().stream()
-                                        .map(pc -> new CostFactorDto(
-                                                        pc.getCostFactor().getFactorId(),
-                                                        pc.getCostFactor().getFactorName(),
-                                                        pc.getValue()))
-                                        .collect(Collectors.toList());
+        for (Map.Entry<Vendor, PartCost> entry
+                : vendorToPartCostMap.entrySet()) {
 
-                        // Build and add VendorCostDto to the result list
-                        VendorCostDto vendorCostDto = VendorCostDto.superBuilder()
-                                        .id(vendor.getVendorId())
-                                        .vendorName(vendor.getVendorName())
-                                        .address(vendor.getAddress())
-                                        .emailId(vendor.getEmailId())
-                                        .contactNumber(vendor.getContactNumber())
-                                        .costFactorValues(costFactorValues)
-                                        .build();
+            Vendor vendor = entry.getKey();
+            PartCost partCost = entry.getValue();
 
-                        vendorCostList.add(vendorCostDto);
-                }
+            List<CostFactorDto> costFactorValues =
+                    partCost.getCostFactorList()
+                            .stream()
+                            .map(pc -> CostFactorDto.builder()
+                                    .id(pc.getCostFactor().getFactorId())
+                                    .factorName(pc.getCostFactor().getFactorName())
+                                    .value(pc.getValue())
+                                    .factorType(pc.getCostFactor().getFactorType())
+                                    .comments(pc.getComments())
+                                    .build())
+                            .collect(Collectors.toList());
+
+            VendorCostDto vendorCostDto =
+                    VendorCostDto.superBuilder()
+                            .id(vendor.getVendorId())
+                            .vendorName(vendor.getVendorName())
+                            .address(vendor.getAddress())
+                            .emailId(vendor.getEmailId())
+                            .contactNumber(vendor.getContactNumber())
+                            .costFactorValues(costFactorValues)
+                            .build();
+
+            vendorCostList.add(vendorCostDto);
+        }
 
         return vendorCostList;
     }
@@ -1058,28 +1114,54 @@ public PartDto updatePartById(Long partId, @Valid PartRequestDto request,Long co
                 }
         }
 
-        private boolean isPartCostEqual(PartCost existing, PartCost incoming) {
-                List<PartCostCostFactor> existingFactors = existing.getCostFactorList();
-                List<PartCostCostFactor> incomingFactors = incoming.getCostFactorList();
+    private boolean isPartCostEqual(
+            PartCost existing,
+            PartCost incoming) {
 
-                if (existingFactors.size() != incomingFactors.size())
-                        return false;
+        List<PartCostCostFactor> existingFactors =
+                existing.getCostFactorList();
 
-                Map<Long, Double> existingMap = existingFactors.stream()
-                                .collect(Collectors.toMap(
-                                                f -> f.getCostFactor().getFactorId(),
-                                                PartCostCostFactor::getValue));
+        List<PartCostCostFactor> incomingFactors =
+                incoming.getCostFactorList();
 
-                for (PartCostCostFactor incomingFactor : incomingFactors) {
-                        Long id = incomingFactor.getCostFactor().getFactorId();
-                        Double incomingValue = incomingFactor.getValue();
-                        if (!Objects.equals(existingMap.get(id), incomingValue)) {
-                                return false;
-                        }
-                }
-
-                return true;
+        if (existingFactors.size() != incomingFactors.size()) {
+            return false;
         }
+
+        Map<Long, PartCostCostFactor> existingMap =
+                existingFactors.stream()
+                        .collect(Collectors.toMap(
+                                f -> f.getCostFactor().getFactorId(),
+                                Function.identity()
+                        ));
+
+        for (PartCostCostFactor incomingFactor : incomingFactors) {
+
+            Long factorId =
+                    incomingFactor.getCostFactor().getFactorId();
+
+            PartCostCostFactor existingFactor =
+                    existingMap.get(factorId);
+
+            if (existingFactor == null) {
+                return false;
+            }
+
+            if (!Objects.equals(
+                    existingFactor.getValue(),
+                    incomingFactor.getValue())) {
+                return false;
+            }
+
+            if (!Objects.equals(
+                    existingFactor.getComments(),
+                    incomingFactor.getComments())) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 
         @Override
         @Transactional
@@ -1093,31 +1175,53 @@ public PartDto updatePartById(Long partId, @Valid PartRequestDto request,Long co
                 partRepository.delete(part);
         }
 
-        @Override
-        public CostHistoryResponseDto getPartCostsByPartAndVendor(Long partId, Long vendorId, Long companyId) {
-                getValidatedPart(partId, companyId);
-                List<PartCost> partCosts = partCostRepository.fetchByPartIdAndVendorId(partId, vendorId);
+    @Override
+    public CostHistoryResponseDto getPartCostsByPartAndVendor(
+            Long partId,
+            Long vendorId,
+            Long companyId) {
 
-                List<CostHistoryDto> costHistoryList = partCosts.isEmpty() ? Collections.emptyList()
-                                : partCosts.stream().map(partCost -> {
-                                        List<CostFactorDto> costFactorList = partCost.getCostFactorList().stream()
-                                                        .map(partCostFactor -> CostFactorDto.entityToDto(
-                                                                        partCostFactor.getCostFactor(),
-                                                                        partCostFactor.getValue()))
-                                                        .toList();
+        getValidatedPart(partId, companyId);
 
-                                        return CostHistoryDto.builder()
-                                                        .costFactorList(costFactorList)
-                                                        .updatedDateTime(partCost.getUpdatedDateTime())
-                                                        .build();
-                                }).toList();
+        List<PartCost> partCosts =
+                partCostRepository.fetchByPartIdAndVendorId(
+                        partId,
+                        vendorId
+                );
 
-                return CostHistoryResponseDto.builder()
-                                .partId(partId)
-                                .vendorId(vendorId)
-                                .costHistoryList(costHistoryList)
-                                .build();
-        }
+        List<CostHistoryDto> costHistoryList =
+                partCosts.isEmpty()
+                        ? Collections.emptyList()
+                        : partCosts.stream()
+                          .map(partCost -> {
+
+                              List<CostFactorDto> costFactorList =
+                                      partCost.getCostFactorList()
+                                              .stream()
+                                              .map(partCostFactor ->
+                                                      CostFactorDto.entityToDto(
+                                                              partCostFactor.getCostFactor(),
+                                                              partCostFactor.getValue(),
+                                                              partCostFactor.getComments()
+                                                      )
+                                              )
+                                              .toList();
+
+                              return CostHistoryDto.builder()
+                                     .costFactorList(costFactorList)
+                                     .updatedDateTime(
+                                             partCost.getUpdatedDateTime()
+                                     )
+                                     .build();
+                          })
+                          .toList();
+
+        return CostHistoryResponseDto.builder()
+                .partId(partId)
+                .vendorId(vendorId)
+                .costHistoryList(costHistoryList)
+                .build();
+    }
 
         @Override
         public byte[] downloadPartsToExcel(Long companyId) throws IOException {

@@ -1,13 +1,6 @@
 package com.jubeiwato.costing_service.entities;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,7 +11,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "part_cost_cost_factor", schema = "app")
+@Table(
+        name = "part_cost_cost_factor",
+        schema = "app"
+)
 public class PartCostCostFactor extends BaseEntity {
 
     @Id
@@ -26,13 +22,24 @@ public class PartCostCostFactor extends BaseEntity {
     @Column(name = "part_cost_cost_factor_id")
     private Long partCostCostFactorId;
 
-    @ManyToOne
-    @JoinColumn(name = "part_cost_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(
+            name = "part_cost_id",
+            nullable = false
+    )
     private PartCost partCost;
 
-    @ManyToOne
-    @JoinColumn(name = "factor_id", referencedColumnName = "factor_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(
+            name = "factor_id",
+            referencedColumnName = "factor_id",
+            nullable = false
+    )
     private CostFactor costFactor;
 
+    @Column(name = "value", nullable = false)
     private double value;
+
+    @Column(name = "comments", length = 255)
+    private String comments;
 }
