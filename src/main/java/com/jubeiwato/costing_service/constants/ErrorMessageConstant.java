@@ -78,6 +78,14 @@ public class ErrorMessageConstant {
     public static final String CYCLIC_DEPENDENCY_DETECTED= "Cyclic dependency detected: The child part already contains the parent in its BOM.";
     public static final String PASSWORD_CANNOT_BE_CHANGED= "Cannot reset your own password";
     public static final String INVALID_EMAIL_FORMAT= "Invalid email format";
+    public static final String COMPANY_ALREADY_EXISTS_TEMPLATE =
+            "Company already exists with name: %s";
+
+    public static final String UNAUTHORIZED_TO_VIEW_COMPANY =
+            "You are not authorized to view this company";
+
+    public static final String UNAUTHORIZED_TO_UPDATE_COMPANY =
+            "You are not authorized to update this company";
     private ErrorMessageConstant() {
 
     }
