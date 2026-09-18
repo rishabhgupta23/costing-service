@@ -75,7 +75,7 @@ public class VendorServiceImpl implements VendorService {
                 if (emailId!= null && !emailId.isBlank() && !ValidationUtil.isValidEmail(emailId)) {
                 throw new AppException(ErrorMessageConstant.INVALID_EMAIL_FORMAT, HttpStatus.BAD_REQUEST);
                 }
-   
+
                 Company company = companyRepository.findById(companyId)
                                 .orElseThrow(() -> new AppException(ErrorMessageConstant.COMPANY_DOES_NOT_EXIST, HttpStatus.BAD_REQUEST));
                 validateDuplicateVendor(companyId, vendorName);
