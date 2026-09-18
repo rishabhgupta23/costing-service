@@ -32,7 +32,26 @@ public class CostFactorSpecification implements Specification<CostFactor> {
         }
 
         if (factorName != null && !factorName.trim().isEmpty()) {
-            predicates.add(cb.like(cb.lower(root.get("factorName")), "%" + factorName.toLowerCase() + "%"));
+            String search = factorName.trim().toLowerCase();
+
+            predicates.add(
+                    cb.like(
+                            cb.lower(root.get("factorName")),
+                            "%" + search + "%"
+                    )
+            );
+
+            query.orderBy(
+                    cb.asc(
+                            cb.selectCase()
+                                    .when(
+                                            cb.like(cb.lower(root.get("factorName")), search + "%"),
+                                            0
+                                    )
+                                    .otherwise(1)
+                    ),
+                    cb.asc(root.get("factorName"))
+            );
         }
 
         return cb.and(predicates.toArray(new Predicate[0]));
