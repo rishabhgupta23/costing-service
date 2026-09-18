@@ -67,8 +67,10 @@ public class PartController {
 
         partService.uploadBomExcel(file, companyId);
 
+        String message = partService.uploadBomExcel(file, companyId);
+
         return ResponseEntity.ok(
-                new GeneralResponseDto("Excel uploaded successfully", HttpStatus.OK.value()));
+                new GeneralResponseDto(message, HttpStatus.OK.value()));
     }
 
     @GetMapping("/types")
