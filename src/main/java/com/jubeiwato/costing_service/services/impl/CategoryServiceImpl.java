@@ -2,6 +2,7 @@ package com.jubeiwato.costing_service.services.impl;
 
 import java.util.List;
 
+import com.jubeiwato.costing_service.utils.SearchUtil;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
@@ -53,25 +54,60 @@ public class CategoryServiceImpl implements CategoryService {
             }
     }
 
-    
+
     @Override
-    public ApiPageResponseDto<List<CategoryDto>> getCategoryList(Long companyId, String categoryName, int pageNo, int pageSize, String sortColumn, Sorting sortMode) {
+    public ApiPageResponseDto<List<CategoryDto>> getCategoryList(
+            Long companyId,
+            String categoryName,
+            int pageNo,
+            int pageSize,
+            String sortColumn,
+            Sorting sortMode) {
 
         if (!ValidationUtil.isValidInput(categoryName)) {
-            throw new AppException(ErrorMessageConstant.INVALID_INPUT, HttpStatus.BAD_REQUEST);
+            throw new AppException(
+                    ErrorMessageConstant.INVALID_INPUT,
+                    HttpStatus.BAD_REQUEST
+            );
         }
 
-        Sort.Direction direction = (sortMode == Sorting.DESC) ? Sort.Direction.DESC : Sort.Direction.ASC;
-        Sort sort = Sort.by(direction, sortColumn);
-        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
+        Specification<Category> spec =
+                new CategorySpecification(companyId, categoryName);
 
-        Specification<Category> spec = new CategorySpecification(companyId, categoryName);
+        boolean hasSearch =
+                SearchUtil.hasSearchCriteria(categoryName);
 
-        Page<Category> categoryPage = categoryRepository.findAll(spec, pageable);
+        Pageable pageable;
 
-        List<CategoryDto> categoryDtos = categoryPage.getContent().stream()
-                .map(CategoryDto::entityToDto)
-                .toList();
+        if (hasSearch) {
+            pageable = PageRequest.of(
+                    pageNo,
+                    pageSize
+            );
+
+        } else {
+            Sort.Direction direction =
+                    (sortMode == Sorting.DESC)
+                            ? Sort.Direction.DESC
+                            : Sort.Direction.ASC;
+
+            Sort sort = Sort.by(direction, sortColumn);
+
+            pageable = PageRequest.of(
+                    pageNo,
+                    pageSize,
+                    sort
+            );
+        }
+
+        Page<Category> categoryPage =
+                categoryRepository.findAll(spec, pageable);
+
+        List<CategoryDto> categoryDtos =
+                categoryPage.getContent()
+                        .stream()
+                        .map(CategoryDto::entityToDto)
+                        .toList();
 
         PageInfoDto pageInfo = PageInfoDto.builder()
                 .totalPages(categoryPage.getTotalPages())

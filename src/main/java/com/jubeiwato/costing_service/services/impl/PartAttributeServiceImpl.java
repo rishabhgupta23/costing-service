@@ -13,6 +13,7 @@ import com.jubeiwato.costing_service.repositories.CompanyRepository;
 import com.jubeiwato.costing_service.repositories.PartAttributeRepository;
 import com.jubeiwato.costing_service.services.PartAttributeService;
 import com.jubeiwato.costing_service.services.PartAttributeSpecification;
+import com.jubeiwato.costing_service.utils.SearchUtil;
 import com.jubeiwato.costing_service.utils.ValidationUtil;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Pageable;
@@ -79,26 +80,61 @@ public class PartAttributeServiceImpl implements PartAttributeService {
     }
 
     @Override
-    public ApiPageResponseDto<List<PartAttributeDto>> getPartAttributeList(Long companyId, String attributeName,
+    public ApiPageResponseDto<List<PartAttributeDto>> getPartAttributeList(
+            Long companyId,
+            String attributeName,
             int pageNo,
-            int pageSize, String sortColumn, Sorting sortMode) {
+            int pageSize,
+            String sortColumn,
+            Sorting sortMode) {
 
         if (!ValidationUtil.isValidInput(attributeName)) {
-            throw new AppException(ErrorMessageConstant.INVALID_INPUT, HttpStatus.BAD_REQUEST);
+            throw new AppException(
+                    ErrorMessageConstant.INVALID_INPUT,
+                    HttpStatus.BAD_REQUEST
+            );
         }
 
-        Sort.Direction direction = (sortMode == Sorting.DESC) ? Sort.Direction.DESC : Sort.Direction.ASC;
-        Sort sort = Sort.by(direction, sortColumn);
-        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
+        Specification<PartAttribute> spec =
+                new PartAttributeSpecification(
+                        companyId,
+                        attributeName,
+                        0
+                );
 
-        Specification<PartAttribute> spec = new PartAttributeSpecification(companyId, attributeName, 0);
+        boolean hasSearch = SearchUtil.hasSearchCriteria(attributeName);
 
-        Page<PartAttribute> partAttributePage = partAttributeRepository.findAll(spec, pageable);
+        Pageable pageable;
 
-        List<PartAttributeDto> dtoList = partAttributePage.getContent()
-                .stream()
-                .map(PartAttributeDto::entityToDto)
-                .toList();
+        if (hasSearch) {
+            pageable = PageRequest.of(
+                    pageNo,
+                    pageSize
+            );
+
+        } else {
+            Sort.Direction direction =
+                    (sortMode == Sorting.DESC)
+                            ? Sort.Direction.DESC
+                            : Sort.Direction.ASC;
+
+            Sort sort = Sort.by(direction, sortColumn);
+
+            pageable = PageRequest.of(
+                    pageNo,
+                    pageSize,
+                    sort
+            );
+        }
+
+        Page<PartAttribute> partAttributePage =
+                partAttributeRepository.findAll(spec, pageable);
+
+        List<PartAttributeDto> dtoList =
+                partAttributePage.getContent()
+                        .stream()
+                        .map(PartAttributeDto::entityToDto)
+                        .toList();
 
         PageInfoDto pageInfo = PageInfoDto.builder()
                 .totalPages(partAttributePage.getTotalPages())

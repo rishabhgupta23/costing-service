@@ -7,6 +7,7 @@ import java.util.function.Function;
 import com.jubeiwato.costing_service.constants.Sorting;
 import com.jubeiwato.costing_service.dtos.*;
 import com.jubeiwato.costing_service.services.FileGeneratorService;
+import com.jubeiwato.costing_service.utils.SearchUtil;
 import jakarta.transaction.Transactional;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -795,16 +796,34 @@ public class PartServiceImpl implements PartService {
                                 filter.getPartNumber(),
                                 filter.getCategoryName(), filter.getType(), filter.getUnit());
 
+            boolean hasSearch = SearchUtil.hasSearchCriteria(
+                    filter.getPartName(),
+                    filter.getPartNumber(),
+                    filter.getCategoryName(),
+                    filter.getType(),
+                    filter.getUnit()
+            );
+
                 if ("categoryName".equalsIgnoreCase(sortBy)) {
                         sortBy = "category.categoryName";
                 }
+
+            Pageable pageable;
+
+            if (hasSearch) {
+                // No Pageable sorting.
+                // Specification controls filtering + relevance ordering.
+                pageable = PageRequest.of(pageNo, pageSize);
+            } else {
+                // No search -> normal ASC/DESC sorting.
                 Sort sort = (sortMode == Sorting.DESC)
-                                ? Sort.by(Sort.Order.desc(sortBy))
-                                : Sort.by(Sort.Order.asc(sortBy));
-                Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
+                        ? Sort.by(Sort.Order.desc(sortBy))
+                        : Sort.by(Sort.Order.asc(sortBy));
 
-                Page<Part> partPage = partRepository.findAll(spec, pageable);
+                pageable = PageRequest.of(pageNo, pageSize, sort);
+            }
 
+            Page<Part> partPage = partRepository.findAll(spec, pageable);
                 // Extract Max Vendor Count
                 Integer maxVendorCount = partCostRepository.getMaxVendorCount();
 

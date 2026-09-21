@@ -159,8 +159,6 @@ public class VendorSpecification implements Specification<Vendor> {
             );
         }
 
-        query.distinct(true);
-
         return cb.and(
                 predicates.toArray(new Predicate[0])
         );
