@@ -13,26 +13,49 @@ public class CostFactorSpecification implements Specification<CostFactor> {
     private final String factorName;
     private final Integer deleteFlag;
 
-    public CostFactorSpecification(Long companyId, String factorName, Integer deleteFlag) {
+    public CostFactorSpecification(
+            Long companyId,
+            String factorName,
+            Integer deleteFlag) {
+
         this.companyId = companyId;
         this.factorName = factorName;
         this.deleteFlag = deleteFlag;
     }
 
     @Override
-    public Predicate toPredicate(Root<CostFactor> root, CriteriaQuery<?> query, CriteriaBuilder cb) {
+    public Predicate toPredicate(
+            Root<CostFactor> root,
+            CriteriaQuery<?> query,
+            CriteriaBuilder cb) {
+
         List<Predicate> predicates = new ArrayList<>();
 
+        // Company filter
         if (companyId != null) {
-            predicates.add(cb.equal(root.get("company").get("companyId"), companyId));
+            predicates.add(
+                    cb.equal(
+                            root.get("company").get("companyId"),
+                            companyId
+                    )
+            );
         }
 
-        if (root.get("deleteFlag") != null) {
-            predicates.add(cb.equal(root.get("deleteFlag"), deleteFlag));
+        // Delete flag filter
+        if (deleteFlag != null) {
+            predicates.add(
+                    cb.equal(
+                            root.get("deleteFlag"),
+                            deleteFlag
+                    )
+            );
         }
 
+        // Factor Name
         if (factorName != null && !factorName.trim().isEmpty()) {
-            String search = factorName.trim().toLowerCase();
+
+            String search =
+                    factorName.trim().toLowerCase();
 
             predicates.add(
                     cb.like(
@@ -45,15 +68,22 @@ public class CostFactorSpecification implements Specification<CostFactor> {
                     cb.asc(
                             cb.selectCase()
                                     .when(
-                                            cb.like(cb.lower(root.get("factorName")), search + "%"),
+                                            cb.like(
+                                                    cb.lower(root.get("factorName")),
+                                                    search + "%"
+                                            ),
                                             0
                                     )
                                     .otherwise(1)
                     ),
-                    cb.asc(root.get("factorName"))
+                    cb.asc(
+                            root.get("factorName")
+                    )
             );
         }
 
-        return cb.and(predicates.toArray(new Predicate[0]));
+        return cb.and(
+                predicates.toArray(new Predicate[0])
+        );
     }
 }

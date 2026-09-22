@@ -12,6 +12,7 @@ import com.jubeiwato.costing_service.dtos.TemplateResponseDto;
 import com.jubeiwato.costing_service.entities.*;
 import com.jubeiwato.costing_service.repositories.*;
 import com.jubeiwato.costing_service.services.TemplateService;
+import com.jubeiwato.costing_service.utils.SearchUtil;
 import com.jubeiwato.costing_service.utils.ValidationUtil;
 
 import lombok.RequiredArgsConstructor;
@@ -106,40 +107,74 @@ public class TemplateServiceImpl implements TemplateService {
         }
     
         return foundAttributes;
-    } 
+    }
 
     @Override
-    public ApiPageResponseDto<List<TemplateResponseDto>> getAllTemplates(Long companyId, String name, int pageNo,
-    int pageSize, String sortColumn, Sorting sortMode) {
+    public ApiPageResponseDto<List<TemplateResponseDto>> getAllTemplates(
+            Long companyId,
+            String name,
+            int pageNo,
+            int pageSize,
+            String sortColumn,
+            Sorting sortMode) {
+
         if (!ValidationUtil.isValidInput(name)) {
-                throw new AppException(ErrorMessageConstant.INVALID_INPUT, HttpStatus.BAD_REQUEST);
-            }
-    
-            Sort.Direction direction = (sortMode == Sorting.DESC) ? Sort.Direction.DESC : Sort.Direction.ASC;
+            throw new AppException(
+                    ErrorMessageConstant.INVALID_INPUT,
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
+        Specification<Template> spec =
+                new TemplateSpecification(companyId, name);
+
+        boolean hasSearch =
+                SearchUtil.hasSearchCriteria(name);
+
+        Pageable pageable;
+
+        if (hasSearch) {
+            pageable = PageRequest.of(
+                    pageNo,
+                    pageSize
+            );
+
+        } else {
+            Sort.Direction direction =
+                    (sortMode == Sorting.DESC)
+                            ? Sort.Direction.DESC
+                            : Sort.Direction.ASC;
+
             Sort sort = Sort.by(direction, sortColumn);
-            Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
-                Specification<Template> spec = new TemplateSpecification(companyId, name);
 
+            pageable = PageRequest.of(
+                    pageNo,
+                    pageSize,
+                    sort
+            );
+        }
 
-            Page<Template> templatePage = templateRepository.findAll(spec, pageable);
+        Page<Template> templatePage =
+                templateRepository.findAll(spec, pageable);
 
-            List<TemplateResponseDto> dtoList = templatePage.getContent()
-            .stream()
-            .map(TemplateResponseDto::entityToDto)
-            .toList();
+        List<TemplateResponseDto> dtoList =
+                templatePage.getContent()
+                        .stream()
+                        .map(TemplateResponseDto::entityToDto)
+                        .toList();
 
-    PageInfoDto pageInfo = PageInfoDto.builder()
-            .totalPages(templatePage.getTotalPages())
-            .pageNumber(pageNo)
-            .pageSize(pageSize)
-            .totalRecords(templatePage.getTotalElements())
-            .build();
+        PageInfoDto pageInfo = PageInfoDto.builder()
+                .totalPages(templatePage.getTotalPages())
+                .pageNumber(pageNo)
+                .pageSize(pageSize)
+                .totalRecords(templatePage.getTotalElements())
+                .build();
 
-    return ApiPageResponseDto.<List<TemplateResponseDto>>builder()
-            .data(dtoList)
-            .pageInfo(pageInfo)
-            .build();
-}
+        return ApiPageResponseDto.<List<TemplateResponseDto>>builder()
+                .data(dtoList)
+                .pageInfo(pageInfo)
+                .build();
+    }
 private Template getValidatedTemplate(Long templateId, Long companyId) {
         return templateRepository.findByTemplateIdAndCompany_CompanyId(templateId, companyId)
                 .orElseThrow(() -> new AppException(

@@ -12,21 +12,37 @@ public class CategorySpecification implements Specification<Category> {
     private final Long companyId;
     private final String categoryName;
 
-    public CategorySpecification(Long companyId, String categoryName) {
+    public CategorySpecification(
+            Long companyId,
+            String categoryName) {
+
         this.companyId = companyId;
         this.categoryName = categoryName;
     }
 
     @Override
-    public Predicate toPredicate(Root<Category> root, CriteriaQuery<?> query, CriteriaBuilder cb) {
+    public Predicate toPredicate(
+            Root<Category> root,
+            CriteriaQuery<?> query,
+            CriteriaBuilder cb) {
+
         List<Predicate> predicates = new ArrayList<>();
-        
+
+        // Company filter
         if (companyId != null) {
-        predicates.add(cb.equal(root.get("company").get("companyId"), companyId));
+            predicates.add(
+                    cb.equal(
+                            root.get("company").get("companyId"),
+                            companyId
+                    )
+            );
         }
 
+        // Category Name
         if (categoryName != null && !categoryName.trim().isEmpty()) {
-            String search = categoryName.trim().toLowerCase();
+
+            String search =
+                    categoryName.trim().toLowerCase();
 
             predicates.add(
                     cb.like(
@@ -39,16 +55,22 @@ public class CategorySpecification implements Specification<Category> {
                     cb.asc(
                             cb.selectCase()
                                     .when(
-                                            cb.like(cb.lower(root.get("categoryName")), search + "%"),
+                                            cb.like(
+                                                    cb.lower(root.get("categoryName")),
+                                                    search + "%"
+                                            ),
                                             0
                                     )
                                     .otherwise(1)
                     ),
-                    cb.asc(root.get("categoryName"))
+                    cb.asc(
+                            root.get("categoryName")
+                    )
             );
         }
 
-        query.distinct(true);
-        return cb.and(predicates.toArray(new Predicate[0]));
+        return cb.and(
+                predicates.toArray(new Predicate[0])
+        );
     }
 }

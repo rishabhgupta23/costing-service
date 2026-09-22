@@ -1,7 +1,6 @@
 package com.jubeiwato.costing_service.services.impl;
 
 import com.jubeiwato.costing_service.entities.Part;
-
 import jakarta.persistence.criteria.*;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -18,7 +17,7 @@ public class PartSpecification implements Specification<Part> {
     private final String unit;
 
     public PartSpecification(
-            long companyId,
+            Long companyId,
             String partName,
             String partNumber,
             String categoryName,
@@ -43,7 +42,6 @@ public class PartSpecification implements Specification<Part> {
 
         // Company filter
         if (companyId != null) {
-
             predicates.add(
                     cb.equal(
                             root.get("company").get("companyId"),
@@ -52,14 +50,10 @@ public class PartSpecification implements Specification<Part> {
             );
         }
 
-
-        // ---------------------------------------------------------
         // Part Name
-        // ---------------------------------------------------------
         if (partName != null && !partName.trim().isEmpty()) {
 
-            String search =
-                    partName.trim().toLowerCase();
+            String search = partName.trim().toLowerCase();
 
             predicates.add(
                     cb.like(
@@ -73,29 +67,21 @@ public class PartSpecification implements Specification<Part> {
                             cb.selectCase()
                                     .when(
                                             cb.like(
-                                                    cb.lower(
-                                                            root.get("partName")
-                                                    ),
+                                                    cb.lower(root.get("partName")),
                                                     search + "%"
                                             ),
                                             0
                                     )
                                     .otherwise(1)
                     ),
-                    cb.asc(
-                            root.get("partName")
-                    )
+                    cb.asc(root.get("partName"))
             );
         }
 
-
-        // ---------------------------------------------------------
         // Part Number
-        // ---------------------------------------------------------
         if (partNumber != null && !partNumber.trim().isEmpty()) {
 
-            String search =
-                    partNumber.trim().toLowerCase();
+            String search = partNumber.trim().toLowerCase();
 
             predicates.add(
                     cb.like(
@@ -109,36 +95,26 @@ public class PartSpecification implements Specification<Part> {
                             cb.selectCase()
                                     .when(
                                             cb.like(
-                                                    cb.lower(
-                                                            root.get("partNumber")
-                                                    ),
+                                                    cb.lower(root.get("partNumber")),
                                                     search + "%"
                                             ),
                                             0
                                     )
                                     .otherwise(1)
                     ),
-                    cb.asc(
-                            root.get("partNumber")
-                    )
+                    cb.asc(root.get("partNumber"))
             );
         }
 
-
-        // ---------------------------------------------------------
         // Category Name
-        // ---------------------------------------------------------
-        if (categoryName != null
-                && !categoryName.trim().isEmpty()) {
+        if (categoryName != null && !categoryName.trim().isEmpty()) {
 
-            String search =
-                    categoryName.trim().toLowerCase();
+            String search = categoryName.trim().toLowerCase();
 
             predicates.add(
                     cb.like(
                             cb.lower(
-                                    root.get("category")
-                                            .get("categoryName")
+                                    root.get("category").get("categoryName")
                             ),
                             "%" + search + "%"
                     )
@@ -160,20 +136,15 @@ public class PartSpecification implements Specification<Part> {
                                     .otherwise(1)
                     ),
                     cb.asc(
-                            root.get("category")
-                                    .get("categoryName")
+                            root.get("category").get("categoryName")
                     )
             );
         }
 
-
-        // ---------------------------------------------------------
         // Type
-        // ---------------------------------------------------------
         if (type != null && !type.trim().isEmpty()) {
 
-            String search =
-                    type.trim().toLowerCase();
+            String search = type.trim().toLowerCase();
 
             predicates.add(
                     cb.like(
@@ -187,29 +158,21 @@ public class PartSpecification implements Specification<Part> {
                             cb.selectCase()
                                     .when(
                                             cb.like(
-                                                    cb.lower(
-                                                            root.get("type")
-                                                    ),
+                                                    cb.lower(root.get("type")),
                                                     search + "%"
                                             ),
                                             0
                                     )
                                     .otherwise(1)
                     ),
-                    cb.asc(
-                            root.get("type")
-                    )
+                    cb.asc(root.get("type"))
             );
         }
 
-
-        // ---------------------------------------------------------
         // Unit
-        // ---------------------------------------------------------
         if (unit != null && !unit.trim().isEmpty()) {
 
-            String search =
-                    unit.trim().toLowerCase();
+            String search = unit.trim().toLowerCase();
 
             predicates.add(
                     cb.like(
@@ -223,23 +186,16 @@ public class PartSpecification implements Specification<Part> {
                             cb.selectCase()
                                     .when(
                                             cb.like(
-                                                    cb.lower(
-                                                            root.get("unit")
-                                                    ),
+                                                    cb.lower(root.get("unit")),
                                                     search + "%"
                                             ),
                                             0
                                     )
                                     .otherwise(1)
                     ),
-                    cb.asc(
-                            root.get("unit")
-                    )
+                    cb.asc(root.get("unit"))
             );
         }
-
-
-        query.distinct(true);
 
         return cb.and(
                 predicates.toArray(new Predicate[0])

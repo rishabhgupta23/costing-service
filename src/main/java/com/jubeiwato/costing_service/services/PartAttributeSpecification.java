@@ -13,21 +13,37 @@ public class PartAttributeSpecification implements Specification<PartAttribute> 
     private final String attributeName;
     private final Integer deleteFlag;
 
-    public PartAttributeSpecification(Long companyId, String attributeName, Integer deleteFlag) {
+    public PartAttributeSpecification(
+            Long companyId,
+            String attributeName,
+            Integer deleteFlag) {
+
         this.companyId = companyId;
         this.attributeName = attributeName;
         this.deleteFlag = deleteFlag;
     }
 
     @Override
-    public Predicate toPredicate(Root<PartAttribute> root, CriteriaQuery<?> query, CriteriaBuilder cb) {
+    public Predicate toPredicate(
+            Root<PartAttribute> root,
+            CriteriaQuery<?> query,
+            CriteriaBuilder cb) {
+
         List<Predicate> predicates = new ArrayList<>();
 
+        // Company filter
         if (companyId != null) {
-            predicates.add(cb.equal(root.get("company").get("companyId"), companyId));
+            predicates.add(
+                    cb.equal(
+                            root.get("company").get("companyId"),
+                            companyId
+                    )
+            );
         }
 
+        // Attribute Name
         if (attributeName != null && !attributeName.trim().isEmpty()) {
+
             String search = attributeName.trim().toLowerCase();
 
             predicates.add(
@@ -41,7 +57,10 @@ public class PartAttributeSpecification implements Specification<PartAttribute> 
                     cb.asc(
                             cb.selectCase()
                                     .when(
-                                            cb.like(cb.lower(root.get("attributeName")), search + "%"),
+                                            cb.like(
+                                                    cb.lower(root.get("attributeName")),
+                                                    search + "%"
+                                            ),
                                             0
                                     )
                                     .otherwise(1)
@@ -50,10 +69,18 @@ public class PartAttributeSpecification implements Specification<PartAttribute> 
             );
         }
 
-        if (root.get("deleteFlag") != null) {
-            predicates.add(cb.equal(root.get("deleteFlag"), deleteFlag));
+        // Delete Flag
+        if (deleteFlag != null) {
+            predicates.add(
+                    cb.equal(
+                            root.get("deleteFlag"),
+                            deleteFlag
+                    )
+            );
         }
 
-        return cb.and(predicates.toArray(new Predicate[0]));
+        return cb.and(
+                predicates.toArray(new Predicate[0])
+        );
     }
 }

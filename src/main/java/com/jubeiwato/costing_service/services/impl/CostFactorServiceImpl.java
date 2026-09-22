@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import com.jubeiwato.costing_service.utils.SearchUtil;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -51,26 +52,68 @@ public class CostFactorServiceImpl implements CostFactorService {
     
         return costFactorRepository
                 .findByCompany_CompanyIdAndFactorNameIgnoreCase(companyId, trimmedName);
-    }  
-    
-    @Override
-    public ApiPageResponseDto<List<CostFactorDto>> getCostFactors(int pageNo, int pageSize, Long companyId, String factorName, String sortColumn, Sorting sortMode) {
-        Sort.Direction direction = (sortMode == Sorting.DESC) ? Sort.Direction.DESC : Sort.Direction.ASC;
-        Sort sort = Sort.by(direction, sortColumn);
-        if (!ValidationUtil.isValidInput(factorName)) {
-            throw new AppException(ErrorMessageConstant.INVALID_INPUT, HttpStatus.BAD_REQUEST);
-        }
-        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
-        Specification<CostFactor> spec = new CostFactorSpecification(companyId, factorName, DeleteFlag.NEGATIVE.getValue());
-        Page<CostFactor> costFactorPage = costFactorRepository.findAll(spec, pageable);
+    }
 
-        List<CostFactorDto> costFactorDtos = costFactorPage.getContent()
-                .stream()
-                .map(costFactor -> CostFactorDto.builder()
-                        .id(costFactor.getFactorId())
-                        .factorName(costFactor.getFactorName())
-                        .build())
-                .toList();
+    @Override
+    public ApiPageResponseDto<List<CostFactorDto>> getCostFactors(
+            int pageNo,
+            int pageSize,
+            Long companyId,
+            String factorName,
+            String sortColumn,
+            Sorting sortMode) {
+
+        if (!ValidationUtil.isValidInput(factorName)) {
+            throw new AppException(
+                    ErrorMessageConstant.INVALID_INPUT,
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
+        Specification<CostFactor> spec =
+                new CostFactorSpecification(
+                        companyId,
+                        factorName,
+                        DeleteFlag.NEGATIVE.getValue()
+                );
+
+        boolean hasSearch =
+                SearchUtil.hasSearchCriteria(factorName);
+
+        Pageable pageable;
+
+        if (hasSearch) {
+            pageable = PageRequest.of(
+                    pageNo,
+                    pageSize
+            );
+
+        } else {
+            Sort.Direction direction =
+                    (sortMode == Sorting.DESC)
+                            ? Sort.Direction.DESC
+                            : Sort.Direction.ASC;
+
+            Sort sort = Sort.by(direction, sortColumn);
+
+            pageable = PageRequest.of(
+                    pageNo,
+                    pageSize,
+                    sort
+            );
+        }
+
+        Page<CostFactor> costFactorPage =
+                costFactorRepository.findAll(spec, pageable);
+
+        List<CostFactorDto> costFactorDtos =
+                costFactorPage.getContent()
+                        .stream()
+                        .map(costFactor -> CostFactorDto.builder()
+                                .id(costFactor.getFactorId())
+                                .factorName(costFactor.getFactorName())
+                                .build())
+                        .toList();
 
         PageInfoDto pageInfo = PageInfoDto.builder()
                 .totalPages(costFactorPage.getTotalPages())

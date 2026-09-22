@@ -1,7 +1,6 @@
 package com.jubeiwato.costing_service.services.impl;
 
 import com.jubeiwato.costing_service.entities.Template;
-
 import jakarta.persistence.criteria.*;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -31,7 +30,6 @@ public class TemplateSpecification implements Specification<Template> {
 
         // Company filter
         if (companyId != null) {
-
             predicates.add(
                     cb.equal(
                             root.get("company").get("companyId"),
@@ -72,8 +70,6 @@ public class TemplateSpecification implements Specification<Template> {
                     )
             );
         }
-
-        query.distinct(true);
 
         return cb.and(
                 predicates.toArray(new Predicate[0])
