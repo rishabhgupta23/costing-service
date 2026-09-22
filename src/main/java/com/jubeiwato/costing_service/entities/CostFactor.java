@@ -2,12 +2,10 @@ package com.jubeiwato.costing_service.entities;
 
 import com.jubeiwato.costing_service.constants.CostFactorType;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
