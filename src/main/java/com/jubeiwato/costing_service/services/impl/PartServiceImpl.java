@@ -775,7 +775,8 @@ public class PartServiceImpl implements PartService {
             CostFactorDto costFactorDto,
             Map<Long, CostFactor> costFactorMap) {
 
-        CostFactor costFactor = costFactorMap.get(costFactorDto.getId());
+        CostFactor costFactor =
+                costFactorMap.get(costFactorDto.getId());
 
         if (costFactor == null) {
             throw new AppException(
@@ -785,39 +786,50 @@ public class PartServiceImpl implements PartService {
         }
 
         String comments = validateCostFactorComments(
-                costFactor,
                 costFactorDto.getComments()
         );
 
-        return PartCostCostFactor.builder()
-                .costFactor(costFactor)
-                .value(
-                        costFactorDto.getValue() != null
-                                ? costFactorDto.getValue()
-                                : 0.0
-                )
-                .comments(comments)
-                .build();
-    }
+        Double quantity = costFactorDto.getQuantity();
+        Double rate = costFactorDto.getRate();
 
-    private String validateCostFactorComments(
-            CostFactor costFactor,
-            String comments) {
+        double value;
 
         if (costFactor.getFactorType() == CostFactorType.CALCULATED) {
 
-            if (comments == null || comments.isBlank()) {
+            if (quantity == null || rate == null) {
                 throw new AppException(
-                        "Comments are required for calculated cost factors",
+                        "Quantity and rate are required for calculated cost factor",
                         HttpStatus.BAD_REQUEST
                 );
             }
 
-            return comments.trim();
+            value = quantity * rate;
+
+        } else {
+
+            value = costFactorDto.getValue() != null
+                    ? costFactorDto.getValue()
+                    : 0.0;
         }
 
-        // SIMPLE cost factors do not need comments
-        return null;
+        return PartCostCostFactor.builder()
+                .costFactor(costFactor)
+                .quantity(quantity)
+                .rate(rate)
+                .value(value)
+                .comments(comments)
+                .build();
+    }
+
+    private String validateCostFactorComments(String comments) {
+
+        if (comments == null) {
+            return null;
+        }
+
+        String trimmedComments = comments.trim();
+
+        return trimmedComments.isEmpty() ? null : trimmedComments;
     }
 
         @Override
@@ -1148,6 +1160,18 @@ public PartDto updatePartById(Long partId, @Valid PartRequestDto request,Long co
             }
 
             if (!Objects.equals(
+                    existingFactor.getQuantity(),
+                    incomingFactor.getQuantity())) {
+                return false;
+            }
+
+            if (!Objects.equals(
+                    existingFactor.getRate(),
+                    incomingFactor.getRate())) {
+                return false;
+            }
+
+            if (!Objects.equals(
                     existingFactor.getValue(),
                     incomingFactor.getValue())) {
                 return false;
@@ -1201,6 +1225,8 @@ public PartDto updatePartById(Long partId, @Valid PartRequestDto request,Long co
                                               .map(partCostFactor ->
                                                       CostFactorDto.entityToDto(
                                                               partCostFactor.getCostFactor(),
+                                                              partCostFactor.getQuantity(),
+                                                              partCostFactor.getRate(),
                                                               partCostFactor.getValue(),
                                                               partCostFactor.getComments()
                                                       )

@@ -193,7 +193,7 @@ public class CostFactorServiceImpl implements CostFactorService {
 
         CostFactor saved = costFactorRepository.save(existing);
 
-        return CostFactorDto.entityToDto(saved, null, null);
+        return CostFactorDto.entityToDto(saved, null, null,null,null);
     }
 
     private String validateCostFactorRequest(CostFactorDto request) {

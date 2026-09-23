@@ -20,6 +20,10 @@ public class CostFactorDto {
     @NotBlank(message = "Factor name is required")
     private String factorName;
 
+    private Double quantity;
+
+    private Double rate;
+
     private Double value;
 
     @NotNull(message = "Factor type is required")
@@ -29,12 +33,16 @@ public class CostFactorDto {
 
     public static CostFactorDto entityToDto(
             CostFactor costFactor,
+            Double quantity,
+            Double rate,
             Double value,
             String comments) {
 
         return CostFactorDto.builder()
                 .id(costFactor.getFactorId())
                 .factorName(costFactor.getFactorName())
+                .quantity(quantity)
+                .rate(rate)
                 .value(value)
                 .factorType(costFactor.getFactorType())
                 .comments(comments)

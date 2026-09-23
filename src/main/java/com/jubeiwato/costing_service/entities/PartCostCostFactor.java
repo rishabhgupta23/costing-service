@@ -1,12 +1,10 @@
 package com.jubeiwato.costing_service.entities;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -36,6 +34,12 @@ public class PartCostCostFactor extends BaseEntity {
             nullable = false
     )
     private CostFactor costFactor;
+
+    @Column(name = "quantity")
+    private Double quantity;
+
+    @Column(name = "rate")
+    private Double rate;
 
     @Column(name = "value", nullable = false)
     private double value;
