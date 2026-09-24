@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+            http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="20260916" author="anjali">
+
+        <addColumn
+                tableName="part_cost_cost_factor"
+                schemaName="app">
+
+            <column
+                    name="comments"
+                    type="varchar(255)"/>
+
+        </addColumn>
+
+        <dropColumn
+                tableName="cost_factor"
+                schemaName="app"
+                columnName="comments"/>
+
+    </changeSet>
+
+</databaseChangeLog>
