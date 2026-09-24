@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import com.jubeiwato.costing_service.utils.SearchUtil;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -33,108 +34,209 @@ public class CostFactorServiceImpl implements CostFactorService {
     private final CostFactorRepository costFactorRepository;
     private final CompanyRepository companyRepository;
 
-    public CostFactorServiceImpl(CostFactorRepository costFactorRepository, CompanyRepository companyRepository) {
+    public CostFactorServiceImpl(
+            CostFactorRepository costFactorRepository,
+            CompanyRepository companyRepository) {
+
         this.costFactorRepository = costFactorRepository;
         this.companyRepository = companyRepository;
-    } 
-
-    private CostFactor getValidatedCostFactor(Long id, Long companyId) {
-        return costFactorRepository.findByFactorIdAndCompany_CompanyIdAndDeleteFlag(id, companyId, DeleteFlag.NEGATIVE.getValue())
-                .orElseThrow(() -> new AppException(ErrorMessageConstant.COST_FACTOR_DOES_NOT_EXIST, HttpStatus.NOT_FOUND));
     }
 
-    private Optional<CostFactor> getConflictingCostFactor(String factorName, Long companyId) {
-        String trimmedName = (factorName != null) ? factorName.trim() : ""; 
-        if (trimmedName.isEmpty()) {
-            throw new AppException(ErrorMessageConstant.INVALID_COST_FACTOR, HttpStatus.BAD_REQUEST);
-        }
-    
+    private CostFactor getValidatedCostFactor(Long id, Long companyId) {
+
         return costFactorRepository
-                .findByCompany_CompanyIdAndFactorNameIgnoreCase(companyId, trimmedName);
-    }  
-    
-    @Override
-    public ApiPageResponseDto<List<CostFactorDto>> getCostFactors(int pageNo, int pageSize, Long companyId, String factorName, String sortColumn, Sorting sortMode) {
-        Sort.Direction direction = (sortMode == Sorting.DESC) ? Sort.Direction.DESC : Sort.Direction.ASC;
-        Sort sort = Sort.by(direction, sortColumn);
-        if (!ValidationUtil.isValidInput(factorName)) {
-            throw new AppException(ErrorMessageConstant.INVALID_INPUT, HttpStatus.BAD_REQUEST);
+                .findByFactorIdAndCompany_CompanyIdAndDeleteFlag(
+                        id,
+                        companyId,
+                        DeleteFlag.NEGATIVE.getValue()
+                )
+                .orElseThrow(() -> new AppException(
+                        ErrorMessageConstant.COST_FACTOR_DOES_NOT_EXIST,
+                        HttpStatus.NOT_FOUND
+                ));
+    }
+
+    private Optional<CostFactor> getConflictingCostFactor(
+            String factorName,
+            Long companyId) {
+
+        String trimmedName =
+                factorName != null ? factorName.trim() : "";
+
+        if (trimmedName.isEmpty()) {
+            throw new AppException(
+                    ErrorMessageConstant.INVALID_COST_FACTOR,
+                    HttpStatus.BAD_REQUEST
+            );
         }
-        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
-        Specification<CostFactor> spec = new CostFactorSpecification(companyId, factorName, DeleteFlag.NEGATIVE.getValue());
-        Page<CostFactor> costFactorPage = costFactorRepository.findAll(spec, pageable);
 
-        List<CostFactorDto> costFactorDtos = costFactorPage.getContent()
-                .stream()
-                .map(costFactor -> CostFactorDto.builder()
-                        .id(costFactor.getFactorId())
-                        .factorName(costFactor.getFactorName())
-                        .factorType(costFactor.getFactorType())
-                        .build())
-                .toList();
+        return costFactorRepository
+                .findByCompany_CompanyIdAndFactorNameIgnoreCase(
+                        companyId,
+                        trimmedName
+                );
+    }
 
-        PageInfoDto pageInfo = PageInfoDto.builder()
-                .totalPages(costFactorPage.getTotalPages())
-                .pageNumber(pageNo)
-                .pageSize(pageSize)
-                .totalRecords(costFactorPage.getTotalElements())
-                .build();
+    @Override
+    public ApiPageResponseDto<List<CostFactorDto>> getCostFactors(
+            int pageNo,
+            int pageSize,
+            Long companyId,
+            String factorName,
+            String sortColumn,
+            Sorting sortMode) {
 
-        return ApiPageResponseDto.<List<CostFactorDto>>builder()
+        if (!ValidationUtil.isValidInput(factorName)) {
+            throw new AppException(
+                    ErrorMessageConstant.INVALID_INPUT,
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
+        Specification<CostFactor> spec =
+                new CostFactorSpecification(
+                        companyId,
+                        factorName,
+                        DeleteFlag.NEGATIVE.getValue()
+                );
+
+        boolean hasSearch =
+                SearchUtil.hasSearchCriteria(factorName);
+
+        Pageable pageable;
+
+        if (hasSearch) {
+
+            /*
+             * When searching, do not apply the normal sorting.
+             * SearchUtil/Specification handles the search ordering.
+             */
+            pageable = PageRequest.of(
+                    pageNo,
+                    pageSize
+            );
+
+        } else {
+
+            Sort.Direction direction =
+                    sortMode == Sorting.DESC
+                            ? Sort.Direction.DESC
+                            : Sort.Direction.ASC;
+
+            Sort sort = Sort.by(
+                    direction,
+                    sortColumn
+            );
+
+            pageable = PageRequest.of(
+                    pageNo,
+                    pageSize,
+                    sort
+            );
+        }
+
+        Page<CostFactor> costFactorPage =
+                costFactorRepository.findAll(
+                        spec,
+                        pageable
+                );
+
+        List<CostFactorDto> costFactorDtos =
+                costFactorPage.getContent()
+                        .stream()
+                        .map(costFactor ->
+                                CostFactorDto.builder()
+                                        .id(costFactor.getFactorId())
+                                        .factorName(costFactor.getFactorName())
+                                        .factorType(costFactor.getFactorType())
+                                        .build()
+                        )
+                        .toList();
+
+        PageInfoDto pageInfo =
+                PageInfoDto.builder()
+                        .totalPages(costFactorPage.getTotalPages())
+                        .pageNumber(pageNo)
+                        .pageSize(pageSize)
+                        .totalRecords(costFactorPage.getTotalElements())
+                        .build();
+
+        return ApiPageResponseDto
+                .<List<CostFactorDto>>builder()
                 .data(costFactorDtos)
                 .pageInfo(pageInfo)
                 .build();
     }
-
-
 
     @Override
     public void createCostFactor(
             CostFactorDto request,
             Long companyId) {
 
-        Company company = companyRepository.findById(companyId)
-                .orElseThrow(() -> new AppException(
-                        ErrorMessageConstant.INVALID_COMPANY,
-                        HttpStatus.BAD_REQUEST
-                ));
+        Company company =
+                companyRepository.findById(companyId)
+                        .orElseThrow(() -> new AppException(
+                                ErrorMessageConstant.INVALID_COMPANY,
+                                HttpStatus.BAD_REQUEST
+                        ));
 
-        String trimmedName = validateCostFactorRequest(request);
+        String trimmedName =
+                validateCostFactorRequest(request);
 
         Optional<CostFactor> conflictOpt =
-                getConflictingCostFactor(trimmedName, companyId);
+                getConflictingCostFactor(
+                        trimmedName,
+                        companyId
+                );
 
         if (conflictOpt.isPresent()) {
 
             CostFactor existing = conflictOpt.get();
 
+            /*
+             * Active cost factor already exists.
+             */
             if (Objects.equals(
                     existing.getDeleteFlag(),
                     DeleteFlag.NEGATIVE.getValue())) {
 
                 throw new AppException(
                         ErrorMessageConstant.getFormattedMessage(
-                                ErrorMessageConstant.COST_FACTOR_ALREADY_EXISTS_TEMPLATE,
+                                ErrorMessageConstant
+                                        .COST_FACTOR_ALREADY_EXISTS_TEMPLATE,
                                 trimmedName
                         ),
                         HttpStatus.CONFLICT
                 );
             }
 
-            // Restore soft-deleted cost factor
-            existing.setDeleteFlag(DeleteFlag.NEGATIVE.getValue());
+            /*
+             * Restore soft-deleted cost factor.
+             */
+            existing.setDeleteFlag(
+                    DeleteFlag.NEGATIVE.getValue()
+            );
+
             existing.setFactorName(trimmedName);
-            existing.setFactorType(request.getFactorType());
+
+            existing.setFactorType(
+                    request.getFactorType()
+            );
 
             costFactorRepository.save(existing);
+
             return;
         }
 
-        CostFactor costFactor = CostFactor.builder()
-                .factorName(trimmedName)
-                .factorType(request.getFactorType())
-                .company(company)
-                .build();
+        /*
+         * Create new cost factor.
+         */
+        CostFactor costFactor =
+                CostFactor.builder()
+                        .factorName(trimmedName)
+                        .factorType(request.getFactorType())
+                        .company(company)
+                        .build();
 
         costFactorRepository.save(costFactor);
     }
@@ -145,39 +247,68 @@ public class CostFactorServiceImpl implements CostFactorService {
             CostFactorDto request,
             Long companyId) {
 
-        CostFactor existing = getValidatedCostFactor(id, companyId);
+        CostFactor existing =
+                getValidatedCostFactor(
+                        id,
+                        companyId
+                );
 
-        String trimmedName = validateCostFactorRequest(request);
+        String trimmedName =
+                validateCostFactorRequest(request);
 
-        if (!existing.getFactorName().equalsIgnoreCase(trimmedName)) {
+        /*
+         * Check whether the name itself is changing.
+         */
+        if (!existing.getFactorName()
+                .equalsIgnoreCase(trimmedName)) {
 
             Optional<CostFactor> conflictOpt =
-                    getConflictingCostFactor(trimmedName, companyId);
+                    getConflictingCostFactor(
+                            trimmedName,
+                            companyId
+                    );
 
+            /*
+             * Ignore the current record while checking
+             * for duplicate names.
+             */
             if (conflictOpt.isPresent()
                     && !Objects.equals(
                     conflictOpt.get().getFactorId(),
                     existing.getFactorId())) {
 
-                CostFactor conflict = conflictOpt.get();
+                CostFactor conflict =
+                        conflictOpt.get();
 
                 String message;
 
+                /*
+                 * The requested name belongs to a
+                 * soft-deleted cost factor.
+                 */
                 if (Objects.equals(
                         conflict.getDeleteFlag(),
                         DeleteFlag.POSITIVE.getValue())) {
 
-                    message = ErrorMessageConstant.getFormattedMessage(
-                            ErrorMessageConstant.COST_FACTOR_SOFT_DELETED_EXISTS_TEMPLATE,
-                            trimmedName
-                    );
+                    message =
+                            ErrorMessageConstant.getFormattedMessage(
+                                    ErrorMessageConstant
+                                            .COST_FACTOR_SOFT_DELETED_EXISTS_TEMPLATE,
+                                    trimmedName
+                            );
 
                 } else {
 
-                    message = ErrorMessageConstant.getFormattedMessage(
-                            ErrorMessageConstant.COST_FACTOR_ALREADY_EXISTS_TEMPLATE,
-                            trimmedName
-                    );
+                    /*
+                     * The requested name already belongs
+                     * to an active cost factor.
+                     */
+                    message =
+                            ErrorMessageConstant.getFormattedMessage(
+                                    ErrorMessageConstant
+                                            .COST_FACTOR_ALREADY_EXISTS_TEMPLATE,
+                                    trimmedName
+                            );
                 }
 
                 throw new AppException(
@@ -189,14 +320,27 @@ public class CostFactorServiceImpl implements CostFactorService {
             existing.setFactorName(trimmedName);
         }
 
-        existing.setFactorType(request.getFactorType());
+        /*
+         * Update factor type.
+         */
+        existing.setFactorType(
+                request.getFactorType()
+        );
 
-        CostFactor saved = costFactorRepository.save(existing);
+        CostFactor saved =
+                costFactorRepository.save(existing);
 
-        return CostFactorDto.entityToDto(saved, null, null,null,null);
+        return CostFactorDto.entityToDto(
+                saved,
+                null,
+                null,
+                null,
+                null
+        );
     }
 
-    private String validateCostFactorRequest(CostFactorDto request) {
+    private String validateCostFactorRequest(
+            CostFactorDto request) {
 
         if (request == null) {
             throw new AppException(
@@ -205,9 +349,10 @@ public class CostFactorServiceImpl implements CostFactorService {
             );
         }
 
-        String trimmedName = request.getFactorName() != null
-                ? request.getFactorName().trim()
-                : "";
+        String trimmedName =
+                request.getFactorName() != null
+                        ? request.getFactorName().trim()
+                        : "";
 
         if (trimmedName.isEmpty()) {
             throw new AppException(
@@ -226,13 +371,21 @@ public class CostFactorServiceImpl implements CostFactorService {
         return trimmedName;
     }
 
-@Override
-public void deleteCostFactor(Long id, Long companyId) {
-    CostFactor existing = getValidatedCostFactor(id, companyId);
+    @Override
+    public void deleteCostFactor(
+            Long id,
+            Long companyId) {
 
-    existing.setDeleteFlag(DeleteFlag.POSITIVE.getValue());
-    costFactorRepository.save(existing);
-}
+        CostFactor existing =
+                getValidatedCostFactor(
+                        id,
+                        companyId
+                );
 
+        existing.setDeleteFlag(
+                DeleteFlag.POSITIVE.getValue()
+        );
 
+        costFactorRepository.save(existing);
+    }
 }

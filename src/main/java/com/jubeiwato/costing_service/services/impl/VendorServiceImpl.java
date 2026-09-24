@@ -7,6 +7,7 @@ import com.jubeiwato.costing_service.authentication.config.AppException;
 import com.jubeiwato.costing_service.constants.ErrorMessageConstant;
 import com.jubeiwato.costing_service.constants.Sorting;
 import com.jubeiwato.costing_service.services.FileGeneratorService;
+import com.jubeiwato.costing_service.utils.SearchUtil;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -75,7 +76,7 @@ public class VendorServiceImpl implements VendorService {
                 if (emailId!= null && !emailId.isBlank() && !ValidationUtil.isValidEmail(emailId)) {
                 throw new AppException(ErrorMessageConstant.INVALID_EMAIL_FORMAT, HttpStatus.BAD_REQUEST);
                 }
-   
+
                 Company company = companyRepository.findById(companyId)
                                 .orElseThrow(() -> new AppException(ErrorMessageConstant.COMPANY_DOES_NOT_EXIST, HttpStatus.BAD_REQUEST));
                 validateDuplicateVendor(companyId, vendorName);
@@ -92,39 +93,86 @@ public class VendorServiceImpl implements VendorService {
         }
 
         @Override
-        public ApiPageResponseDto<List<VendorDto>> getVendorList(Long companyId, String vendorName, String address,
-                        String emailId, String contactNumber, int pageNo, int pageSize, String sortColumn,
-                        Sorting sortMode) {
-                Sort.Direction direction = (sortMode == Sorting.DESC) ? Sort.Direction.DESC : Sort.Direction.ASC;
+        public ApiPageResponseDto<List<VendorDto>> getVendorList(
+                Long companyId,
+                String vendorName,
+                String address,
+                String emailId,
+                String contactNumber,
+                int pageNo,
+                int pageSize,
+                String sortColumn,
+                Sorting sortMode) {
 
-                Sort sort = Sort.by(direction, sortColumn);
-                Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
-                if (!ValidationUtil.isValidInput(vendorName) ||
-                                !ValidationUtil.isValidInput(address) ||
-                                !ValidationUtil.isValidInput(emailId) ||
-                                !ValidationUtil.isValidInput(contactNumber)) {
-                        throw new AppException(ErrorMessageConstant.INVALID_INPUT, HttpStatus.BAD_REQUEST);
+                if (!ValidationUtil.isValidInput(vendorName)
+                        || !ValidationUtil.isValidInput(address)
+                        || !ValidationUtil.isValidInput(emailId)
+                        || !ValidationUtil.isValidInput(contactNumber)) {
+
+                        throw new AppException(
+                                ErrorMessageConstant.INVALID_INPUT,
+                                HttpStatus.BAD_REQUEST
+                        );
                 }
 
-                Specification<Vendor> spec = new VendorSpecification(companyId, vendorName, address, emailId, contactNumber);
+                Specification<Vendor> spec = new VendorSpecification(
+                        companyId,
+                        vendorName,
+                        address,
+                        emailId,
+                        contactNumber
+                );
 
-                Page<Vendor> vendorPage = vendorRepository.findAll(spec, pageable);
+                boolean hasSearch = SearchUtil.hasSearchCriteria(
+                        vendorName,
+                        address,
+                        emailId,
+                        contactNumber
+                );
 
-                List<VendorDto> vendorDtos = vendorPage.getContent().stream()
+                Pageable pageable;
+
+                if (hasSearch) {
+                        pageable = PageRequest.of(
+                                pageNo,
+                                pageSize
+                        );
+
+                } else {
+                        Sort.Direction direction =
+                                (sortMode == Sorting.DESC)
+                                        ? Sort.Direction.DESC
+                                        : Sort.Direction.ASC;
+
+                        Sort sort = Sort.by(direction, sortColumn);
+
+                        pageable = PageRequest.of(
+                                pageNo,
+                                pageSize,
+                                sort
+                        );
+                }
+
+                Page<Vendor> vendorPage =
+                        vendorRepository.findAll(spec, pageable);
+
+                List<VendorDto> vendorDtos =
+                        vendorPage.getContent()
+                                .stream()
                                 .map(VendorDto::entityToDto)
                                 .toList();
 
                 PageInfoDto pageInfo = PageInfoDto.builder()
-                                .totalPages(vendorPage.getTotalPages())
-                                .pageNumber(pageNo)
-                                .pageSize(pageSize)
-                                .totalRecords(vendorPage.getTotalElements())
-                                .build();
+                        .totalPages(vendorPage.getTotalPages())
+                        .pageNumber(pageNo)
+                        .pageSize(pageSize)
+                        .totalRecords(vendorPage.getTotalElements())
+                        .build();
 
                 return ApiPageResponseDto.<List<VendorDto>>builder()
-                                .data(vendorDtos)
-                                .pageInfo(pageInfo)
-                                .build();
+                        .data(vendorDtos)
+                        .pageInfo(pageInfo)
+                        .build();
         }
 
         @Override

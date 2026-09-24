@@ -44,11 +44,13 @@ public class UserSpecification implements Specification<User> {
                     )
             );
         }
+
+        // Display Name
         if (displayName != null && !displayName.trim().isEmpty()) {
 
-            String search = displayName.trim().toLowerCase();
+            String search =
+                    displayName.trim().toLowerCase();
 
-            // Keep all records containing the search text
             predicates.add(
                     cb.like(
                             cb.lower(root.get("displayName")),
@@ -56,26 +58,31 @@ public class UserSpecification implements Specification<User> {
                     )
             );
 
-            // Starts-with results come first
             query.orderBy(
                     cb.asc(
                             cb.selectCase()
                                     .when(
                                             cb.like(
-                                                    cb.lower(root.get("displayName")),
+                                                    cb.lower(
+                                                            root.get("displayName")
+                                                    ),
                                                     search + "%"
                                             ),
                                             0
                                     )
                                     .otherwise(1)
                     ),
-                    cb.asc(root.get("displayName"))
+                    cb.asc(
+                            root.get("displayName")
+                    )
             );
         }
 
+        // Email
         if (emailId != null && !emailId.trim().isEmpty()) {
 
-            String search = emailId.trim().toLowerCase();
+            String search =
+                    emailId.trim().toLowerCase();
 
             predicates.add(
                     cb.like(
@@ -84,40 +91,50 @@ public class UserSpecification implements Specification<User> {
                     )
             );
 
-            // If email search is being used, starts-with emails come first
-            if (displayName == null || displayName.trim().isEmpty()) {
+            if (displayName == null
+                    || displayName.trim().isEmpty()) {
+
                 query.orderBy(
                         cb.asc(
                                 cb.selectCase()
                                         .when(
                                                 cb.like(
-                                                        cb.lower(root.get("emailId")),
+                                                        cb.lower(
+                                                                root.get("emailId")
+                                                        ),
                                                         search + "%"
                                                 ),
                                                 0
                                         )
                                         .otherwise(1)
                         ),
-                        cb.asc(root.get("emailId"))
+                        cb.asc(
+                                root.get("emailId")
+                        )
                 );
             }
         }
 
+        // Role Name
         if (roleName != null && !roleName.trim().isEmpty()) {
 
-            String search = roleName.trim().toLowerCase();
+            String search =
+                    roleName.trim().toLowerCase();
 
             predicates.add(
                     cb.like(
-                            cb.lower(root.get("userRole").get("roleName")),
+                            cb.lower(
+                                    root.get("userRole")
+                                            .get("roleName")
+                            ),
                             "%" + search + "%"
                     )
             );
 
-            // If role search is being used and displayName/email are not,
-            // starts-with roles come first
-            if ((displayName == null || displayName.trim().isEmpty())
-                    && (emailId == null || emailId.trim().isEmpty())) {
+            if ((displayName == null
+                    || displayName.trim().isEmpty())
+                    && (emailId == null
+                    || emailId.trim().isEmpty())) {
 
                 query.orderBy(
                         cb.asc(
@@ -135,30 +152,37 @@ public class UserSpecification implements Specification<User> {
                                         .otherwise(1)
                         ),
                         cb.asc(
-                                root.get("userRole").get("roleName")
+                                root.get("userRole")
+                                        .get("roleName")
                         )
                 );
             }
         }
-
-        query.distinct(true);
 
         return cb.and(
                 predicates.toArray(new Predicate[0])
         );
     }
 
-    public static Specification<User> orderByRoleName(Sorting sortMode) {
+    public static Specification<User> orderByRoleName(
+            Sorting sortMode) {
 
         return (root, query, builder) -> {
 
             Join<Object, Object> userRoleJoin =
-                    root.join("userRole", JoinType.LEFT);
+                    root.join(
+                            "userRole",
+                            JoinType.LEFT
+                    );
 
             query.orderBy(
                     sortMode == Sorting.DESC
-                            ? builder.desc(userRoleJoin.get("roleName"))
-                            : builder.asc(userRoleJoin.get("roleName"))
+                            ? builder.desc(
+                            userRoleJoin.get("roleName")
+                    )
+                            : builder.asc(
+                            userRoleJoin.get("roleName")
+                    )
             );
 
             return builder.conjunction();

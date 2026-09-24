@@ -2,6 +2,7 @@ package com.jubeiwato.costing_service.services.impl;
 
 import java.util.List;
 
+import com.jubeiwato.costing_service.utils.SearchUtil;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -140,38 +141,108 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public ApiPageResponseDto<List<UserDto>> getUserListByCompany(Long userId,
-            String displayName, String emailId, String roleName, int pageNo, int pageSize, String sortColumn,
-            Sorting sortMode, Long companyId) {
-        if (companyId == null) {
-            throw new AppException(ErrorMessageConstant.COMPANY_ID_REQUIRED, HttpStatus.BAD_REQUEST);
-        }
-        if (!ValidationUtil.isValidInput(displayName) ||
-                !ValidationUtil.isValidInput(emailId) ||
-                !ValidationUtil.isValidInput(roleName)) {
-            throw new AppException(ErrorMessageConstant.INVALID_INPUT, HttpStatus.BAD_REQUEST);
-        }
-        Sort sort = Sort.unsorted();
-        Specification<User> spec = new UserSpecification(companyId, displayName, emailId, roleName);
+    public ApiPageResponseDto<List<UserDto>> getUserListByCompany(
+            Long userId,
+            String displayName,
+            String emailId,
+            String roleName,
+            int pageNo,
+            int pageSize,
+            String sortColumn,
+            Sorting sortMode,
+            Long companyId) {
 
-        if (!"roleName".equals(sortColumn)) {
-            Sort.Direction direction = (sortMode == Sorting.DESC) ? Sort.Direction.DESC : Sort.Direction.ASC;
-            sort = Sort.by(direction, sortColumn);
-        } else {
-            spec = spec.and(UserSpecification.orderByRoleName(sortMode));
+        if (companyId == null) {
+            throw new AppException(
+                    ErrorMessageConstant.COMPANY_ID_REQUIRED,
+                    HttpStatus.BAD_REQUEST
+            );
         }
-        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
-        Page<User> userPage = userRepository.findAll(spec, pageable);
-        List<UserDto> userDtos = userPage.getContent()
-                .stream()
-                .map(UserDto::entityToDto)
-                .toList();
+
+        if (!ValidationUtil.isValidInput(displayName)
+                || !ValidationUtil.isValidInput(emailId)
+                || !ValidationUtil.isValidInput(roleName)) {
+
+            throw new AppException(
+                    ErrorMessageConstant.INVALID_INPUT,
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
+        Specification<User> spec =
+                new UserSpecification(
+                        companyId,
+                        displayName,
+                        emailId,
+                        roleName
+                );
+
+        boolean hasSearch = SearchUtil.hasSearchCriteria(
+                displayName,
+                emailId,
+                roleName
+        );
+
+        Pageable pageable;
+
+        if (hasSearch) {
+
+            // Search is active.
+            // Specification controls search filtering and ordering.
+            pageable = PageRequest.of(
+                    pageNo,
+                    pageSize
+            );
+
+        } else {
+
+            if ("roleName".equals(sortColumn)) {
+
+                // No search + sorting by role name.
+                spec = spec.and(
+                        UserSpecification.orderByRoleName(sortMode)
+                );
+
+                pageable = PageRequest.of(
+                        pageNo,
+                        pageSize
+                );
+
+            } else {
+
+                // No search + normal column sorting.
+                Sort.Direction direction =
+                        (sortMode == Sorting.DESC)
+                                ? Sort.Direction.DESC
+                                : Sort.Direction.ASC;
+
+                Sort sort =
+                        Sort.by(direction, sortColumn);
+
+                pageable = PageRequest.of(
+                        pageNo,
+                        pageSize,
+                        sort
+                );
+            }
+        }
+
+        Page<User> userPage =
+                userRepository.findAll(spec, pageable);
+
+        List<UserDto> userDtos =
+                userPage.getContent()
+                        .stream()
+                        .map(UserDto::entityToDto)
+                        .toList();
+
         PageInfoDto pageInfo = PageInfoDto.builder()
                 .totalPages(userPage.getTotalPages())
                 .pageNumber(pageNo)
                 .pageSize(pageSize)
                 .totalRecords(userPage.getTotalElements())
                 .build();
+
         return ApiPageResponseDto.<List<UserDto>>builder()
                 .data(userDtos)
                 .pageInfo(pageInfo)
