@@ -59,6 +59,34 @@ public class PartController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/autocomplete")
+    public ResponseEntity<ApiPageResponseDto<PartDataDto>> autocompleteParts(
+            @RequestParam String search,
+            @RequestParam(
+                    defaultValue = AppConstants.DEFAULT_PAGE_NUMBER
+            ) int pageNo,
+            @RequestParam(
+                    defaultValue = AppConstants.DEFAULT_PAGE_SIZE
+            ) int pageSize,
+            @AuthenticationPrincipal User authenticatedUser
+    ) {
+
+        Long companyId =
+                authenticatedUser
+                        .getCompany()
+                        .getCompanyId();
+
+        ApiPageResponseDto<PartDataDto> response =
+                partService.autocompleteParts(
+                        search,
+                        companyId,
+                        pageNo,
+                        pageSize
+                );
+
+        return ResponseEntity.ok(response);
+    }
+
     @PostMapping("/excel/upload")
     @PreAuthorize("hasRole('" + SUPER_ADMIN + "')")
     public ResponseEntity<GeneralResponseDto> uploadExcel(
