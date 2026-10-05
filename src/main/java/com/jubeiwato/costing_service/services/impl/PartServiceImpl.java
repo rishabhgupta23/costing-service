@@ -1109,13 +1109,33 @@ public PartDto updatePartById(Long partId, @Valid PartRequestDto request,Long co
         @Override
         @Transactional
         public void deletePartById(Long partId, Long companyId) {
-                Part part = getValidatedPart(partId, companyId);
+            Part part = getValidatedPart(partId, companyId);
 
-                boolean isChildPart = bomRepository.existsByChildPart(part);
-                if (isChildPart) {
-                        throw new AppException(ErrorMessageConstant.RESTRICT_CHILD_PART_DELETE, HttpStatus.BAD_REQUEST);
-                }
-                partRepository.delete(part);
+            List<Bom> parentBoms = bomRepository.findByChildPart(part);
+
+            if (!parentBoms.isEmpty()) {
+
+                String parentParts = parentBoms.stream()
+                        .map(Bom::getParentPart)
+                        .filter(Objects::nonNull)
+                        .map(parent -> parent.getPartName()
+                                + " | "
+                                + parent.getPartNumber())
+                        .distinct()
+                        .collect(Collectors.joining(", "));
+
+                String message =
+                        "Cannot delete this part because it is a child part of: "
+                                + parentParts
+                                + ". Please remove it from these BOM(s) first.";
+
+                throw new AppException(
+                        message,
+                        HttpStatus.BAD_REQUEST
+                );
+            }
+
+            partRepository.delete(part);
         }
 
         @Override
