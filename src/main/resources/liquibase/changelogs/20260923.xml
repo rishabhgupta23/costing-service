@@ -12,15 +12,22 @@
                 tableName="part_cost_cost_factor"
                 schemaName="app">
 
-            <column
-                    name="quantity"
-                    type="double precision"/>
-
-            <column
-                    name="rate"
-                    type="double precision"/>
+            <column name="quantity" type="double precision"/>
+            <column name="rate" type="double precision"/>
 
         </addColumn>
+
+        <rollback>
+            <dropColumn
+                    tableName="part_cost_cost_factor"
+                    schemaName="app"
+                    columnName="quantity"/>
+
+            <dropColumn
+                    tableName="part_cost_cost_factor"
+                    schemaName="app"
+                    columnName="rate"/>
+        </rollback>
 
     </changeSet>
 
