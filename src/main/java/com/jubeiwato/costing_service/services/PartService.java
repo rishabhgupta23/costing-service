@@ -13,6 +13,13 @@ public interface PartService {
 
     public ApiPageResponseDto<PartDataDto> getParts(PartDto filter,long companyId, int pageNo, int pageSize, String sortBy, Sorting sortDir);
 
+    ApiPageResponseDto<PartDataDto> autocompleteParts(
+            String search,
+            Long companyId,
+            int pageNo,
+            int pageSize
+    );
+
     public List<String> getPartTypes();
 
     public ApiPageResponseDto<List<PartUnitDto>> getPartUnits(int pageNo, int pageSize);

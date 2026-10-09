@@ -925,6 +925,97 @@ public class PartServiceImpl implements PartService {
                                 .build();
         }
 
+    @Override
+    public ApiPageResponseDto<PartDataDto> autocompleteParts(
+            String search,
+            Long companyId,
+            int pageNo,
+            int pageSize) {
+
+        if (search == null || search.trim().isEmpty()) {
+            throw new AppException(
+                    ErrorMessageConstant.INVALID_INPUT,
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
+        Specification<Part> spec =
+                new PartAutocompleteSpecification(
+                        companyId,
+                        search
+                );
+
+        Pageable pageable = PageRequest.of(
+                pageNo,
+                pageSize
+        );
+
+        Page<Part> partPage =
+                partRepository.findAll(spec, pageable);
+
+        // Get maximum vendor count
+        Integer maxVendorCount =
+                partCostRepository.getMaxVendorCount();
+
+        // Convert Parts to DTO
+        List<PartRowDto> partList =
+                partPage.getContent()
+                        .stream()
+                        .map(part -> {
+
+                            Set<String> vendorNames =
+                                    part.getPartCosts()
+                                            .stream()
+                                            .map(PartCost::getVendor)
+                                            .map(Vendor::getVendorName)
+                                            .collect(Collectors.toSet());
+
+                            return PartRowDto.superBuilder()
+                                    .partId(part.getPartId())
+                                    .partName(part.getPartName())
+                                    .partNumber(part.getPartNumber())
+                                    .categoryName(
+                                            part.getCategory() != null
+                                                    ? part.getCategory().getCategoryName()
+                                                    : null
+                                    )
+                                    .type(
+                                            part.getType() != null
+                                                    ? part.getType().name()
+                                                    : null
+                                    )
+                                    .unit(part.getUnit())
+                                    .vendorNames(
+                                            new ArrayList<>(vendorNames)
+                                    )
+                                    .build();
+                        })
+                        .toList();
+
+        PartDataDto partDataDto =
+                PartDataDto.builder()
+                        .partsList(partList)
+                        .maxVendorCount(
+                                maxVendorCount != null
+                                        ? maxVendorCount
+                                        : 0
+                        )
+                        .build();
+
+        PageInfoDto pageInfo =
+                PageInfoDto.builder()
+                        .totalPages(partPage.getTotalPages())
+                        .pageNumber(pageNo)
+                        .pageSize(pageSize)
+                        .totalRecords(partPage.getTotalElements())
+                        .build();
+
+        return ApiPageResponseDto.<PartDataDto>builder()
+                .data(partDataDto)
+                .pageInfo(pageInfo)
+                .build();
+    }
+
         @Override
         public PartDto getPartById(Long partId, Long companyId) {
                 Part part = getValidatedPart(partId, companyId);
