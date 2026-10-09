@@ -1226,14 +1226,12 @@ public PartDto updatePartById(Long partId, @Valid PartRequestDto request,Long co
                 String parentParts = parentBoms.stream()
                         .map(Bom::getParentPart)
                         .filter(Objects::nonNull)
-                        .map(parent -> parent.getPartName()
-                                + " | "
-                                + parent.getPartNumber())
+                        .map(parent -> parent.getPartNumber())
                         .distinct()
                         .collect(Collectors.joining(", "));
 
                 String message =
-                        "Cannot delete this part because it is a child part of: "
+                        "Cannot delete this part because it is a child part of following part number(s): "
                                 + parentParts
                                 + ". Please remove it from these BOM(s) first.";
 
