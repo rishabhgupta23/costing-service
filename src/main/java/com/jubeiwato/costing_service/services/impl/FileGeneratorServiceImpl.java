@@ -20,36 +20,37 @@ public class FileGeneratorServiceImpl implements FileGeneratorService {
         try (Workbook workbook = new XSSFWorkbook();
              ByteArrayOutputStream out = new ByteArrayOutputStream()) {
 
-            Sheet sheet = workbook.createSheet("Cost Calculation");
+            Sheet sheet = workbook.createSheet("Sheet1");
 
             // Header style
-            Font headerFont = workbook.createFont();
-            headerFont.setBold(true);
-            headerFont.setColor(IndexedColors.WHITE.getIndex());
-            headerFont.setFontHeightInPoints((short) 11);
-
-            CellStyle headerStyle = workbook.createCellStyle();
-            headerStyle.setFont(headerFont);
-            headerStyle.setFillForegroundColor(IndexedColors.DARK_BLUE.getIndex());
-            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-            headerStyle.setAlignment(HorizontalAlignment.CENTER);
-            headerStyle.setVerticalAlignment(VerticalAlignment.CENTER);
-            setBorders(headerStyle);
+            CellStyle headerStyle = createCellStyle(
+            workbook,
+            true,
+            IndexedColors.WHITE.getIndex(),
+            IndexedColors.DARK_BLUE.getIndex(),
+            HorizontalAlignment.CENTER,
+            null
+        );
 
             // Body style
-            CellStyle bodyStyle = workbook.createCellStyle();
-            bodyStyle.setVerticalAlignment(VerticalAlignment.CENTER);
-            bodyStyle.setBorderBottom(BorderStyle.THIN);
-            bodyStyle.setBorderTop(BorderStyle.THIN);
-            bodyStyle.setBorderLeft(BorderStyle.THIN);
-            bodyStyle.setBorderRight(BorderStyle.THIN);
+            CellStyle bodyStyle = createCellStyle(
+            workbook,
+            false,
+            IndexedColors.AUTOMATIC.getIndex(),
+            null,
+            HorizontalAlignment.GENERAL,
+            null
+        );
 
             // Numeric style
-            DataFormat format = workbook.createDataFormat();
-
-            CellStyle numberStyle = workbook.createCellStyle();
-            numberStyle.cloneStyleFrom(bodyStyle);
-            numberStyle.setDataFormat(format.getFormat("#,##0.00"));
+            CellStyle numberStyle = createCellStyle(
+            workbook,
+            false,
+            IndexedColors.AUTOMATIC.getIndex(),
+            null,
+            HorizontalAlignment.GENERAL,
+            "#,##0.00"
+            );
 
             // Header row
             Row headerRow = sheet.createRow(0);
@@ -88,36 +89,15 @@ public class FileGeneratorServiceImpl implements FileGeneratorService {
                 }
             }
 
-            // Add Total Cost only when the spreadsheet contains a Sub Total column.
-            int subtotalColumn = findHeader(headers, "Sub Total");
-
-            if (subtotalColumn >= 0) {
-                int totalRowIndex = data.size() + 1;
-                Row totalRow = sheet.createRow(totalRowIndex);
-
-                Cell labelCell = totalRow.createCell(
-                        Math.max(0, subtotalColumn - 1)
-                );
-                labelCell.setCellValue("Total Cost:");
-
-                Font totalFont = workbook.createFont();
-                totalFont.setBold(true);
-
-                CellStyle totalLabelStyle = workbook.createCellStyle();
-                totalLabelStyle.cloneStyleFrom(bodyStyle);
-                totalLabelStyle.setFont(totalFont);
-                totalLabelStyle.setAlignment(HorizontalAlignment.RIGHT);
-
-                labelCell.setCellStyle(totalLabelStyle);
-
-                Cell totalCell = totalRow.createCell(subtotalColumn);
-                totalCell.setCellValue(totalCost);
-
-                CellStyle totalValueStyle = workbook.createCellStyle();
-                totalValueStyle.cloneStyleFrom(numberStyle);
-                totalValueStyle.setFont(totalFont);
-                totalCell.setCellStyle(totalValueStyle);
-            }
+            addTotalCost(
+                sheet,
+                workbook,
+                headers,
+                data.size(),
+                totalCost,
+                bodyStyle,
+                numberStyle
+            );
 
             // Column sizing
             for (int i = 0; i < headers.length; i++) {
@@ -179,5 +159,79 @@ public class FileGeneratorServiceImpl implements FileGeneratorService {
         }
 
         return -1;
+    }
+    private CellStyle createCellStyle(
+        Workbook workbook,
+        boolean bold,
+        short fontColor,
+        Short backgroundColor,
+        HorizontalAlignment alignment,
+        String numberFormat) {
+
+        CellStyle style = workbook.createCellStyle();
+
+        Font font = workbook.createFont();
+        font.setBold(bold);
+        font.setColor(fontColor);
+        font.setFontHeightInPoints((short) 11);
+
+        style.setFont(font);
+        style.setVerticalAlignment(VerticalAlignment.CENTER);
+        style.setAlignment(alignment);
+
+        if (backgroundColor != null) {
+            style.setFillForegroundColor(backgroundColor);
+            style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        }
+
+        setBorders(style);
+
+        if (numberFormat != null) {
+            style.setDataFormat(
+                    workbook.createDataFormat().getFormat(numberFormat)
+            );
+        }
+
+        return style;
+    }
+
+    private void addTotalCost(
+    Sheet sheet,
+    Workbook workbook,
+    String[] headers,
+    int dataSize,
+    double totalCost,
+    CellStyle bodyStyle,
+    CellStyle numberStyle) {
+
+        int subtotalColumn = findHeader(headers, "Sub Total");
+
+        if (subtotalColumn < 0) {
+            return;
+        }
+
+        Row totalRow = sheet.createRow(dataSize + 1);
+
+        Font totalFont = workbook.createFont();
+        totalFont.setBold(true);
+
+        CellStyle totalLabelStyle = workbook.createCellStyle();
+        totalLabelStyle.cloneStyleFrom(bodyStyle);
+        totalLabelStyle.setFont(totalFont);
+        totalLabelStyle.setAlignment(HorizontalAlignment.RIGHT);
+
+        CellStyle totalValueStyle = workbook.createCellStyle();
+        totalValueStyle.cloneStyleFrom(numberStyle);
+        totalValueStyle.setFont(totalFont);
+
+        Cell labelCell = totalRow.createCell(
+                Math.max(0, subtotalColumn - 1)
+        );
+        labelCell.setCellValue("Total Cost:");
+        labelCell.setCellStyle(totalLabelStyle);
+
+        Cell totalCell = totalRow.createCell(subtotalColumn);
+        totalCell.setCellValue(totalCost);
+        totalCell.setCellStyle(totalValueStyle);
     }
 }
