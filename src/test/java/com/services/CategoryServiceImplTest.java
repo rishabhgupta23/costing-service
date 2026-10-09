@@ -24,6 +24,9 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -73,25 +76,47 @@ class CategoryServiceImplTest {
 
     private void testCategoryListSorting(Sorting sortMode) {
         Long companyId = 1L;
-        String name = "TestCategory";
-        Page<Category> page = new PageImpl<>(List.of(mockCategory(1L, name, companyId)));
 
-        when(categoryRepository.findAll(any(Specification.class), any(Pageable.class)))
-                .thenReturn(page);
+        Page<Category> page = new PageImpl<>(
+                List.of(mockCategory(1L, "TestCategory", companyId))
+        );
 
-        ApiPageResponseDto<List<CategoryDto>> response = categoryService.getCategoryList(
-                companyId, name, 0, 5, "name", sortMode);
+        when(categoryRepository.findAll(
+                any(Specification.class),
+                any(Pageable.class)
+        )).thenReturn(page);
+
+        ApiPageResponseDto<List<CategoryDto>> response =
+                categoryService.getCategoryList(
+                        companyId,
+                        "",
+                        0,
+                        5,
+                        "name",
+                        sortMode
+                );
 
         assertNotNull(response);
         assertEquals(1, response.getData().size());
 
-        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-        verify(categoryRepository).findAll(any(Specification.class), pageableCaptor.capture());
+        ArgumentCaptor<Pageable> pageableCaptor =
+                ArgumentCaptor.forClass(Pageable.class);
+
+        verify(categoryRepository).findAll(
+                any(Specification.class),
+                pageableCaptor.capture()
+        );
+
         Sort sort = pageableCaptor.getValue().getSort();
-        if (sortMode == Sorting.ASC)
-            assertTrue(sort.getOrderFor("name").isAscending());
-        else
-        assertTrue(sort.getOrderFor("name").isDescending());
+        Sort.Order order = sort.getOrderFor("name");
+
+        assertNotNull(order, "Expected sorting by name");
+
+        if (sortMode == Sorting.ASC) {
+            assertTrue(order.isAscending());
+        } else {
+            assertTrue(order.isDescending());
+        }
     }
     @Test
     void testGetCategoryList_WithAscendingSort() {
