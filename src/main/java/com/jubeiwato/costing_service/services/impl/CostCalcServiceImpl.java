@@ -11,6 +11,9 @@ import com.jubeiwato.costing_service.repositories.BomRepository;
 import com.jubeiwato.costing_service.repositories.PartCostRepository;
 import com.jubeiwato.costing_service.repositories.PartRepository;
 import com.jubeiwato.costing_service.services.CostCalcService;
+import com.jubeiwato.costing_service.services.FileGeneratorService;
+import java.io.IOException;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -24,14 +27,19 @@ public class CostCalcServiceImpl implements CostCalcService {
     private final PartRepository partRepository;
     private final PartCostRepository partCostRepository;
     private final BomRepository bomRepository;
+    private final FileGeneratorService excelService;
 
-    public CostCalcServiceImpl(PartRepository partRepository, PartCostRepository partCostRepository,
-            BomRepository bomRepository) {
-        this.partRepository = partRepository;
-        this.partCostRepository = partCostRepository;
-        this.bomRepository = bomRepository;
-    }
+public CostCalcServiceImpl(
+        PartRepository partRepository,
+        PartCostRepository partCostRepository,
+        BomRepository bomRepository,
+        FileGeneratorService excelService) {
 
+    this.partRepository = partRepository;
+    this.partCostRepository = partCostRepository;
+    this.bomRepository = bomRepository;
+    this.excelService = excelService;
+}
     private List<CostItemDto> calculateMasterPart(Long partId, String priceMode) {
         double calculatedPrice = 0.0;
         String vendorName = "";
@@ -153,5 +161,37 @@ public class CostCalcServiceImpl implements CostCalcService {
                 throw new AppException(ErrorMessageConstant.INVALID_PRICE_MODE, HttpStatus.BAD_REQUEST);
         }
     }
+
+    @Override
+public byte[] downloadCostExcel(
+        Long partId,
+        String priceMode,
+        Long companyId) throws IOException {
+
+    CostCalcResultDto result = calculatePrice(partId, priceMode, companyId);
+
+    String[] headers = {
+            "Part Name",
+            "Part Number",
+            "Quantity",
+            "Rate",
+            "Vendor Name",
+            "Sub Total"
+    };
+
+    List<String[]> data = result.getCostCalcDtoList()
+            .stream()
+            .map(item -> new String[] {
+                    item.getPartName(),
+                    item.getPartNumber(),
+                    String.valueOf(item.getQuantity()),
+                    String.valueOf(item.getRate()),
+                    item.getVendorName(),
+                    String.valueOf(item.getSubTotal())
+            })
+            .toList();
+
+    return excelService.generateSpreadsheet(data, headers);
+}
 
 }
