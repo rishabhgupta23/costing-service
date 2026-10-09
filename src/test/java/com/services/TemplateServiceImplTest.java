@@ -170,21 +170,36 @@ class TemplateServiceImplTest {
 
         @Test
         void getAllTemplates_Success() {
-                Pageable pageable = PageRequest.of(0, 2, Sort.by(Sort.Direction.ASC, "templateName"));
+        Pageable pageable = PageRequest.of(0, 2);
 
-                List<Template> templates = List.of(testTemplate);
+        List<Template> templates = List.of(testTemplate);
 
-                Page<Template> page = new PageImpl<>(templates, pageable, templates.size());
+        Page<Template> page = new PageImpl<>(
+                templates, pageable, templates.size()
+        );
 
-                when(templateRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(page);
+        when(templateRepository.findAll(
+                any(Specification.class),
+                eq(pageable)
+        )).thenReturn(page);
 
-                ApiPageResponseDto<List<TemplateResponseDto>> response = templateService.getAllTemplates(1L, "Test", 0,
-                                2, "templateName", Sorting.ASC);
+        ApiPageResponseDto<List<TemplateResponseDto>> response =
+                templateService.getAllTemplates(
+                        1L, "Test", 0, 2, "templateName", Sorting.ASC
+                );
 
-                assertNotNull(response);
-                assertEquals(1, response.getData().size());
-                assertEquals(testTemplate.getTemplateName(), response.getData().get(0).getTemplateName());
-                assertEquals(1, response.getPageInfo().getTotalRecords());
+        assertNotNull(response);
+        assertEquals(1, response.getData().size());
+        assertEquals(
+                testTemplate.getTemplateName(),
+                response.getData().get(0).getTemplateName()
+        );
+        assertEquals(1, response.getPageInfo().getTotalRecords());
+
+        verify(templateRepository).findAll(
+                any(Specification.class),
+                eq(pageable)
+        );
         }
 
         @Test
