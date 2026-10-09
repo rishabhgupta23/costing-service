@@ -24,6 +24,17 @@
                 schemaName="app"
                 columnName="comments"/>
 
+        <rollback> 
+                <dropColumn tableName="part_cost_cost_factor" 
+                schemaName="app" 
+                columnName="comments"/> 
+
+                <addColumn tableName="cost_factor" 
+                schemaName="app"> 
+                        <column name="comments" type="varchar(255)"/> 
+                </addColumn> 
+        </rollback>
+
     </changeSet>
 
 </databaseChangeLog>

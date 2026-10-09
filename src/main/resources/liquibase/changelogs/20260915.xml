@@ -20,6 +20,17 @@
                     type="varchar(255)"/>
         </addColumn>
 
+        <rollback>
+            <dropColumn
+                    tableName="cost_factor"
+                    schemaName="app"
+                    columnName="factor_type"/>
+
+            <dropColumn
+                    tableName="cost_factor"
+                    schemaName="app"
+                    columnName="comments"/>
+        </rollback>
     </changeSet>
 
 </databaseChangeLog>
