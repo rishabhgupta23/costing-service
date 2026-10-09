@@ -9,6 +9,7 @@ import com.jubeiwato.costing_service.entities.User;
 import com.jubeiwato.costing_service.services.CostFactorService;
 
 
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -42,18 +43,33 @@ public class CostFactorController {
     }
     @PostMapping
     @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
-    public ResponseEntity<GeneralResponseDto> createCostFactor(@RequestParam String factorName, @AuthenticationPrincipal User authenticatedUser) {
+    public ResponseEntity<GeneralResponseDto> createCostFactor(
+            @Valid @RequestBody CostFactorDto request,
+            @AuthenticationPrincipal User authenticatedUser) {
+
         Long companyId = authenticatedUser.getCompany().getCompanyId();
-        costFactorService.createCostFactor(factorName, companyId);
+
+        costFactorService.createCostFactor(request, companyId);
+
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(new GeneralResponseDto("Cost Factor created successfully", HttpStatus.CREATED.value()));
+                .body(new GeneralResponseDto(
+                        "Cost Factor created successfully",
+                        HttpStatus.CREATED.value()
+                ));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
-    public ResponseEntity<CostFactorDto> updateCostFactor(@PathVariable Long id,@RequestParam String factorName, @AuthenticationPrincipal User authenticatedUser) {
+    public ResponseEntity<CostFactorDto> updateCostFactor(
+            @PathVariable Long id,
+            @Valid @RequestBody CostFactorDto request,
+            @AuthenticationPrincipal User authenticatedUser) {
+
         Long companyId = authenticatedUser.getCompany().getCompanyId();
-        CostFactorDto updated = costFactorService.updateCostFactor(id, factorName, companyId);
+
+        CostFactorDto updated =
+                costFactorService.updateCostFactor(id, request, companyId);
+
         return ResponseEntity.ok(updated);
     }
 
