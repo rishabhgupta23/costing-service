@@ -119,52 +119,70 @@ class VendorServiceTest {
 
         @Test
         void testGetVendorList_WithSortingDESC() {
-                Long companyId = 1L;
-                String name = "VendorX";
-                String address = "Kolkata";
-                String emailId = "vendorx@mail.com";
-                String contactNumber = "9876543210";
-                int pageNo = 0;
-                int pageSize = 10;
-                String sortColumn = "name";
-                Sorting sortMode = Sorting.DESC;
+        Long companyId = 1L;
+        int pageNo = 0;
+        int pageSize = 10;
+        String sortColumn = "name";
+        Sorting sortMode = Sorting.DESC;
 
-                Vendor vendor = Vendor.builder()
-                                .vendorName(name)
-                                .address(address)
-                                .emailId(emailId)
-                                .contactNumber(contactNumber)
-                                .company(Company.builder().companyId(companyId).build())
-                                .build();
+        Vendor vendor = Vendor.builder()
+                .vendorName("VendorX")
+                .address("Kolkata")
+                .emailId("vendorx@mail.com")
+                .contactNumber("9876543210")
+                .company(Company.builder()
+                        .companyId(companyId)
+                        .build())
+                .build();
 
-                Page<Vendor> vendorPage = new PageImpl<>(List.of(vendor));
+        Page<Vendor> vendorPage = new PageImpl<>(List.of(vendor));
 
-                when(vendorRepository.findAll(any(Specification.class), any(Pageable.class)))
-                                .thenReturn(vendorPage);
+        when(vendorRepository.findAll(
+                any(Specification.class),
+                any(Pageable.class)
+        )).thenReturn(vendorPage);
 
-                ApiPageResponseDto<List<VendorDto>> response = vendorService.getVendorList(
-                                companyId, name, address, emailId, contactNumber,
-                                pageNo, pageSize, sortColumn, sortMode);
+        ApiPageResponseDto<List<VendorDto>> response =
+                vendorService.getVendorList(
+                        companyId,
+                        "",
+                        "",
+                        "",
+                        "",
+                        pageNo,
+                        pageSize,
+                        sortColumn,
+                        sortMode
+                );
 
-                assertNotNull(response);
-                assertEquals(1, response.getData().size());
+        assertNotNull(response);
+        assertEquals(1, response.getData().size());
 
-                VendorDto vendorDto = response.getData().get(0);
-                assertEquals(name, vendorDto.getVendorName());
-                assertEquals(address, vendorDto.getAddress());
-                assertEquals(emailId, vendorDto.getEmailId());
-                assertEquals(contactNumber, vendorDto.getContactNumber());
+        VendorDto vendorDto = response.getData().get(0);
+        assertEquals("VendorX", vendorDto.getVendorName());
+        assertEquals("Kolkata", vendorDto.getAddress());
+        assertEquals("vendorx@mail.com", vendorDto.getEmailId());
+        assertEquals("9876543210", vendorDto.getContactNumber());
 
-                assertEquals(1, response.getPageInfo().getTotalRecords());
-                assertEquals(pageNo, response.getPageInfo().getPageNumber());
-                assertEquals(pageSize, response.getPageInfo().getPageSize());
+        assertEquals(1, response.getPageInfo().getTotalRecords());
+        assertEquals(pageNo, response.getPageInfo().getPageNumber());
+        assertEquals(pageSize, response.getPageInfo().getPageSize());
 
-                // Additional check if Sort.Direction was correctly interpreted (indirectly)
-                ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-                verify(vendorRepository).findAll(any(Specification.class), pageableCaptor.capture());
-                Sort sort = pageableCaptor.getValue().getSort();
-                assertTrue(sort.getOrderFor(sortColumn).isDescending());
+        ArgumentCaptor<Pageable> pageableCaptor =
+                ArgumentCaptor.forClass(Pageable.class);
+
+        verify(vendorRepository).findAll(
+                any(Specification.class),
+                pageableCaptor.capture()
+        );
+
+        Sort sort = pageableCaptor.getValue().getSort();
+        Sort.Order order = sort.getOrderFor(sortColumn);
+
+        assertNotNull(order, "Expected sorting by " + sortColumn);
+        assertTrue(order.isDescending());
         }
+
 
         @Test
         void getVendorListTest() {
