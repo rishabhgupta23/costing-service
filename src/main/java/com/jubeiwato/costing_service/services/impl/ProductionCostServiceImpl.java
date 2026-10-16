@@ -1,5 +1,6 @@
 package com.jubeiwato.costing_service.services.impl;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +19,7 @@ import com.jubeiwato.costing_service.dtos.ProductionPlanPartDto;
 import com.jubeiwato.costing_service.repositories.BomRepository;
 import com.jubeiwato.costing_service.repositories.PartRepository;
 import com.jubeiwato.costing_service.services.CostCalcService;
+import com.jubeiwato.costing_service.services.FileGeneratorService;
 import com.jubeiwato.costing_service.services.ProductionCostService;
 
 @Service
@@ -25,13 +27,15 @@ public class ProductionCostServiceImpl implements ProductionCostService {
     private final PartRepository partRepository;
     private final BomRepository bomRepository;
     private final CostCalcService costCalcService;
+    private final FileGeneratorService fileGeneratorService;
 
     public ProductionCostServiceImpl(
             PartRepository partRepository,
-            BomRepository bomRepository, CostCalcService costCalcService) {
+            BomRepository bomRepository, CostCalcService costCalcService, FileGeneratorService fileGeneratorService) {
         this.partRepository = partRepository;
         this.bomRepository = bomRepository;
         this.costCalcService = costCalcService;
+        this.fileGeneratorService = fileGeneratorService;
     }
 
     @Override
@@ -98,4 +102,38 @@ public class ProductionCostServiceImpl implements ProductionCostService {
             }
         }
     }
+
+    @Override
+public byte[] downloadProductionPlanExcel(
+        List<ProductionPlanPartDto> parts,
+        String priceMode,
+        Long companyId) throws IOException {
+
+    ProductionCostResponseDto response =
+            calculateProductionCost(parts, priceMode, companyId);
+
+    String[] headers = {
+            "Part Number",
+            "Part Name",
+            "Quantity",
+            "Rate",
+            "Vendor",
+            "Sub Total"
+    };
+
+    List<String[]> data = new ArrayList<>();
+
+    for (CostItemDto item : response.getItems()) {
+        data.add(new String[]{
+                item.getPartNumber(),
+                item.getPartName(),
+                String.valueOf(item.getQuantity()),
+                String.valueOf(item.getRate()),
+                item.getVendorName(),
+                String.valueOf(item.getSubTotal())
+        });
+    }
+
+    return fileGeneratorService.generateSpreadsheet(data, headers);
+}
 }
